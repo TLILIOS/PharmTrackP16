@@ -295,6 +295,7 @@ enum NavigationDestination: Hashable {
     case medicineForm(String?) // Medicine ID or nil for new
     case adjustStock(String) // Medicine ID
     case aisle(String?) // Aisle ID or nil for new
+    case medicinesByAisle(String) // Aisle ID
     case criticalStock
     case expiringMedicines
     case history
@@ -314,6 +315,9 @@ enum NavigationDestination: Hashable {
         case .aisle(let aisleId):
             hasher.combine("aisle")
             hasher.combine(aisleId ?? "new")
+        case .medicinesByAisle(let aisleId):
+            hasher.combine("medicinesByAisle")
+            hasher.combine(aisleId)
         case .criticalStock:
             hasher.combine("criticalStock")
         case .expiringMedicines:
@@ -334,6 +338,8 @@ enum NavigationDestination: Hashable {
         case (.adjustStock(let lhsId), .adjustStock(let rhsId)):
             return lhsId == rhsId
         case (.aisle(let lhsId), .aisle(let rhsId)):
+            return lhsId == rhsId
+        case (.medicinesByAisle(let lhsId), .medicinesByAisle(let rhsId)):
             return lhsId == rhsId
         case (.criticalStock, .criticalStock),
              (.expiringMedicines, .expiringMedicines),
@@ -376,7 +382,7 @@ class AppCoordinator: ObservableObject {
     let searchMedicineUseCase: SearchMedicineUseCaseProtocol // Public for DashboardView
     
     // Aisles
-    private let getAislesUseCase: GetAislesUseCaseProtocol
+    let getAislesUseCase: GetAislesUseCaseProtocol
     private let addAisleUseCase: AddAisleUseCaseProtocol
     private let updateAisleUseCase: UpdateAisleUseCaseProtocol
     private let deleteAisleUseCase: DeleteAisleUseCaseProtocol
@@ -499,6 +505,8 @@ class AppCoordinator: ObservableObject {
             medicineNavigationPath.append(destination)
         case .aisle:
             aislesNavigationPath.append(destination)
+        case .medicinesByAisle:
+            aislesNavigationPath.append(destination)
         case .criticalStock, .expiringMedicines:
             medicineNavigationPath.append(destination)
         case .history:
@@ -533,6 +541,8 @@ class AppCoordinator: ObservableObject {
             AdjustStockViewWrapper(medicineId: medicineId, appCoordinator: self)
         case .aisle(let aisleId):
             AisleFormViewWrapper(aisleId: aisleId, appCoordinator: self)
+        case .medicinesByAisle(let aisleId):
+            AisleMedicinesView(aisleId: aisleId, appCoordinator: self)
         case .criticalStock:
             Text("Stocks critiques") // À implémenter
         case .expiringMedicines:
@@ -573,6 +583,11 @@ class AppCoordinator: ObservableObject {
     
     private func createAisleFormViewModel(for aisle: Aisle?) -> some View {
         return Text("Aisle Form View - TODO")
+    }
+    
+    private func getAisleName(for aisleId: String) -> String {
+        // Simple implementation - in real app, this should fetch from repository
+        return "Médicaments du rayon"
     }
 }
 
@@ -689,6 +704,46 @@ struct AisleFormViewWrapper: View {
     
     var body: some View {
         Text("Aisle Form View - TODO")
+    }
+}
+
+struct AisleMedicinesView: View {
+    let aisleId: String
+    let appCoordinator: AppCoordinator
+    @State private var aisle: Aisle?
+    @State private var isLoading = true
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Chargement...")
+            } else if let aisle = aisle {
+                MedicineListView(medicineStockViewModel: appCoordinator.medicineListViewModel)
+                    .navigationTitle(aisle.name)
+                    .onAppear {
+                        // Pre-select this aisle in the medicine list filter
+                        Task {
+                            await appCoordinator.medicineListViewModel.fetchMedicines()
+                            await appCoordinator.medicineListViewModel.fetchAisles()
+                        }
+                    }
+            } else {
+                Text("Rayon introuvable")
+            }
+        }
+        .task {
+            await loadAisle()
+        }
+    }
+    
+    private func loadAisle() async {
+        do {
+            let allAisles = try await appCoordinator.getAislesUseCase.execute()
+            aisle = allAisles.first { $0.id == aisleId }
+        } catch {
+            print("Error loading aisle: \(error)")
+        }
+        isLoading = false
     }
 }
 

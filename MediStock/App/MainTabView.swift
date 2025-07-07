@@ -22,6 +22,7 @@ struct MainTabView: View {
                         .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
+                                .environmentObject(appCoordinator)
                         }
                 }
                 .tabItem {
@@ -35,6 +36,7 @@ struct MainTabView: View {
                         .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
+                                .environmentObject(appCoordinator)
                         }
                 }
                 .tabItem {
@@ -45,8 +47,10 @@ struct MainTabView: View {
                 // Gestion des rayons
                 NavigationStack(path: $appCoordinator.aislesNavigationPath) {
                     AislesView(aislesViewModel: appCoordinator.aislesViewModel)
+                        .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
+                                .environmentObject(appCoordinator)
                         }
                 }
                 .tabItem {
@@ -59,6 +63,7 @@ struct MainTabView: View {
                     HistoryView(historyViewModel: appCoordinator.historyViewModel)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
+                                .environmentObject(appCoordinator)
                         }
                 }
                 .tabItem {
@@ -71,6 +76,7 @@ struct MainTabView: View {
                     ProfileView(viewModel: appCoordinator.profileViewModel)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
+                                .environmentObject(appCoordinator)
                         }
                 }
                 .tabItem {

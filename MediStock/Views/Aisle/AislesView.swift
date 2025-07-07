@@ -176,49 +176,60 @@ struct AislesView: View {
 struct AisleRowView: View {
     let aisle: Aisle
     let medicineCount: Int
+    @EnvironmentObject var appCoordinator: AppCoordinator
     
     var body: some View {
-        HStack(spacing: 15) {
-            Circle()
-                .fill(aisle.color)
-                .frame(width: 50, height: 50)
-                .overlay {
-                    if !aisle.icon.isEmpty {
-                        Image(systemName: aisle.icon)
-                            .font(.system(size: 22))
-                            .foregroundColor(.white)
+        Button(action: {
+            appCoordinator.navigateTo(.medicinesByAisle(aisle.id))
+        }) {
+            HStack(spacing: 15) {
+                Circle()
+                    .fill(aisle.color)
+                    .frame(width: 50, height: 50)
+                    .overlay {
+                        if !aisle.icon.isEmpty {
+                            Image(systemName: aisle.icon)
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                        }
+                    }
+                
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(aisle.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    if let description = aisle.description, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
                     }
                 }
-            
-            VStack(alignment: .leading, spacing: 5) {
-                Text(aisle.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
                 
-                if let description = aisle.description, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(medicineCount)")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(aisle.color)
+                    
+                    Text("médicaments")
+                        .font(.caption)
                         .foregroundColor(.secondary)
-                        .lineLimit(1)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 2)
                 }
             }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing) {
-                Text("\(medicineCount)")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(aisle.color)
-                
-                Text("médicaments")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .buttonStyle(PlainButtonStyle())
         .padding(.horizontal)
         .padding(.vertical, 4)
     }
