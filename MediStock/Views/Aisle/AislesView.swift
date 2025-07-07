@@ -18,114 +18,85 @@ struct AislesView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.backgroundApp.opacity(0.1).ignoresSafeArea()
-                
-                VStack {
-                    if viewModel.isLoading {
-                        Spacer()
-                        ProgressView("Chargement des rayons...")
-                        Spacer()
-                    } else if filteredAisles.isEmpty {
-                        VStack(spacing: 20) {
-                            Image(systemName: "tray.full")
-                                .font(.system(size: 70))
-                                .foregroundColor(.gray.opacity(0.8))
-                            
-                            Text(searchText.isEmpty ? "Aucun rayon" : "Aucun résultat pour \"\(searchText)\"")
-                                .font(.headline)
-                            
-                            Text(searchText.isEmpty ? "Créez des rayons pour mieux organiser vos médicaments" : "Essayez une recherche différente")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 30)
-                            
-                            PrimaryButton(title: "Ajouter un rayon", icon: "plus") {
-                                showingAddAisle = true
-                            }
-                            .frame(maxWidth: 250)
-                            .padding(.top, 20)
-                        }
-                        .padding()
-                    } else {
-                        searchBar
+        ZStack {
+            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+            
+            VStack {
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView("Chargement des rayons...")
+                    Spacer()
+                } else if filteredAisles.isEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "tray.full")
+                            .font(.system(size: 70))
+                            .foregroundColor(.gray.opacity(0.8))
                         
-                        aislesList
-                    }
-                }
-                .navigationTitle("Rayons")
-                .searchable(text: $searchText, prompt: "Rechercher un rayon")
-                .toolbar {
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button(action: {
+                        Text(searchText.isEmpty ? "Aucun rayon" : "Aucun résultat pour \"\(searchText)\"")
+                            .font(.headline)
+                        
+                        Text(searchText.isEmpty ? "Créez des rayons pour mieux organiser vos médicaments" : "Essayez une recherche différente")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 30)
+                        
+                        PrimaryButton(title: "Ajouter un rayon", icon: "plus") {
                             showingAddAisle = true
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title3)
                         }
-                        
-                        EditButton()
+                        .frame(maxWidth: 250)
+                        .padding(.top, 20)
                     }
+                    .padding()
+                } else {
+                    aislesList
                 }
-                .environment(\.editMode, $editMode)
-                
-                // Message d'erreur
-                if case .error(let message) = viewModel.state {
-                    VStack {
-                        Spacer()
-                        
-                        MessageView(message: message, type: .error) {
-                            viewModel.resetState()
-                        }
-                        .padding()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            .navigationTitle("Rayons")
+            .searchable(text: $searchText, prompt: "Rechercher un rayon")
+            .toolbar {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showingAddAisle = true
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
                     }
-                    .animation(.easeInOut, value: viewModel.state)
-                    .zIndex(1)
+                    
+                    EditButton()
                 }
             }
-            .sheet(isPresented: $showingAddAisle) {
-                AisleFormView(viewModel: viewModel)
-            }
-            .sheet(item: $selectedAisleForEdit) { aisle in
-                AisleFormView(viewModel: viewModel, editingAisle: aisle)
-            }
-            .onAppear {
-                Task {
-                    await viewModel.fetchAisles()
+            .environment(\.editMode, $editMode)
+            
+            // Message d'erreur
+            if case .error(let message) = viewModel.state {
+                VStack {
+                    Spacer()
+                    
+                    MessageView(message: message, type: .error) {
+                        viewModel.resetState()
+                    }
+                    .padding()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                .animation(.easeInOut, value: viewModel.state)
+                .zIndex(1)
+            }
+        }
+        .sheet(isPresented: $showingAddAisle) {
+            AisleFormView(viewModel: viewModel)
+        }
+        .sheet(item: $selectedAisleForEdit) { aisle in
+            AisleFormView(viewModel: viewModel, editingAisle: aisle)
+        }
+        .onAppear {
+            Task {
+                await viewModel.fetchAisles()
             }
         }
     }
     
     // MARK: - View Components
-    
-    private var searchBar: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField("Rechercher un rayon...", text: $searchText)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-            
-            if !searchText.isEmpty {
-                Button(action: {
-                    searchText = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
-        }
-        .padding(10)
-        .background(Color(.systemGray6))
-        .cornerRadius(10)
-        .padding(.horizontal)
-        .padding(.top, 10)
-    }
     
     private var aislesList: some View {
         List {

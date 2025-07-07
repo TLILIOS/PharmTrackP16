@@ -207,8 +207,9 @@ class MedicineStockViewModel: ObservableObject {
     
     private func addHistory(action: String, user: String, medicineId: String, details: String) {
         let history = HistoryEntry(id: UUID().uuidString, medicineId: medicineId, userId: user, action: action, details: details, timestamp: Date())
+        let historyDTO = HistoryEntryDTO.fromDomain(history)
         do {
-            try db.collection("history").document(history.id).setData(from: history)
+            try db.collection("history").document(history.id).setData(from: historyDTO)
         } catch let error {
             print("Error adding history: \(error)")
         }
@@ -221,7 +222,7 @@ class MedicineStockViewModel: ObservableObject {
                 print("Error getting history: \(error)")
             } else {
                 self.history = querySnapshot?.documents.compactMap { document in
-                    try? document.data(as: HistoryEntry.self)
+                    try? document.data(as: HistoryEntryDTO.self).toDomain()
                 } ?? []
             }
         }

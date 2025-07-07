@@ -571,20 +571,85 @@ class RealGetMedicineUseCase: GetMedicineUseCaseProtocol {
 
 class RealAddMedicineUseCase: AddMedicineUseCaseProtocol {
     private let medicineRepository: MedicineRepositoryProtocol
-    init(medicineRepository: MedicineRepositoryProtocol) { self.medicineRepository = medicineRepository }
-    func execute(medicine: Medicine) async throws { _ = try await medicineRepository.saveMedicine(medicine) }
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
+        self.medicineRepository = medicineRepository
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(medicine: Medicine) async throws {
+        let savedMedicine = try await medicineRepository.saveMedicine(medicine)
+        
+        // Ajouter une entrée à l'historique
+        let historyEntry = HistoryEntry(
+            id: UUID().uuidString,
+            medicineId: savedMedicine.id,
+            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
+            action: "Médicament ajouté",
+            details: "Nouveau médicament '\(savedMedicine.name)' ajouté avec une quantité de \(savedMedicine.currentQuantity) \(savedMedicine.unit)",
+            timestamp: Date()
+        )
+        
+        try await historyRepository.addHistoryEntry(historyEntry)
+    }
 }
 
 class RealUpdateMedicineUseCase: UpdateMedicineUseCaseProtocol {
     private let medicineRepository: MedicineRepositoryProtocol
-    init(medicineRepository: MedicineRepositoryProtocol) { self.medicineRepository = medicineRepository }
-    func execute(medicine: Medicine) async throws { _ = try await medicineRepository.saveMedicine(medicine) }
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
+        self.medicineRepository = medicineRepository
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(medicine: Medicine) async throws {
+        let updatedMedicine = try await medicineRepository.saveMedicine(medicine)
+        
+        // Ajouter une entrée à l'historique
+        let historyEntry = HistoryEntry(
+            id: UUID().uuidString,
+            medicineId: updatedMedicine.id,
+            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
+            action: "Médicament modifié",
+            details: "Médicament '\(updatedMedicine.name)' mis à jour",
+            timestamp: Date()
+        )
+        
+        try await historyRepository.addHistoryEntry(historyEntry)
+    }
 }
 
 class RealDeleteMedicineUseCase: DeleteMedicineUseCaseProtocol {
     private let medicineRepository: MedicineRepositoryProtocol
-    init(medicineRepository: MedicineRepositoryProtocol) { self.medicineRepository = medicineRepository }
-    func execute(id: String) async throws { try await medicineRepository.deleteMedicine(id: id) }
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
+        self.medicineRepository = medicineRepository
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(id: String) async throws {
+        // Récupérer le médicament avant de le supprimer pour l'historique
+        let medicine = try await medicineRepository.getMedicine(id: id)
+        
+        try await medicineRepository.deleteMedicine(id: id)
+        
+        // Ajouter une entrée à l'historique si le médicament existait
+        if let deletedMedicine = medicine {
+            let historyEntry = HistoryEntry(
+                id: UUID().uuidString,
+                medicineId: deletedMedicine.id,
+                userId: "current_user", // TODO: Récupérer l'utilisateur actuel
+                action: "Médicament supprimé",
+                details: "Médicament '\(deletedMedicine.name)' supprimé du stock",
+                timestamp: Date()
+            )
+            
+            try await historyRepository.addHistoryEntry(historyEntry)
+        }
+    }
 }
 
 class RealGetAislesUseCase: GetAislesUseCaseProtocol {
@@ -641,6 +706,52 @@ class RealSignOutUseCase: SignOutUseCaseProtocol {
     
     func execute() async throws {
         try await authRepository.signOut()
+    }
+}
+
+class RealGetHistoryUseCase: GetHistoryUseCaseProtocol {
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(historyRepository: HistoryRepositoryProtocol) {
+        self.historyRepository = historyRepository
+    }
+    
+    func execute() async throws -> [HistoryEntry] {
+        return try await historyRepository.getAllHistory()
+    }
+}
+
+class RealGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(historyRepository: HistoryRepositoryProtocol) {
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(limit: Int) async throws -> [HistoryEntry] {
+        let allHistory = try await historyRepository.getAllHistory()
+        return Array(allHistory.prefix(limit))
+    }
+}
+
+class RealExportHistoryUseCase: ExportHistoryUseCaseProtocol {
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(historyRepository: HistoryRepositoryProtocol) {
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(format: ExportFormat) async throws -> Data {
+        let formatString: String
+        switch format {
+        case .csv:
+            formatString = "csv"
+        case .json:
+            formatString = "json"
+        case .pdf:
+            formatString = "pdf"
+        }
+        return try await historyRepository.exportHistory(format: formatString, medicineId: nil)
     }
 }
 
@@ -897,6 +1008,7 @@ extension AppCoordinator {
         let authRepository = FirebaseAuthRepository()
         let medicineRepository = FirebaseMedicineRepository()
         let aisleRepository = FirebaseAisleRepository()
+        let historyRepository = FirebaseHistoryRepository()
         
         // Auth use cases
         let getUserUseCase = RealGetUserUseCase(authRepository: authRepository)
@@ -905,9 +1017,9 @@ extension AppCoordinator {
         // Medicine use cases with real Firebase
         let getMedicinesUseCase = RealGetMedicinesUseCase(medicineRepository: medicineRepository)
         let getMedicineUseCase = RealGetMedicineUseCase(medicineRepository: medicineRepository)
-        let addMedicineUseCase = RealAddMedicineUseCase(medicineRepository: medicineRepository)
-        let updateMedicineUseCase = RealUpdateMedicineUseCase(medicineRepository: medicineRepository)
-        let deleteMedicineUseCase = RealDeleteMedicineUseCase(medicineRepository: medicineRepository)
+        let addMedicineUseCase = RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
+        let updateMedicineUseCase = RealUpdateMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
+        let deleteMedicineUseCase = RealDeleteMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
         
         // Aisle use cases with real Firebase
         let getAislesUseCase = RealGetAislesUseCase(aisleRepository: aisleRepository)
@@ -915,6 +1027,11 @@ extension AppCoordinator {
         let updateAisleUseCase = RealUpdateAisleUseCase(aisleRepository: aisleRepository)
         let deleteAisleUseCase = RealDeleteAisleUseCase(aisleRepository: aisleRepository)
         let getMedicineCountByAisleUseCase = RealGetMedicineCountByAisleUseCase(aisleRepository: aisleRepository)
+        
+        // History use cases with real Firebase
+        let getHistoryUseCase = RealGetHistoryUseCase(historyRepository: historyRepository)
+        let getRecentHistoryUseCase = RealGetRecentHistoryUseCase(historyRepository: historyRepository)
+        let exportHistoryUseCase = RealExportHistoryUseCase(historyRepository: historyRepository)
         
         return AppCoordinator(
             // Auth - using real implementations
@@ -938,10 +1055,10 @@ extension AppCoordinator {
             searchAisleUseCase: MockSearchAisleUseCase(), // TODO: Implement real search
             getMedicineCountByAisleUseCase: getMedicineCountByAisleUseCase,
             
-            // History - using mock for now
-            getHistoryUseCase: MockGetHistoryUseCase(),
-            getRecentHistoryUseCase: MockGetRecentHistoryUseCase(),
-            exportHistoryUseCase: MockExportHistoryUseCase()
+            // History - using real Firebase implementations
+            getHistoryUseCase: getHistoryUseCase,
+            getRecentHistoryUseCase: getRecentHistoryUseCase,
+            exportHistoryUseCase: exportHistoryUseCase
         )
     }
     
