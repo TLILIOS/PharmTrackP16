@@ -62,8 +62,8 @@ struct DashboardView: View {
         .sheet(isPresented: $showingSearchSheet) {
             NavigationStack {
                 SearchView(viewModel: SearchViewModel(
-                    searchMedicineUseCase: MockSearchMedicineUseCase(),
-                    searchAisleUseCase: MockSearchAisleUseCase()
+                    searchMedicineUseCase: appCoordinator.searchMedicineUseCase,
+                    searchAisleUseCase: appCoordinator.searchAisleUseCase
                 ))
             }
             .presentationDragIndicator(.visible)

@@ -98,7 +98,7 @@ struct AdjustStockView: View {
                                         get: { Double(newQuantity) },
                                         set: { newQuantity = Int($0) }
                                     ),
-                                    in: 0...Double(operation == .set ? viewModel.medicine.maxQuantity : viewModel.medicine.maxQuantity - viewModel.medicine.currentQuantity),
+                                    in: 0...Double(sliderMaxValue),
                                     step: 1
                                 )
                                 .tint(.accentApp)
@@ -120,31 +120,15 @@ struct AdjustStockView: View {
                             HStack {
                                 Spacer()
                                 
-                                if operation == .set {
-                                    Text("Min: 0")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("Max: \(viewModel.medicine.maxQuantity)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    let maxDelta = operation == .add ?
-                                        viewModel.medicine.maxQuantity - viewModel.medicine.currentQuantity :
-                                        viewModel.medicine.currentQuantity
-                                    
-                                    Text("Min: 0")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("Max: \(maxDelta)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                                Text("Min: 0")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                Text("Max: \(sliderMaxValue)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 
                                 Spacer()
                             }
@@ -292,6 +276,18 @@ struct AdjustStockView: View {
             return .orange
         } else {
             return .green
+        }
+    }
+    
+    private var sliderMaxValue: Int {
+        switch operation {
+        case .set:
+            return max(1, viewModel.medicine.maxQuantity)
+        case .add:
+            let maxDelta = viewModel.medicine.maxQuantity - viewModel.medicine.currentQuantity
+            return max(1, maxDelta)
+        case .remove:
+            return max(1, viewModel.medicine.currentQuantity)
         }
     }
     

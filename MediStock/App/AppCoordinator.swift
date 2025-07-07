@@ -197,15 +197,16 @@ class AppCoordinator: ObservableObject {
     private let addMedicineUseCase: AddMedicineUseCaseProtocol
     private let updateMedicineUseCase: UpdateMedicineUseCaseProtocol
     private let deleteMedicineUseCase: DeleteMedicineUseCaseProtocol
+    private let updateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol
     private let adjustStockUseCase: AdjustStockUseCaseProtocol
-    private let searchMedicineUseCase: SearchMedicineUseCaseProtocol
+    let searchMedicineUseCase: SearchMedicineUseCaseProtocol // Public for DashboardView
     
     // Aisles
     private let getAislesUseCase: GetAislesUseCaseProtocol
     private let addAisleUseCase: AddAisleUseCaseProtocol
     private let updateAisleUseCase: UpdateAisleUseCaseProtocol
     private let deleteAisleUseCase: DeleteAisleUseCaseProtocol
-    private let searchAisleUseCase: SearchAisleUseCaseProtocol
+    let searchAisleUseCase: SearchAisleUseCaseProtocol // Public for DashboardView
     private let getMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseProtocol
     
     // History
@@ -235,6 +236,7 @@ class AppCoordinator: ObservableObject {
         addMedicineUseCase: AddMedicineUseCaseProtocol,
         updateMedicineUseCase: UpdateMedicineUseCaseProtocol,
         deleteMedicineUseCase: DeleteMedicineUseCaseProtocol,
+        updateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol,
         adjustStockUseCase: AdjustStockUseCaseProtocol,
         searchMedicineUseCase: SearchMedicineUseCaseProtocol,
         
@@ -261,6 +263,7 @@ class AppCoordinator: ObservableObject {
         self.addMedicineUseCase = addMedicineUseCase
         self.updateMedicineUseCase = updateMedicineUseCase
         self.deleteMedicineUseCase = deleteMedicineUseCase
+        self.updateMedicineStockUseCase = updateMedicineStockUseCase
         self.adjustStockUseCase = adjustStockUseCase
         self.searchMedicineUseCase = searchMedicineUseCase
         
@@ -366,7 +369,7 @@ class AppCoordinator: ObservableObject {
         return MedicineDetailViewModel(
             medicine: medicine,
             getMedicineUseCase: getMedicineUseCase,
-            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
+            updateMedicineStockUseCase: updateMedicineStockUseCase,
             deleteMedicineUseCase: deleteMedicineUseCase,
             getHistoryUseCase: MockGetHistoryForMedicineUseCase()
         )
@@ -965,6 +968,28 @@ class MockAdjustStockUseCase: AdjustStockUseCaseProtocol {
     func execute(medicineId: String, adjustment: Int, reason: String) async throws {}
 }
 
+class RealSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
+    private let medicineRepository: MedicineRepositoryProtocol
+    
+    init(medicineRepository: MedicineRepositoryProtocol) {
+        self.medicineRepository = medicineRepository
+    }
+    
+    func execute(query: String) async throws -> [Medicine] {
+        let allMedicines = try await medicineRepository.getMedicines()
+        
+        // Recherche insensible à la casse dans le nom et la description
+        return allMedicines.filter { medicine in
+            let searchQuery = query.lowercased()
+            let nameMatch = medicine.name.lowercased().contains(searchQuery)
+            let descriptionMatch = medicine.description?.lowercased().contains(searchQuery) ?? false
+            let referenceMatch = medicine.reference?.lowercased().contains(searchQuery) ?? false
+            
+            return nameMatch || descriptionMatch || referenceMatch
+        }
+    }
+}
+
 class MockSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
     func execute(query: String) async throws -> [Medicine] {
         return []
@@ -974,6 +999,35 @@ class MockSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
 class MockGetHistoryForMedicineUseCase: GetHistoryForMedicineUseCaseProtocol {
     func execute(medicineId: String) async throws -> [HistoryEntry] {
         return []
+    }
+}
+
+class RealUpdateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol {
+    private let medicineRepository: MedicineRepositoryProtocol
+    private let historyRepository: HistoryRepositoryProtocol
+    
+    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
+        self.medicineRepository = medicineRepository
+        self.historyRepository = historyRepository
+    }
+    
+    func execute(medicineId: String, newQuantity: Int, comment: String) async throws -> Medicine {
+        // Mettre à jour le stock dans le repository
+        let updatedMedicine = try await medicineRepository.updateMedicineStock(id: medicineId, newStock: newQuantity)
+        
+        // Ajouter une entrée à l'historique
+        let historyEntry = HistoryEntry(
+            id: UUID().uuidString,
+            medicineId: medicineId,
+            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
+            action: "Stock ajusté",
+            details: comment.isEmpty ? "Stock ajusté à \(newQuantity) \(updatedMedicine.unit)" : comment,
+            timestamp: Date()
+        )
+        
+        try await historyRepository.addHistoryEntry(historyEntry)
+        
+        return updatedMedicine
     }
 }
 
@@ -1018,6 +1072,27 @@ class MockUpdateAisleUseCase: UpdateAisleUseCaseProtocol {
 
 class MockDeleteAisleUseCase: DeleteAisleUseCaseProtocol {
     func execute(id: String) async throws {}
+}
+
+class RealSearchAisleUseCase: SearchAisleUseCaseProtocol {
+    private let aisleRepository: AisleRepositoryProtocol
+    
+    init(aisleRepository: AisleRepositoryProtocol) {
+        self.aisleRepository = aisleRepository
+    }
+    
+    func execute(query: String) async throws -> [Aisle] {
+        let allAisles = try await aisleRepository.getAisles()
+        
+        // Recherche insensible à la casse dans le nom et la description
+        return allAisles.filter { aisle in
+            let searchQuery = query.lowercased()
+            let nameMatch = aisle.name.lowercased().contains(searchQuery)
+            let descriptionMatch = aisle.description?.lowercased().contains(searchQuery) ?? false
+            
+            return nameMatch || descriptionMatch
+        }
+    }
 }
 
 class MockSearchAisleUseCase: SearchAisleUseCaseProtocol {
@@ -1102,6 +1177,7 @@ extension AppCoordinator {
             addMedicineUseCase: MockAddMedicineUseCase(),
             updateMedicineUseCase: MockUpdateMedicineUseCase(),
             deleteMedicineUseCase: MockDeleteMedicineUseCase(),
+            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
             adjustStockUseCase: MockAdjustStockUseCase(),
             searchMedicineUseCase: MockSearchMedicineUseCase(),
             
@@ -1137,6 +1213,8 @@ extension AppCoordinator {
         let addMedicineUseCase = RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
         let updateMedicineUseCase = RealUpdateMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
         let deleteMedicineUseCase = RealDeleteMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
+        let updateMedicineStockUseCase = RealUpdateMedicineStockUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
+        let searchMedicineUseCase = RealSearchMedicineUseCase(medicineRepository: medicineRepository)
         
         // Aisle use cases with real Firebase
         let getAislesUseCase = RealGetAislesUseCase(aisleRepository: aisleRepository)
@@ -1144,6 +1222,7 @@ extension AppCoordinator {
         let updateAisleUseCase = RealUpdateAisleUseCase(aisleRepository: aisleRepository)
         let deleteAisleUseCase = RealDeleteAisleUseCase(aisleRepository: aisleRepository)
         let getMedicineCountByAisleUseCase = RealGetMedicineCountByAisleUseCase(aisleRepository: aisleRepository)
+        let searchAisleUseCase = RealSearchAisleUseCase(aisleRepository: aisleRepository)
         
         // History use cases with real Firebase
         let getHistoryUseCase = RealGetHistoryUseCase(historyRepository: historyRepository)
@@ -1161,15 +1240,16 @@ extension AppCoordinator {
             addMedicineUseCase: addMedicineUseCase,
             updateMedicineUseCase: updateMedicineUseCase,
             deleteMedicineUseCase: deleteMedicineUseCase,
+            updateMedicineStockUseCase: updateMedicineStockUseCase,
             adjustStockUseCase: MockAdjustStockUseCase(), // TODO: Implement real adjust stock
-            searchMedicineUseCase: MockSearchMedicineUseCase(), // TODO: Implement real search
+            searchMedicineUseCase: searchMedicineUseCase,
             
             // Aisles - using real Firebase implementations
             getAislesUseCase: getAislesUseCase,
             addAisleUseCase: addAisleUseCase,
             updateAisleUseCase: updateAisleUseCase,
             deleteAisleUseCase: deleteAisleUseCase,
-            searchAisleUseCase: MockSearchAisleUseCase(), // TODO: Implement real search
+            searchAisleUseCase: searchAisleUseCase,
             getMedicineCountByAisleUseCase: getMedicineCountByAisleUseCase,
             
             // History - using real Firebase implementations
@@ -1191,6 +1271,7 @@ extension AppCoordinator {
             addMedicineUseCase: MockAddMedicineUseCase(),
             updateMedicineUseCase: MockUpdateMedicineUseCase(),
             deleteMedicineUseCase: MockDeleteMedicineUseCase(),
+            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
             adjustStockUseCase: MockAdjustStockUseCase(),
             searchMedicineUseCase: MockSearchMedicineUseCase(),
             
