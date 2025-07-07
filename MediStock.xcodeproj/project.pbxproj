@@ -368,7 +368,6 @@
 			isa = PBXGroup;
 			children = (
 				D0C3DBEC2E1A8BF8008D94A7 /* Implementations */,
-				D0C3DBF02E1A8BF8008D94A7 /* Interfaces */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -400,13 +399,6 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		D0C3DBF92E1A8BF8008D94A7 /* Aisle */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Aisle;
-			sourceTree = "<group>";
-		};
 		D0C3DBFC2E1A8BF8008D94A7 /* Authentication */ = {
 			isa = PBXGroup;
 			children = (
@@ -425,20 +417,11 @@
 			path = Medicine;
 			sourceTree = "<group>";
 		};
-		D0C3DC002E1A8BF8008D94A7 /* Stock */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Stock;
-			sourceTree = "<group>";
-		};
 		D0C3DC012E1A8BF8008D94A7 /* UseCases */ = {
 			isa = PBXGroup;
 			children = (
-				D0C3DBF92E1A8BF8008D94A7 /* Aisle */,
 				D0C3DBFC2E1A8BF8008D94A7 /* Authentication */,
 				D0C3DBFF2E1A8BF8008D94A7 /* Medicine */,
-				D0C3DC002E1A8BF8008D94A7 /* Stock */,
 			);
 			path = UseCases;
 			sourceTree = "<group>";
@@ -446,6 +429,7 @@
 		D0C3DC022E1A8BF8008D94A7 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				D0C3DBF02E1A8BF8008D94A7 /* Interfaces */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";

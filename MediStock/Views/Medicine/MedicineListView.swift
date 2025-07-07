@@ -427,7 +427,7 @@ struct MedicineCard: View {
     
     private var stockPercentage: Double {
         guard medicine.maxQuantity > 0 else { return 0 }
-        return Double(medicine.currentQuantity) / Double(medicine.maxQuantity)
+        return min(1.0, Double(medicine.currentQuantity) / Double(medicine.maxQuantity))
     }
     
     var body: some View {

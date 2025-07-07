@@ -4,6 +4,180 @@ import Firebase
 import FirebaseFirestore
 import Combine
 
+// MARK: - Test Data Service
+
+@MainActor
+class TestMedicineDataService {
+    private let getAislesUseCase: GetAislesUseCaseProtocol
+    private let addMedicineUseCase: AddMedicineUseCaseProtocol
+    
+    init(getAislesUseCase: GetAislesUseCaseProtocol, addMedicineUseCase: AddMedicineUseCaseProtocol) {
+        self.getAislesUseCase = getAislesUseCase
+        self.addMedicineUseCase = addMedicineUseCase
+    }
+    
+    func generateTestMedicines() async throws {
+        let aisles = try await getAislesUseCase.execute()
+        
+        for aisle in aisles {
+            let medicines = generateMedicinesForAisle(aisle)
+            
+            for medicine in medicines {
+                try await addMedicineUseCase.execute(medicine: medicine)
+            }
+        }
+    }
+    
+    private func generateMedicinesForAisle(_ aisle: Aisle) -> [Medicine] {
+        let medicineTemplates = getMedicineTemplates(for: aisle.name.lowercased())
+        
+        return medicineTemplates.enumerated().map { index, template in
+            Medicine(
+                id: "", // Firebase génèrera l'ID
+                name: template.name,
+                description: template.description,
+                dosage: template.dosage,
+                form: template.form,
+                reference: generateReference(template.name, index: index),
+                unit: template.unit,
+                currentQuantity: generateRandomStock(),
+                maxQuantity: template.maxQuantity,
+                warningThreshold: template.warningThreshold,
+                criticalThreshold: template.criticalThreshold,
+                expiryDate: generateRandomExpiryDate(),
+                aisleId: aisle.id,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        }
+    }
+    
+    private func getMedicineTemplates(for aisleName: String) -> [MedicineTemplate] {
+        // Détermine le type de médicaments selon le nom du rayon
+        if aisleName.contains("analg") || aisleName.contains("douleur") || aisleName.contains("antalgique") {
+            return analgesicMedicines
+        } else if aisleName.contains("antibio") || aisleName.contains("infection") {
+            return antibioticMedicines
+        } else if aisleName.contains("vitamine") || aisleName.contains("supplément") {
+            return vitaminMedicines
+        } else if aisleName.contains("digest") || aisleName.contains("gastro") {
+            return digestiveMedicines
+        } else if aisleName.contains("cardio") || aisleName.contains("cœur") || aisleName.contains("tension") {
+            return cardiovascularMedicines
+        } else {
+            return generalMedicines
+        }
+    }
+    
+    private func generateReference(_ name: String, index: Int) -> String {
+        let prefix = String(name.prefix(3)).uppercased()
+        return "\(prefix)-\(String(format: "%03d", index + 1))"
+    }
+    
+    private func generateRandomStock() -> Int {
+        let stockTypes = [5, 15, 25, 45, 75, 95] // Variété de stocks
+        return stockTypes.randomElement() ?? 50
+    }
+    
+    private func generateRandomExpiryDate() -> Date {
+        let daysFromNow = [30, 60, 120, 180, 365, 730].randomElement() ?? 365
+        return Calendar.current.date(byAdding: .day, value: daysFromNow, to: Date()) ?? Date()
+    }
+}
+
+// MARK: - Medicine Templates
+
+struct MedicineTemplate {
+    let name: String
+    let description: String
+    let dosage: String
+    let form: String
+    let unit: String
+    let maxQuantity: Int
+    let warningThreshold: Int
+    let criticalThreshold: Int
+}
+
+// MARK: - Medicine Categories
+
+private let analgesicMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Paracétamol", description: "Antalgique et antipyrétique", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 100, warningThreshold: 20, criticalThreshold: 10),
+    MedicineTemplate(name: "Ibuprofène", description: "Anti-inflammatoire non stéroïdien", dosage: "400mg", form: "Comprimé", unit: "comprimé", maxQuantity: 80, warningThreshold: 15, criticalThreshold: 8),
+    MedicineTemplate(name: "Aspirine", description: "Antalgique et anti-inflammatoire", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 120, warningThreshold: 25, criticalThreshold: 12),
+    MedicineTemplate(name: "Doliprane", description: "Paracétamol pour douleurs légères", dosage: "1000mg", form: "Comprimé effervescent", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Nurofen", description: "Ibuprofène pour douleurs et fièvre", dosage: "200mg", form: "Gélule", unit: "gélule", maxQuantity: 90, warningThreshold: 18, criticalThreshold: 9),
+    MedicineTemplate(name: "Codéine", description: "Antalgique opioïde faible", dosage: "30mg", form: "Comprimé", unit: "comprimé", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Tramadol", description: "Antalgique opioïde", dosage: "50mg", form: "Gélule", unit: "gélule", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Diclofénac", description: "Anti-inflammatoire topique", dosage: "1%", form: "Gel", unit: "tube", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3),
+    MedicineTemplate(name: "Morphine", description: "Antalgique opioïde fort", dosage: "10mg", form: "Ampoule", unit: "ampoule", maxQuantity: 20, warningThreshold: 4, criticalThreshold: 2),
+    MedicineTemplate(name: "Ketoprofène", description: "Anti-inflammatoire puissant", dosage: "100mg", form: "Suppositoire", unit: "suppositoire", maxQuantity: 25, warningThreshold: 5, criticalThreshold: 2)
+]
+
+private let antibioticMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Amoxicilline", description: "Antibiotique à large spectre", dosage: "500mg", form: "Gélule", unit: "gélule", maxQuantity: 80, warningThreshold: 16, criticalThreshold: 8),
+    MedicineTemplate(name: "Azithromycine", description: "Macrolide pour infections respiratoires", dosage: "250mg", form: "Comprimé", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Ciprofloxacine", description: "Fluoroquinolone", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Clarithromycine", description: "Macrolide pour infections ORL", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Doxycycline", description: "Tétracycline", dosage: "100mg", form: "Gélule", unit: "gélule", maxQuantity: 70, warningThreshold: 14, criticalThreshold: 7),
+    MedicineTemplate(name: "Erythromycine", description: "Macrolide", dosage: "250mg", form: "Comprimé", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Flucloxacilline", description: "Pénicilline anti-staphylococcique", dosage: "500mg", form: "Gélule", unit: "gélule", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Gentamicine", description: "Aminoglycoside", dosage: "80mg", form: "Ampoule", unit: "ampoule", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3),
+    MedicineTemplate(name: "Métronidazole", description: "Antiprotozoaire et antibactérien", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 45, warningThreshold: 9, criticalThreshold: 4),
+    MedicineTemplate(name: "Vancomycine", description: "Glycopeptide", dosage: "500mg", form: "Flacon", unit: "flacon", maxQuantity: 20, warningThreshold: 4, criticalThreshold: 2)
+]
+
+private let vitaminMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Vitamine C", description: "Acide ascorbique", dosage: "1000mg", form: "Comprimé effervescent", unit: "comprimé", maxQuantity: 120, warningThreshold: 24, criticalThreshold: 12),
+    MedicineTemplate(name: "Vitamine D3", description: "Cholécalciférol", dosage: "1000UI", form: "Gouttes", unit: "flacon", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Vitamine B12", description: "Cyanocobalamine", dosage: "1000mcg", form: "Ampoule", unit: "ampoule", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Complexe B", description: "Vitamines du groupe B", dosage: "1 dose", form: "Gélule", unit: "gélule", maxQuantity: 100, warningThreshold: 20, criticalThreshold: 10),
+    MedicineTemplate(name: "Fer", description: "Sulfate ferreux", dosage: "65mg", form: "Comprimé", unit: "comprimé", maxQuantity: 80, warningThreshold: 16, criticalThreshold: 8),
+    MedicineTemplate(name: "Calcium", description: "Carbonate de calcium", dosage: "500mg", form: "Comprimé à croquer", unit: "comprimé", maxQuantity: 90, warningThreshold: 18, criticalThreshold: 9),
+    MedicineTemplate(name: "Magnésium", description: "Oxyde de magnésium", dosage: "400mg", form: "Gélule", unit: "gélule", maxQuantity: 70, warningThreshold: 14, criticalThreshold: 7),
+    MedicineTemplate(name: "Zinc", description: "Gluconate de zinc", dosage: "15mg", form: "Comprimé", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Acide folique", description: "Vitamine B9", dosage: "5mg", form: "Comprimé", unit: "comprimé", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Oméga 3", description: "Acides gras essentiels", dosage: "1000mg", form: "Capsule", unit: "capsule", maxQuantity: 90, warningThreshold: 18, criticalThreshold: 9)
+]
+
+private let digestiveMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Oméprazole", description: "Inhibiteur de la pompe à protons", dosage: "20mg", form: "Gélule", unit: "gélule", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Lopéramide", description: "Antidiarrhéique", dosage: "2mg", form: "Gélule", unit: "gélule", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Siméticone", description: "Anti-flatulent", dosage: "40mg", form: "Comprimé à croquer", unit: "comprimé", maxQuantity: 80, warningThreshold: 16, criticalThreshold: 8),
+    MedicineTemplate(name: "Dompéridone", description: "Antiémétique", dosage: "10mg", form: "Comprimé", unit: "comprimé", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Lactulose", description: "Laxatif osmotique", dosage: "15ml", form: "Sirop", unit: "flacon", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3),
+    MedicineTemplate(name: "Ranitidine", description: "Antagoniste H2", dosage: "150mg", form: "Comprimé", unit: "comprimé", maxQuantity: 70, warningThreshold: 14, criticalThreshold: 7),
+    MedicineTemplate(name: "Probiotiques", description: "Ferments lactiques", dosage: "1 dose", form: "Gélule", unit: "gélule", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Pancréatine", description: "Enzymes digestives", dosage: "25000UI", form: "Gélule", unit: "gélule", maxQuantity: 45, warningThreshold: 9, criticalThreshold: 4),
+    MedicineTemplate(name: "Charbon activé", description: "Adsorbant intestinal", dosage: "250mg", form: "Gélule", unit: "gélule", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Hyoscine", description: "Antispasmodique", dosage: "10mg", form: "Comprimé", unit: "comprimé", maxQuantity: 35, warningThreshold: 7, criticalThreshold: 3)
+]
+
+private let cardiovascularMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Amlodipine", description: "Inhibiteur calcique", dosage: "5mg", form: "Comprimé", unit: "comprimé", maxQuantity: 90, warningThreshold: 18, criticalThreshold: 9),
+    MedicineTemplate(name: "Lisinopril", description: "Inhibiteur de l'ECA", dosage: "10mg", form: "Comprimé", unit: "comprimé", maxQuantity: 80, warningThreshold: 16, criticalThreshold: 8),
+    MedicineTemplate(name: "Métoprolol", description: "Bêta-bloquant", dosage: "50mg", form: "Comprimé", unit: "comprimé", maxQuantity: 70, warningThreshold: 14, criticalThreshold: 7),
+    MedicineTemplate(name: "Atorvastatine", description: "Statine", dosage: "20mg", form: "Comprimé", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Furosémide", description: "Diurétique de l'anse", dosage: "40mg", form: "Comprimé", unit: "comprimé", maxQuantity: 50, warningThreshold: 10, criticalThreshold: 5),
+    MedicineTemplate(name: "Digoxine", description: "Digitalique", dosage: "0.25mg", form: "Comprimé", unit: "comprimé", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Warfarine", description: "Anticoagulant", dosage: "5mg", form: "Comprimé", unit: "comprimé", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3),
+    MedicineTemplate(name: "Clopidogrel", description: "Antiagrégant plaquettaire", dosage: "75mg", form: "Comprimé", unit: "comprimé", maxQuantity: 45, warningThreshold: 9, criticalThreshold: 4),
+    MedicineTemplate(name: "Isosorbide", description: "Vasodilatateur", dosage: "20mg", form: "Comprimé", unit: "comprimé", maxQuantity: 35, warningThreshold: 7, criticalThreshold: 3),
+    MedicineTemplate(name: "Nitroglycérine", description: "Vasodilatateur d'urgence", dosage: "0.4mg", form: "Spray sublingual", unit: "spray", maxQuantity: 25, warningThreshold: 5, criticalThreshold: 2)
+]
+
+private let generalMedicines: [MedicineTemplate] = [
+    MedicineTemplate(name: "Cétirizine", description: "Antihistaminique", dosage: "10mg", form: "Comprimé", unit: "comprimé", maxQuantity: 60, warningThreshold: 12, criticalThreshold: 6),
+    MedicineTemplate(name: "Prednisolone", description: "Corticostéroïde", dosage: "5mg", form: "Comprimé", unit: "comprimé", maxQuantity: 40, warningThreshold: 8, criticalThreshold: 4),
+    MedicineTemplate(name: "Salbutamol", description: "Bronchodilatateur", dosage: "100mcg", form: "Inhalateur", unit: "dose", maxQuantity: 200, warningThreshold: 40, criticalThreshold: 20),
+    MedicineTemplate(name: "Lorazépam", description: "Anxiolytique", dosage: "1mg", form: "Comprimé", unit: "comprimé", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3),
+    MedicineTemplate(name: "Insuline", description: "Hormone hypoglycémiante", dosage: "100UI/ml", form: "Cartouche", unit: "cartouche", maxQuantity: 20, warningThreshold: 4, criticalThreshold: 2),
+    MedicineTemplate(name: "Thyroxine", description: "Hormone thyroïdienne", dosage: "100mcg", form: "Comprimé", unit: "comprimé", maxQuantity: 80, warningThreshold: 16, criticalThreshold: 8),
+    MedicineTemplate(name: "Metformine", description: "Antidiabétique", dosage: "500mg", form: "Comprimé", unit: "comprimé", maxQuantity: 90, warningThreshold: 18, criticalThreshold: 9),
+    MedicineTemplate(name: "Fluconazole", description: "Antifongique", dosage: "150mg", form: "Gélule", unit: "gélule", maxQuantity: 25, warningThreshold: 5, criticalThreshold: 2),
+    MedicineTemplate(name: "Aciclovir", description: "Antiviral", dosage: "400mg", form: "Comprimé", unit: "comprimé", maxQuantity: 35, warningThreshold: 7, criticalThreshold: 3),
+    MedicineTemplate(name: "Paracétamol injectable", description: "Antalgique intraveineux", dosage: "1g", form: "Flacon", unit: "flacon", maxQuantity: 30, warningThreshold: 6, criticalThreshold: 3)
+]
+
 // MARK: - Use Case Protocols
 
 // Authentication Use Cases
@@ -304,9 +478,16 @@ class AppCoordinator: ObservableObject {
             exportHistoryUseCase: exportHistoryUseCase
         )
         
+        // Create TestDataService
+        let testDataService = TestMedicineDataService(
+            getAislesUseCase: getAislesUseCase,
+            addMedicineUseCase: addMedicineUseCase
+        )
+        
         self.profileViewModel = ProfileViewModel(
             getUserUseCase: getUserUseCase,
-            signOutUseCase: signOutUseCase
+            signOutUseCase: signOutUseCase,
+            testDataService: testDataService
         )
     }
     
@@ -1297,14 +1478,21 @@ extension AppCoordinator {
 class ProfileViewModel: ObservableObject {
     private let getUserUseCase: GetUserUseCaseProtocol
     private let signOutUseCase: SignOutUseCaseProtocol
+    private let testDataService: TestMedicineDataService
     
     @Published var user: User?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isGeneratingTestData = false
     
-    init(getUserUseCase: GetUserUseCaseProtocol, signOutUseCase: SignOutUseCaseProtocol) {
+    init(
+        getUserUseCase: GetUserUseCaseProtocol, 
+        signOutUseCase: SignOutUseCaseProtocol,
+        testDataService: TestMedicineDataService
+    ) {
         self.getUserUseCase = getUserUseCase
         self.signOutUseCase = signOutUseCase
+        self.testDataService = testDataService
     }
     
     @MainActor
@@ -1331,6 +1519,21 @@ class ProfileViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+    
+    @MainActor
+    func generateTestMedicines() async {
+        isGeneratingTestData = true
+        errorMessage = nil
+        
+        do {
+            try await testDataService.generateTestMedicines()
+            // Success - maybe show a success message
+        } catch {
+            errorMessage = "Erreur lors de la génération des médicaments de test: \(error.localizedDescription)"
+        }
+        
+        isGeneratingTestData = false
     }
 }
 
@@ -1372,6 +1575,25 @@ struct ProfileView: View {
             Section(header: Text("Actions")) {
                 Button(action: {
                     Task {
+                        await viewModel.generateTestMedicines()
+                    }
+                }) {
+                    HStack {
+                        if viewModel.isGeneratingTestData {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "pills.fill")
+                                .foregroundColor(.blue)
+                        }
+                        Text(viewModel.isGeneratingTestData ? "Génération en cours..." : "Générer médicaments de test")
+                            .foregroundColor(.blue)
+                    }
+                }
+                .disabled(viewModel.isGeneratingTestData)
+                
+                Button(action: {
+                    Task {
                         await viewModel.signOut()
                     }
                 }) {
@@ -1387,6 +1609,13 @@ struct ProfileView: View {
         .navigationTitle("Mon Profil")
         .task {
             await viewModel.loadUserProfile()
+        }
+        .alert("Erreur", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 }

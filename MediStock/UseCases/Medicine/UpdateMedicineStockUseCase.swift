@@ -10,7 +10,6 @@ class UpdateMedicineStockUseCase: UpdateMedicineUseCaseProtocol {
     }
     
     func execute(medicine: Medicine) async throws {
-        // Simple implementation for now
-        // In a real app, this would update the medicine repository
+        
     }
 }

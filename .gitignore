@@ -1,0 +1,16 @@
+# Xcode
+xcuserdata/
+*.DS_Store
+DerivedData/
+build/
+
+# Firebase configuration files
+GoogleService-Info.plist
+google-services.json
+
+# API Keys and secrets
+*.key
+*.pem
+*.p12
+.env
+config.json

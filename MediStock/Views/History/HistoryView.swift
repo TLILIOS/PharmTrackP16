@@ -21,8 +21,7 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
                 Color.backgroundApp.opacity(0.1).ignoresSafeArea()
                 
                 VStack(spacing: 0) {
@@ -49,34 +48,33 @@ struct HistoryView: View {
                         listOpacity: listOpacity,
                         onRefresh: refreshHistory
                     )
-                }
-                .navigationTitle("Historique")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        ResetFiltersButton(
-                            isDisabled: isFiltersEmpty,
-                            action: resetFilters
-                        )
-                    }
-                }
-                
-                HistoryErrorView(
-                    state: viewModel.state,
-                    onDismiss: viewModel.resetState
-                )
             }
-            .sheet(isPresented: $showingExportOptions) {
-                HistoryExportSheet(
-                    filteredHistory: filteredHistory,
-                    viewModel: viewModel,
-                    isPresented: $showingExportOptions
-                )
-            }
-            .onAppear {
-                Task {
-                    await loadData()
-                    startAnimations()
+            .navigationTitle("Historique")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    ResetFiltersButton(
+                        isDisabled: isFiltersEmpty,
+                        action: resetFilters
+                    )
                 }
+            }
+            
+            HistoryErrorView(
+                state: viewModel.state,
+                onDismiss: viewModel.resetState
+            )
+        }
+        .sheet(isPresented: $showingExportOptions) {
+            HistoryExportSheet(
+                filteredHistory: filteredHistory,
+                viewModel: viewModel,
+                isPresented: $showingExportOptions
+            )
+        }
+        .onAppear {
+            Task {
+                await loadData()
+                startAnimations()
             }
         }
     }

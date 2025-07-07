@@ -218,10 +218,18 @@ struct AdjustStockView: View {
         }
         .navigationTitle("Ajuster le stock")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Annuler") {
+                Button {
                     dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("Retour")
+                    }
+                    .foregroundColor(.accentApp)
                 }
             }
         }
