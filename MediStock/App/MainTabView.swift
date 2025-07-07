@@ -111,7 +111,7 @@ struct MainTabView: View {
     private func configureNavigationHandlers() {
         // Configuration des handlers de navigation pour le ViewModel du tableau de bord
         appCoordinator.dashboardViewModel.navigateToMedicineDetailHandler = { medicine in
-            appCoordinator.navigateTo(.medicineDetail(medicine))
+            appCoordinator.navigateTo(.medicineDetail(medicine.id))
         }
         
         appCoordinator.dashboardViewModel.navigateToMedicineListHandler = {
@@ -137,9 +137,8 @@ struct MainTabView: View {
         }
         
         appCoordinator.dashboardViewModel.navigateToAdjustStockHandler = {
-            if let firstMedicine = appCoordinator.medicineListViewModel.medicines.first {
-                appCoordinator.navigateTo(.adjustStock(firstMedicine))
-            }
+            // Aller à l'onglet Médicaments pour permettre de choisir un médicament
+            selectedTab = 1 // Switch to Medicines tab
         }
     }
     

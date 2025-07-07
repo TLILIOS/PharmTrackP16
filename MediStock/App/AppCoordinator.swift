@@ -117,10 +117,10 @@ enum ExportFormat {
 
 /// Énumération des destinations de navigation possibles
 enum NavigationDestination: Hashable {
-    case medicineDetail(Medicine)
-    case medicineForm(Medicine?)
-    case adjustStock(Medicine)
-    case aisle(Aisle?)
+    case medicineDetail(String) // Medicine ID
+    case medicineForm(String?) // Medicine ID or nil for new
+    case adjustStock(String) // Medicine ID
+    case aisle(String?) // Aisle ID or nil for new
     case criticalStock
     case expiringMedicines
     case history
@@ -128,18 +128,18 @@ enum NavigationDestination: Hashable {
     
     func hash(into hasher: inout Hasher) {
         switch self {
-        case .medicineDetail(let medicine):
+        case .medicineDetail(let medicineId):
             hasher.combine("medicineDetail")
-            hasher.combine(medicine.id)
-        case .medicineForm(let medicine):
+            hasher.combine(medicineId)
+        case .medicineForm(let medicineId):
             hasher.combine("medicineForm")
-            hasher.combine(medicine?.id ?? "new")
-        case .adjustStock(let medicine):
+            hasher.combine(medicineId ?? "new")
+        case .adjustStock(let medicineId):
             hasher.combine("adjustStock")
-            hasher.combine(medicine.id)
-        case .aisle(let aisle):
+            hasher.combine(medicineId)
+        case .aisle(let aisleId):
             hasher.combine("aisle")
-            hasher.combine(aisle?.id ?? "new")
+            hasher.combine(aisleId ?? "new")
         case .criticalStock:
             hasher.combine("criticalStock")
         case .expiringMedicines:
@@ -153,14 +153,14 @@ enum NavigationDestination: Hashable {
     
     static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
         switch (lhs, rhs) {
-        case (.medicineDetail(let lhsMedicine), .medicineDetail(let rhsMedicine)):
-            return lhsMedicine.id == rhsMedicine.id
-        case (.medicineForm(let lhsMedicine), .medicineForm(let rhsMedicine)):
-            return lhsMedicine?.id == rhsMedicine?.id
-        case (.adjustStock(let lhsMedicine), .adjustStock(let rhsMedicine)):
-            return lhsMedicine.id == rhsMedicine.id
-        case (.aisle(let lhsAisle), .aisle(let rhsAisle)):
-            return lhsAisle?.id == rhsAisle?.id
+        case (.medicineDetail(let lhsId), .medicineDetail(let rhsId)):
+            return lhsId == rhsId
+        case (.medicineForm(let lhsId), .medicineForm(let rhsId)):
+            return lhsId == rhsId
+        case (.adjustStock(let lhsId), .adjustStock(let rhsId)):
+            return lhsId == rhsId
+        case (.aisle(let lhsId), .aisle(let rhsId)):
+            return lhsId == rhsId
         case (.criticalStock, .criticalStock),
              (.expiringMedicines, .expiringMedicines),
              (.history, .history),
@@ -193,7 +193,7 @@ class AppCoordinator: ObservableObject {
     
     // Medicines
     private let getMedicinesUseCase: GetMedicinesUseCaseProtocol
-    private let getMedicineUseCase: GetMedicineUseCaseProtocol
+    let getMedicineUseCase: GetMedicineUseCaseProtocol // Public for wrapper views
     private let addMedicineUseCase: AddMedicineUseCaseProtocol
     private let updateMedicineUseCase: UpdateMedicineUseCaseProtocol
     private let deleteMedicineUseCase: DeleteMedicineUseCaseProtocol
@@ -341,14 +341,14 @@ class AppCoordinator: ObservableObject {
     @ViewBuilder
     func view(for destination: NavigationDestination) -> some View {
         switch destination {
-        case .medicineDetail(let medicine):
-            MedicineDetailView(medicine: medicine)
-        case .medicineForm(let medicine):
-            MedicineFormView(medicineFormViewModel: createMedicineFormViewModel(for: medicine))
-        case .adjustStock(let medicine):
-            createAdjustStockViewModel(for: medicine)
-        case .aisle(let aisle):
-            createAisleFormViewModel(for: aisle)
+        case .medicineDetail(let medicineId):
+            MedicineDetailViewWrapper(medicineId: medicineId, appCoordinator: self)
+        case .medicineForm(let medicineId):
+            MedicineFormViewWrapper(medicineId: medicineId, appCoordinator: self)
+        case .adjustStock(let medicineId):
+            AdjustStockViewWrapper(medicineId: medicineId, appCoordinator: self)
+        case .aisle(let aisleId):
+            AisleFormViewWrapper(aisleId: aisleId, appCoordinator: self)
         case .criticalStock:
             Text("Stocks critiques") // À implémenter
         case .expiringMedicines:
@@ -362,7 +362,7 @@ class AppCoordinator: ObservableObject {
     
     // MARK: - ViewModel Factory Methods
     
-    private func createMedicineDetailViewModel(for medicine: Medicine) -> MedicineDetailViewModel {
+     func createMedicineDetailViewModel(for medicine: Medicine) -> MedicineDetailViewModel {
         return MedicineDetailViewModel(
             medicine: medicine,
             getMedicineUseCase: getMedicineUseCase,
@@ -372,7 +372,7 @@ class AppCoordinator: ObservableObject {
         )
     }
     
-    private func createMedicineFormViewModel(for medicine: Medicine?) -> MedicineFormViewModel {
+     func createMedicineFormViewModel(for medicine: Medicine?) -> MedicineFormViewModel {
         return MedicineFormViewModel(
             getMedicineUseCase: getMedicineUseCase,
             getAislesUseCase: getAislesUseCase,
@@ -383,11 +383,128 @@ class AppCoordinator: ObservableObject {
     }
     
     private func createAdjustStockViewModel(for medicine: Medicine) -> some View {
-        return Text("Adjust Stock View - TODO")
+        let medicineDetailViewModel = createMedicineDetailViewModel(for: medicine)
+        return AdjustStockView(viewModel: medicineDetailViewModel)
     }
     
     private func createAisleFormViewModel(for aisle: Aisle?) -> some View {
         return Text("Aisle Form View - TODO")
+    }
+}
+
+// MARK: - Navigation Wrapper Views
+
+struct AdjustStockViewWrapper: View {
+    let medicineId: String
+    let appCoordinator: AppCoordinator
+    @State private var medicine: Medicine?
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Chargement...")
+            } else if let medicine = medicine {
+                AdjustStockView(viewModel: appCoordinator.createMedicineDetailViewModel(for: medicine))
+            } else {
+                VStack {
+                    Text("Médicament introuvable")
+                    Text(errorMessage ?? "")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .task {
+            await loadMedicine()
+        }
+    }
+    
+    private func loadMedicine() async {
+        do {
+            medicine = try await appCoordinator.getMedicineUseCase.execute(id: medicineId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+}
+
+struct MedicineDetailViewWrapper: View {
+    let medicineId: String
+    let appCoordinator: AppCoordinator
+    @State private var medicine: Medicine?
+    @State private var isLoading = true
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                ProgressView("Chargement...")
+            } else if let medicine = medicine {
+                MedicineDetailView(medicine: medicine)
+            } else {
+                Text("Médicament introuvable")
+            }
+        }
+        .task {
+            await loadMedicine()
+        }
+    }
+    
+    private func loadMedicine() async {
+        do {
+            medicine = try await appCoordinator.getMedicineUseCase.execute(id: medicineId)
+        } catch {
+            print("Error loading medicine: \(error)")
+        }
+        isLoading = false
+    }
+}
+
+struct MedicineFormViewWrapper: View {
+    let medicineId: String?
+    let appCoordinator: AppCoordinator
+    @State private var medicine: Medicine?
+    @State private var isLoading = true
+    
+    var body: some View {
+        Group {
+            if medicineId == nil {
+                // New medicine
+                MedicineFormView(medicineFormViewModel: appCoordinator.createMedicineFormViewModel(for: nil))
+            } else if isLoading {
+                ProgressView("Chargement...")
+            } else if let medicine = medicine {
+                MedicineFormView(medicineFormViewModel: appCoordinator.createMedicineFormViewModel(for: medicine))
+            } else {
+                Text("Médicament introuvable")
+            }
+        }
+        .task {
+            if let medicineId = medicineId {
+                await loadMedicine(id: medicineId)
+            } else {
+                isLoading = false
+            }
+        }
+    }
+    
+    private func loadMedicine(id: String) async {
+        do {
+            medicine = try await appCoordinator.getMedicineUseCase.execute(id: id)
+        } catch {
+            print("Error loading medicine: \(error)")
+        }
+        isLoading = false
+    }
+}
+
+struct AisleFormViewWrapper: View {
+    let aisleId: String?
+    let appCoordinator: AppCoordinator
+    
+    var body: some View {
+        Text("Aisle Form View - TODO")
     }
 }
 

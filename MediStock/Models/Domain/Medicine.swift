@@ -1,6 +1,6 @@
 import Foundation
 
-struct Medicine: Identifiable, Codable, Equatable {
+struct Medicine: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let name: String
     let description: String?
@@ -42,6 +42,16 @@ struct Medicine: Identifiable, Codable, Equatable {
     // Legacy compatibility with Firebase model
     var stock: Int { currentQuantity }
     var aisle: String { aisleId }
+    
+    // MARK: - Hashable
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // MARK: - Equatable
+    static func == (lhs: Medicine, rhs: Medicine) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 enum StockStatus: String, CaseIterable {

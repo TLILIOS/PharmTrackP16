@@ -45,11 +45,6 @@ class MedicineDetailViewModel: ObservableObject {
         self.updateMedicineStockUseCase = updateMedicineStockUseCase
         self.deleteMedicineUseCase = deleteMedicineUseCase
         self.getHistoryUseCase = getHistoryUseCase
-        
-        // Rafraîchir les données du médicament
-        Task {
-            await refreshMedicine()
-        }
     }
     
     // MARK: - Public Methods

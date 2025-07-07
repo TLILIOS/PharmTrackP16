@@ -19,8 +19,7 @@ struct DashboardView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        ScrollView {
                 VStack(spacing: 20) {
                     // En-tête avec salutation
                     welcomeHeader
@@ -59,20 +58,19 @@ struct DashboardView: View {
                             .font(.body)
                     }
                 }
+        }
+        .sheet(isPresented: $showingSearchSheet) {
+            NavigationStack {
+                SearchView(viewModel: SearchViewModel(
+                    searchMedicineUseCase: MockSearchMedicineUseCase(),
+                    searchAisleUseCase: MockSearchAisleUseCase()
+                ))
             }
-            .sheet(isPresented: $showingSearchSheet) {
-                NavigationStack {
-                    SearchView(viewModel: SearchViewModel(
-                        searchMedicineUseCase: MockSearchMedicineUseCase(),
-                        searchAisleUseCase: MockSearchAisleUseCase()
-                    ))
-                }
-                .presentationDragIndicator(.visible)
-            }
-            .task {
-                await viewModel.fetchData()
-                startAnimations()
-            }
+            .presentationDragIndicator(.visible)
+        }
+        .task {
+            await viewModel.fetchData()
+            startAnimations()
         }
     }
     
@@ -212,7 +210,16 @@ struct DashboardView: View {
                     icon: "arrow.up.arrow.down",
                     color: .orange
                 ) {
-                    viewModel.navigateToAdjustStock()
+                    // Vérifier s'il y a des médicaments disponibles
+                    if let criticalMedicine = viewModel.criticalStockMedicines.first {
+                        appCoordinator.navigateFromDashboard(.adjustStock(criticalMedicine.id))
+                    } else if let anyMedicine = viewModel.medicines.first {
+                        // Sinon, ajuster le premier médicament disponible
+                        appCoordinator.navigateFromDashboard(.adjustStock(anyMedicine.id))
+                    } else {
+                        // Si aucun médicament, aller à l'onglet médicaments
+                        viewModel.navigateToMedicineList()
+                    }
                 }
                 
                 // Consulter l'historique

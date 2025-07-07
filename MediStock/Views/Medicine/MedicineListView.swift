@@ -413,6 +413,7 @@ struct MedicineGridView: View {
 // MARK: - Medicine Card
 struct MedicineCard: View {
     let medicine: Medicine
+    @EnvironmentObject var appCoordinator: AppCoordinator
     
     private var stockColor: Color {
         if medicine.currentQuantity <= medicine.criticalThreshold {
@@ -501,6 +502,9 @@ struct MedicineCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .onTapGesture {
+            appCoordinator.navigateTo(.adjustStock(medicine.id))
+        }
     }
     
     private func formatDate(_ date: Date) -> String {

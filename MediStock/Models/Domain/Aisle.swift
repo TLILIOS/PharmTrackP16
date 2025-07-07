@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct Aisle: Identifiable, Equatable {
+struct Aisle: Identifiable, Equatable, Hashable {
     let id: String
     var name: String
     var description: String?
@@ -30,11 +30,14 @@ struct Aisle: Identifiable, Equatable {
         self.icon = icon
     }
     
-    static func == (lhs: Aisle, rhs: Aisle) -> Bool {
-        return lhs.id == rhs.id &&
-               lhs.name == rhs.name &&
-               lhs.description == rhs.description &&
-               lhs.colorHex == rhs.colorHex &&
-               lhs.icon == rhs.icon
+    // MARK: - Hashable
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
+    
+    // MARK: - Equatable
+    static func == (lhs: Aisle, rhs: Aisle) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
 }

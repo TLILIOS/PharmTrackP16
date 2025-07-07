@@ -6,6 +6,7 @@ struct AdjustStockView: View {
     @State private var newQuantity: Int
     @State private var comment: String = ""
     @State private var operation: StockOperation = .set
+    @State private var hasUserSavedStock: Bool = false
     
     // Animation
     @State private var sliderOffset: CGFloat = 50
@@ -27,8 +28,7 @@ struct AdjustStockView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
                 Color.backgroundApp.opacity(0.1).ignoresSafeArea()
                 
                 VStack(spacing: 30) {
@@ -231,23 +231,27 @@ struct AdjustStockView: View {
                     .animation(.easeInOut, value: viewModel.state)
                     .zIndex(1)
                 }
-            }
-            .navigationTitle("Ajuster le stock")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Annuler") {
-                        dismiss()
-                    }
-                }
-            }
-            .onAppear {
-                startAnimations()
-            }
-            .onChange(of: viewModel.state) { oldValue, newValue in
-                if case .success = newValue {
+        }
+        .navigationTitle("Ajuster le stock")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Annuler") {
                     dismiss()
                 }
+            }
+        }
+        .onAppear {
+            startAnimations()
+            Task {
+                await viewModel.refreshMedicine()
+                await viewModel.fetchHistory()
+            }
+        }
+        .onChange(of: viewModel.state) { oldValue, newValue in
+            // Seulement fermer après une opération de mise à jour du stock
+            if case .success = newValue, hasUserSavedStock {
+                dismiss()
             }
         }
     }
@@ -318,6 +322,9 @@ struct AdjustStockView: View {
     }
     
     private func saveStockAdjustment() async {
+        // Marquer que l'utilisateur effectue une sauvegarde
+        hasUserSavedStock = true
+        
         // Construire un commentaire si l'utilisateur n'en a pas fourni
         var finalComment = comment
         
