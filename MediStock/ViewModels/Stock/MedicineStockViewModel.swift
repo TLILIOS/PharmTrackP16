@@ -8,30 +8,129 @@ class MedicineStockViewModel: ObservableObject {
     @Published var history: [HistoryEntry] = []
     private var db = Firestore.firestore()
     @Published var isLoading = false
+    private var medicinesListener: ListenerRegistration?
+    private var aislesListener: ListenerRegistration?
+    
+    init() {
+        startListening()
+    }
+    
+    deinit {
+        medicinesListener?.remove()
+        aislesListener?.remove()
+    }
+    
+    private func startListening() {
+        startMedicinesListener()
+        startAislesListener()
+    }
+    
+    private func stopListening() {
+        medicinesListener?.remove()
+        aislesListener?.remove()
+    }
+    
+    private func startMedicinesListener() {
+        medicinesListener = db.collection("medicines").addSnapshotListener { [weak self] querySnapshot, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error listening to medicines: \(error)")
+                return
+            }
+            
+            guard let documents = querySnapshot?.documents else {
+                print("No medicines documents")
+                return
+            }
+            
+            Task { @MainActor in
+                self.medicines = documents.compactMap { document in
+                    do {
+                        return try document.data(as: MedicineDTO.self).toDomain()
+                    } catch {
+                        print("Error decoding medicine: \(error)")
+                        return nil
+                    }
+                }
+            }
+        }
+    }
+    
+    private func startAislesListener() {
+        aislesListener = db.collection("aisles").addSnapshotListener { [weak self] querySnapshot, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error listening to aisles: \(error)")
+                return
+            }
+            
+            guard let documents = querySnapshot?.documents else {
+                print("No aisles documents")
+                return
+            }
+            
+            Task { @MainActor in
+                self.aisleObjects = documents.compactMap { document in
+                    do {
+                        return try document.data(as: AisleDTO.self).toDomain()
+                    } catch {
+                        print("Error decoding aisle: \(error)")
+                        return nil
+                    }
+                }
+                self.aisles = self.aisleObjects.map { $0.name }.sorted()
+            }
+        }
+    }
+    
     func fetchMedicines() async {
+        // Cette méthode est maintenant utilisée pour le refresh manuel
+        isLoading = true
         do {
             let querySnapshot = try await db.collection("medicines").getDocuments()
             await MainActor.run {
                 self.medicines = querySnapshot.documents.compactMap { document in
-                    try? document.data(as: Medicine.self)
+                    do {
+                        return try document.data(as: MedicineDTO.self).toDomain()
+                    } catch {
+                        print("Error decoding medicine: \(error)")
+                        return nil
+                    }
                 }
+                self.isLoading = false
             }
         } catch {
             print("Error getting documents: \(error)")
+            await MainActor.run {
+                self.isLoading = false
+            }
         }
     }
     
     func fetchAisles() async {
+        // Cette méthode est maintenant utilisée pour le refresh manuel
+        isLoading = true
         do {
-            let querySnapshot = try await db.collection("medicines").getDocuments()
-            let allMedicines = querySnapshot.documents.compactMap { document in
-                try? document.data(as: Medicine.self)
-            }
+            let querySnapshot = try await db.collection("aisles").getDocuments()
             await MainActor.run {
-                self.aisles = Array(Set(allMedicines.map { $0.aisleId })).sorted()
+                self.aisleObjects = querySnapshot.documents.compactMap { document in
+                    do {
+                        return try document.data(as: AisleDTO.self).toDomain()
+                    } catch {
+                        print("Error decoding aisle: \(error)")
+                        return nil
+                    }
+                }
+                self.aisles = self.aisleObjects.map { $0.name }.sorted()
+                self.isLoading = false
             }
         } catch {
-            print("Error getting documents: \(error)")
+            print("Error getting aisles: \(error)")
+            await MainActor.run {
+                self.isLoading = false
+            }
         }
     }
     

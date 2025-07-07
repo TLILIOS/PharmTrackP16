@@ -2,9 +2,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var viewModel: DashboardViewModel
-    @State private var showingAddMedicine = false
     @State private var refreshTimestamp = Date()
     @State private var showingSearchSheet = false
+    @EnvironmentObject var appCoordinator: AppCoordinator
     
     // Animation properties
     @State private var headerScale = 0.95
@@ -59,10 +59,6 @@ struct DashboardView: View {
                             .font(.body)
                     }
                 }
-            }
-            .sheet(isPresented: $showingAddMedicine) {
-                // À remplacer par la vraie vue d'ajout de médicament
-                Text("Ajouter un médicament")
             }
             .sheet(isPresented: $showingSearchSheet) {
                 NavigationStack {
@@ -207,7 +203,7 @@ struct DashboardView: View {
                     icon: "plus.circle",
                     color: .accentApp
                 ) {
-                    showingAddMedicine = true
+                    appCoordinator.navigateFromDashboard(.medicineForm(nil))
                 }
                 
                 // Ajuster un stock

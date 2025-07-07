@@ -65,62 +65,61 @@ struct MedicineFormView: View {
     @State private var editingMedicineId: String?
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.backgroundApp.opacity(0.1).ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Informations générales du médicament
-                        generalInfoSection
-                        
-                        // Informations de stock
-                        stockInfoSection
-                        
-                        // Informations complémentaires
-                        additionalInfoSection
-                        
-                        // Bouton d'action
-                        PrimaryButton(
-                            title: isEditing ? "Mettre à jour" : "Ajouter ce médicament",
-                            icon: isEditing ? "checkmark" : "plus",
-                            isLoading: viewModel.state == .loading,
-                            isDisabled: !isFormValid
-                        ) {
-                            saveMedicine()
-                        }
-                        .padding(.top, 10)
-                        .padding(.bottom, 30)
+        ZStack {
+            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Informations générales du médicament
+                    generalInfoSection
+                    
+                    // Informations de stock
+                    stockInfoSection
+                    
+                    // Informations complémentaires
+                    additionalInfoSection
+                    
+                    // Bouton d'action
+                    PrimaryButton(
+                        title: isEditing ? "Mettre à jour" : "Ajouter ce médicament",
+                        icon: isEditing ? "checkmark" : "plus",
+                        isLoading: viewModel.state == .loading,
+                        isDisabled: !isFormValid
+                    ) {
+                        saveMedicine()
+                    }
+                    .padding(.top, 10)
+                    .padding(.bottom, 30)
+                }
+                .padding()
+                .offset(y: formOffset)
+                .opacity(formOpacity)
+            }
+            
+            // Message d'erreur
+            if case .error(let message) = viewModel.state {
+                VStack {
+                    Spacer()
+                    
+                    MessageView(message: message, type: .error) {
+                        viewModel.resetState()
                     }
                     .padding()
-                    .offset(y: formOffset)
-                    .opacity(formOpacity)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                
-                // Message d'erreur
-                if case .error(let message) = viewModel.state {
-                    VStack {
-                        Spacer()
-                        
-                        MessageView(message: message, type: .error) {
-                            viewModel.resetState()
-                        }
-                        .padding()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                    .animation(.easeInOut, value: viewModel.state)
-                    .zIndex(1)
+                .animation(.easeInOut, value: viewModel.state)
+                .zIndex(1)
+            }
+        }
+        .navigationTitle(isEditing ? "Modifier un médicament" : "Ajouter un médicament")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Annuler") {
+                    dismiss()
                 }
             }
-            .navigationTitle(isEditing ? "Modifier un médicament" : "Ajouter un médicament")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuler") {
-                        dismiss()
-                    }
-                }
-            }
+        }
             .task {
                 await viewModel.fetchAisles()
                 
@@ -141,7 +140,7 @@ struct MedicineFormView: View {
                 aisleSelectionSheet
             }
         }
-    }
+    
     
     // MARK: - Form Sections
     
@@ -502,7 +501,7 @@ struct MedicineFormView: View {
     }
     
     private var aisleSelectionSheet: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 ForEach(viewModel.aisles) { aisle in
                     Button(action: {
@@ -555,7 +554,7 @@ struct MedicineFormView: View {
     // MARK: - Helper Properties and Methods
     
     private var isFormValid: Bool {
-        !name.isEmpty && currentQuantity >= 0 && maxQuantity > 0 && warningThreshold >= 0 && criticalThreshold >= 0
+        !name.isEmpty && selectedAisle != nil && currentQuantity >= 0 && maxQuantity > 0 && warningThreshold >= 0 && criticalThreshold >= 0
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -567,7 +566,7 @@ struct MedicineFormView: View {
     private func saveMedicine() {
         Task {
             let medicine = Medicine(
-                id: editingMedicineId ?? UUID().uuidString,
+                id: editingMedicineId ?? "",
                 name: name,
                 description: description.isEmpty ? nil : description,
                 dosage: dosage,

@@ -19,6 +19,7 @@ struct MainTabView: View {
                 // Tableau de bord
                 NavigationStack(path: $appCoordinator.dashboardNavigationPath) {
                     DashboardView(dashboardViewModel: appCoordinator.dashboardViewModel)
+                        .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
                         }
@@ -31,6 +32,7 @@ struct MainTabView: View {
                 // Liste des médicaments
                 NavigationStack(path: $appCoordinator.medicineNavigationPath) {
                     MedicineListView(medicineStockViewModel: appCoordinator.medicineListViewModel)
+                        .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
                         }

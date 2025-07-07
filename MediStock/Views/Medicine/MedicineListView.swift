@@ -13,32 +13,30 @@ struct MedicineListView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+        ZStack {
+            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                MedicineSearchAndFilterView(
+                    searchText: $searchText,
+                    selectedAisle: $selectedAisle,
+                    sortOption: $sortOption,
+                    selectedStockFilter: $selectedStockFilter,
+                    aisles: aisleObjects
+                )
                 
-                VStack(spacing: 0) {
-                    MedicineSearchAndFilterView(
-                        searchText: $searchText,
-                        selectedAisle: $selectedAisle,
-                        sortOption: $sortOption,
-                        selectedStockFilter: $selectedStockFilter,
-                        aisles: aisleObjects
-                    )
-                    
-                    MedicineContentView(
-                        medicines: filteredMedicines,
-                        searchText: searchText,
-                        selectedAisle: selectedAisle,
-                        isRefreshing: isRefreshing,
-                        onRefresh: refreshData
-                    )
-                }
-                .navigationTitle("Médicaments")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        MedicineToolbarButton()
-                    }
+                MedicineContentView(
+                    medicines: filteredMedicines,
+                    searchText: searchText,
+                    selectedAisle: selectedAisle,
+                    isRefreshing: isRefreshing,
+                    onRefresh: refreshData
+                )
+            }
+            .navigationTitle("Médicaments")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    MedicineToolbarButton()
                 }
             }
         }
@@ -319,9 +317,11 @@ struct MedicineSortMenu: View {
 
 // MARK: - Toolbar Button
 struct MedicineToolbarButton: View {
+    @EnvironmentObject var appCoordinator: AppCoordinator
+    
     var body: some View {
         Button(action: {
-            // Action pour ajouter un médicament
+            appCoordinator.medicineNavigationPath.append(NavigationDestination.medicineForm(nil))
         }) {
             Image(systemName: "plus")
         }

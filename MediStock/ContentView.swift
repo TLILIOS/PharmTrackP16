@@ -1,11 +1,15 @@
 import SwiftUI
 import Combine
+import Foundation
 
 struct ContentView: View {
     @EnvironmentObject var session: SessionStore
-    @StateObject private var appCoordinator = AppCoordinator.preview
+    
+    // Shared auth repository instance
+    private static let sharedAuthRepository = FirebaseAuthRepository()
+    
     @StateObject private var authViewModel: AuthViewModel = {
-        let authRepository = FirebaseAuthRepository()
+        let authRepository = ContentView.sharedAuthRepository
         let signInUseCase = SignInUseCase(authRepository: authRepository)
         let signUpUseCase = SignUpUseCase(authRepository: authRepository)
         return AuthViewModel(
@@ -13,6 +17,10 @@ struct ContentView: View {
             signUpUseCase: signUpUseCase,
             authRepository: authRepository
         )
+    }()
+    
+    @StateObject private var appCoordinator: AppCoordinator = {
+        return AppCoordinator.createWithRealFirebase()
     }()
 
     var body: some View {
