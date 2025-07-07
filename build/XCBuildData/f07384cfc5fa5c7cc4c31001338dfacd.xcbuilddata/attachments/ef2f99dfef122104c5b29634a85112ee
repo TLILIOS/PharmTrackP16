@@ -1,0 +1,4 @@
+module GoogleAppMeasurementTarget {
+umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/GoogleAppMeasurement/GoogleAppMeasurementWrapper/include"
+export *
+}

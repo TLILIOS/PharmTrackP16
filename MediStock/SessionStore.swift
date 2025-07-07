@@ -1,5 +1,5 @@
 import Foundation
-import Firebase
+import FirebaseAuth
 
 class SessionStore: ObservableObject {
     @Published var session: User?
@@ -8,7 +8,7 @@ class SessionStore: ObservableObject {
     func listen() {
         handle = Auth.auth().addStateDidChangeListener { (auth, user) in
             if let user = user {
-                self.session = User(uid: user.uid, email: user.email)
+                self.session = User(id: user.uid, email: user.email, displayName: user.displayName)
             } else {
                 self.session = nil
             }
@@ -20,7 +20,7 @@ class SessionStore: ObservableObject {
             if let error = error {
                 print("Error creating user: \(error.localizedDescription) \(error)")
             } else {
-                self.session = User(uid: result?.user.uid ?? "", email: result?.user.email ?? "")
+                self.session = User(id: result?.user.uid ?? "", email: result?.user.email ?? "", displayName: result?.user.displayName)
             }
         }
     }
@@ -30,7 +30,7 @@ class SessionStore: ObservableObject {
             if let error = error {
                 print("Error signing in: \(error.localizedDescription)")
             } else {
-                self.session = User(uid: result?.user.uid ?? "", email: result?.user.email ?? "")
+                self.session = User(id: result?.user.uid ?? "", email: result?.user.email ?? "", displayName: result?.user.displayName)
             }
         }
     }
@@ -51,7 +51,3 @@ class SessionStore: ObservableObject {
     }
 }
 
-struct User {
-    var uid: String
-    var email: String?
-}

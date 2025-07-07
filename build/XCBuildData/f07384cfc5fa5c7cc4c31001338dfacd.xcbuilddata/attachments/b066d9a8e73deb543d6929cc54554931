@@ -1,0 +1,315 @@
+{
+  "" : {
+    "const-values" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master.swiftconstvalues",
+    "dependencies" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master.d",
+    "diagnostics" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master.dia",
+    "emit-module-dependencies" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master-emit-module.dia",
+    "swift-dependencies" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStock-master.swiftdeps"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/AllMedicinesView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AllMedicinesView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AllMedicinesView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AllMedicinesView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/App/AppCoordinator.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppCoordinator.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppCoordinator.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppCoordinator.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/App/MainTabView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-c280daab3eb46cfcd5001ef23e9d1db4.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-c280daab3eb46cfcd5001ef23e9d1db4.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-c280daab3eb46cfcd5001ef23e9d1db4.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/AppDelegate.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppDelegate.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ContentView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Extensions/Color+Extensions.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Color+Extensions.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Color+Extensions.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Color+Extensions.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/HistoryEntry.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-07e2efcbbdd39a074aa983178f5f7cc5.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-07e2efcbbdd39a074aa983178f5f7cc5.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-07e2efcbbdd39a074aa983178f5f7cc5.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/LoginView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-f68cbe0020e531c98a58f1d5442f5292.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-f68cbe0020e531c98a58f1d5442f5292.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-f68cbe0020e531c98a58f1d5442f5292.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/MainTabView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-f6719a9cd48daec988ac32a1d1c5f6f3.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-f6719a9cd48daec988ac32a1d1c5f6f3.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MainTabView-f6719a9cd48daec988ac32a1d1c5f6f3.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/MediStockApp.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStockApp.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStockApp.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MediStockApp.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Medicine.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-9e78cf169707c2296f14f08410a2ad65.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-9e78cf169707c2296f14f08410a2ad65.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-9e78cf169707c2296f14f08410a2ad65.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/MedicineListView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-a485d23731a181a93d5102d35fef473b.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-a485d23731a181a93d5102d35fef473b.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-a485d23731a181a93d5102d35fef473b.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/DTOs/AisleDTO.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleDTO.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleDTO.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleDTO.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/DTOs/HistoryEntryDTO.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntryDTO.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntryDTO.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntryDTO.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/DTOs/MedicineDTO.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDTO.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDTO.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDTO.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/DTOs/UserDTO.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UserDTO.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UserDTO.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UserDTO.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/Aisle.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Aisle.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Aisle.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Aisle.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/AuthError.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthError.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthError.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthError.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/ExportError.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ExportError.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ExportError.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/ExportError.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/HistoryEntry.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-b5b5b1b02001af82072aa586adbd2a62.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-b5b5b1b02001af82072aa586adbd2a62.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryEntry-b5b5b1b02001af82072aa586adbd2a62.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/Medicine.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-595c31b7e410eb7595530a8b91fa1037.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-595c31b7e410eb7595530a8b91fa1037.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/Medicine-595c31b7e410eb7595530a8b91fa1037.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/MedicineError.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineError.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineError.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineError.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Models/Domain/User.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/User.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/User.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/User.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Repositories/Implementations/FirebaseAuthRepository.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseAuthRepository.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseAuthRepository.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseAuthRepository.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Repositories/Implementations/FirebaseHistoryRepository.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseHistoryRepository.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseHistoryRepository.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/FirebaseHistoryRepository.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Repositories/Interfaces/AuthRepositoryProtocol.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthRepositoryProtocol.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthRepositoryProtocol.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthRepositoryProtocol.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Repositories/Interfaces/HistoryRepositoryProtocol.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryRepositoryProtocol.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryRepositoryProtocol.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryRepositoryProtocol.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Repositories/Interfaces/MedicineRepositoryProtocol.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineRepositoryProtocol.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineRepositoryProtocol.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineRepositoryProtocol.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Services/Implementations/AppSyncService.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppSyncService.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppSyncService.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AppSyncService.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Services/Implementations/LocalCacheService.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LocalCacheService.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LocalCacheService.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LocalCacheService.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Services/Interfaces/CacheServiceProtocol.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/CacheServiceProtocol.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/CacheServiceProtocol.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/CacheServiceProtocol.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Services/Interfaces/SyncServiceProtocol.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SyncServiceProtocol.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SyncServiceProtocol.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SyncServiceProtocol.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/SessionStore.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SessionStore.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SessionStore.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SessionStore.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/UseCases/Authentication/SignInUseCase.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignInUseCase.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignInUseCase.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignInUseCase.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/UseCases/Authentication/SignUpUseCase.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpUseCase.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpUseCase.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpUseCase.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/UseCases/Medicine/GetMedicinesUseCase.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GetMedicinesUseCase.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GetMedicinesUseCase.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GetMedicinesUseCase.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/UseCases/Medicine/UpdateMedicineStockUseCase.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UpdateMedicineStockUseCase.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UpdateMedicineStockUseCase.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/UpdateMedicineStockUseCase.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Aisle/AislesViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Authentication/AuthViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AuthViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Dashboard/DashboardViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/History/HistoryViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Medicine/MedicineDetailViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Medicine/MedicineFormViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/ViewModels/Stock/MedicineStockViewModel.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineStockViewModel.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineStockViewModel.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineStockViewModel.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Aisle/AisleFormView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleFormView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleFormView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleFormView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Aisle/AisleListView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleListView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleListView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AisleListView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Aisle/AislesView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AislesView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Auth/LoginView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-644edd9817e28a3b4a38b8f23c63c3b1.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-644edd9817e28a3b4a38b8f23c63c3b1.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/LoginView-644edd9817e28a3b4a38b8f23c63c3b1.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Auth/PasswordResetView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PasswordResetView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PasswordResetView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PasswordResetView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Auth/SignUpView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/SignUpView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Common/MessageView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MessageView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MessageView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MessageView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Common/PrimaryButton.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PrimaryButton.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PrimaryButton.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/PrimaryButton.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Common/StyledTextField.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/StyledTextField.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/StyledTextField.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/StyledTextField.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Dashboard/DashboardView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/DashboardView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/History/HistoryView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/HistoryView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Medicine/AdjustStockView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AdjustStockView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AdjustStockView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/AdjustStockView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Medicine/MedicineDetailView 2.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView 2.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView 2.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView 2.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Medicine/MedicineDetailView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineDetailView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Medicine/MedicineFormView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormView.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormView.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineFormView.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/Views/Medicine/MedicineListView.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-fda0590338204a15339f2af0db95eb2c.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-fda0590338204a15339f2af0db95eb2c.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/MedicineListView-fda0590338204a15339f2af0db95eb2c.o"
+  },
+  "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/build/MediStock.build/Release-iphoneos/MediStock.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

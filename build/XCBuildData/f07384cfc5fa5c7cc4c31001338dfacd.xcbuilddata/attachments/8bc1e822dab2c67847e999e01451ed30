@@ -1,0 +1,4 @@
+module GoogleUtilities_Logger {
+umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/GoogleUtilities/GoogleUtilities/Logger/Public"
+export *
+}

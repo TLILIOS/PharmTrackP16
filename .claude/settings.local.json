@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(xcodebuild clean:*)",
+      "Bash(xcodebuild build:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(cat:*)",
+      "Bash(sed:*)",
+      "Bash(rg:*)",
+      "Bash(ls:*)",
+      "Bash(touch:*)"
+    ],
+    "deny": []
+  }
+}

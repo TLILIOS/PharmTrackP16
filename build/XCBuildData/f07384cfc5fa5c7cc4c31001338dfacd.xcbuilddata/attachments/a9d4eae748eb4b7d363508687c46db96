@@ -1,0 +1,4 @@
+module grpcppWrapper {
+umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/grpc-binary/grpcpp-Wrapper/include"
+export *
+}

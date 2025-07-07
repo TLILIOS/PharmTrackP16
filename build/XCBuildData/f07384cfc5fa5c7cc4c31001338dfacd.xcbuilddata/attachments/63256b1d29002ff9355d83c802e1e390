@@ -1,0 +1,4 @@
+module FirebaseFirestoreInternalWrapper {
+umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/firebase-ios-sdk/FirebaseFirestoreInternal"
+export *
+}
