@@ -11,18 +11,30 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
     // MARK: - Basic CRUD Operations
     
     func getAisles() async throws -> [Aisle] {
-        let snapshot = try await db.collection(collection).getDocuments()
+        let snapshot = try await db.collection(collection).getDocuments(source: .cache)
         
-        return snapshot.documents.compactMap { document in
+        if !snapshot.isEmpty {
+            return snapshot.documents.compactMap { document in
+                try? document.data(as: AisleDTO.self).toDomain()
+            }
+        }
+        
+        let serverSnapshot = try await db.collection(collection).getDocuments(source: .server)
+        return serverSnapshot.documents.compactMap { document in
             try? document.data(as: AisleDTO.self).toDomain()
         }
     }
     
     func getAisle(id: String) async throws -> Aisle? {
-        let document = try await db.collection(collection).document(id).getDocument()
+        let document = try await db.collection(collection).document(id).getDocument(source: .cache)
         
-        guard document.exists,
-              let aisleDTO = try? document.data(as: AisleDTO.self) else {
+        if document.exists, let aisleDTO = try? document.data(as: AisleDTO.self) {
+            return aisleDTO.toDomain()
+        }
+        
+        let serverDocument = try await db.collection(collection).document(id).getDocument(source: .server)
+        guard serverDocument.exists,
+              let aisleDTO = try? serverDocument.data(as: AisleDTO.self) else {
             return nil
         }
         
@@ -86,9 +98,17 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
     func getMedicineCountByAisle(aisleId: String) async throws -> Int {
         let snapshot = try await db.collection(medicinesCollection)
             .whereField("aisleId", isEqualTo: aisleId)
-            .getDocuments()
+            .getDocuments(source: .cache)
+            
+        if !snapshot.isEmpty {
+            return snapshot.documents.count
+        }
         
-        return snapshot.documents.count
+        let serverSnapshot = try await db.collection(medicinesCollection)
+            .whereField("aisleId", isEqualTo: aisleId)
+            .getDocuments(source: .server)
+        
+        return serverSnapshot.documents.count
     }
     
     // MARK: - Reactive Operations

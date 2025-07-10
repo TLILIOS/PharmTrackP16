@@ -3,8 +3,6 @@ import SwiftUI
 struct MedicineDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: MedicineDetailViewModel
-    @State private var showingEditSheet = false
-    @State private var showingAdjustStockSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var isHistoryExpanded = false
     
@@ -13,15 +11,8 @@ struct MedicineDetailView: View {
     @State private var contentOffset = 50.0
     @State private var contentOpacity = 0.0
     
-    init(medicine: Medicine) {
-        // Dans une application réelle, nous injecterions les dépendances nécessaires
-        self._viewModel = StateObject(wrappedValue: MedicineDetailViewModel(
-            medicine: medicine,
-            getMedicineUseCase: MockGetMedicineUseCase(), // À remplacer par l'implémentation réelle
-            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(), // À remplacer par l'implémentation réelle
-            deleteMedicineUseCase: MockDeleteMedicineUseCase(), // À remplacer par l'implémentation réelle
-            getHistoryUseCase: MockGetHistoryForMedicineUseCase() // À remplacer par l'implémentation réelle
-        ))
+    init(viewModel: MedicineDetailViewModel) {
+        self._viewModel = StateObject(wrappedValue: viewModel)
     }
     
     var body: some View {
@@ -46,37 +37,6 @@ struct MedicineDetailView: View {
                         
                         historySection
                         
-                        // Boutons d'action
-                        HStack(spacing: 15) {
-                            Button(action: {
-                                showingAdjustStockSheet = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "arrow.up.arrow.down")
-                                    Text("Ajuster stock")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.accentApp)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                            }
-                            
-                            Button(action: {
-                                showingEditSheet = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "pencil")
-                                    Text("Modifier")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(.systemGray5))
-                                .foregroundColor(.primary)
-                                .cornerRadius(10)
-                            }
-                        }
-                        .padding(.top, 10)
                         
                         // Bouton de suppression
                         Button(action: {
@@ -121,21 +81,6 @@ struct MedicineDetailView: View {
         }
         .navigationTitle("Détails du médicament")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {
-                    showingEditSheet = true
-                }) {
-                    Image(systemName: "pencil.circle")
-                }
-            }
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            Text("Éditer médicament") // À remplacer par la vraie vue d'édition
-        }
-        .sheet(isPresented: $showingAdjustStockSheet) {
-            Text("Ajuster stock") // À remplacer par la vraie vue d'ajustement
-        }
         .alert("Supprimer ce médicament ?", isPresented: $showingDeleteConfirmation) {
             Button("Annuler", role: .cancel) {}
             Button("Supprimer", role: .destructive) {
@@ -424,23 +369,33 @@ struct StockIndicator: View {
 }
 
 #Preview {
+    let mockMedicine = Medicine(
+        id: "1",
+        name: "Doliprane",
+        description: "Paracétamol pour traitement de la douleur et de la fièvre",
+        dosage: "500 mg",
+        form: "Comprimé",
+        reference: "DOLI500",
+        unit: "comprimés",
+        currentQuantity: 15,
+        maxQuantity: 30,
+        warningThreshold: 10,
+        criticalThreshold: 5,
+        expiryDate: Date().addingTimeInterval(60*60*24*60), // 60 jours
+        aisleId: "aisle1",
+        createdAt: Date(),
+        updatedAt: Date()
+    )
+    
+    let mockViewModel = MedicineDetailViewModel(
+        medicine: mockMedicine,
+        getMedicineUseCase: MockGetMedicineUseCase(),
+        updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
+        deleteMedicineUseCase: MockDeleteMedicineUseCase(),
+        getHistoryUseCase: MockGetHistoryForMedicineUseCase()
+    )
+    
     NavigationStack {
-        MedicineDetailView(medicine: Medicine(
-            id: "1",
-            name: "Doliprane",
-            description: "Paracétamol pour traitement de la douleur et de la fièvre",
-            dosage: "500 mg",
-            form: "Comprimé",
-            reference: "DOLI500",
-            unit: "comprimés",
-            currentQuantity: 15,
-            maxQuantity: 30,
-            warningThreshold: 10,
-            criticalThreshold: 5,
-            expiryDate: Date().addingTimeInterval(60*60*24*60), // 60 jours
-            aisleId: "aisle1",
-            createdAt: Date(),
-            updatedAt: Date()
-        ))
+        MedicineDetailView(viewModel: mockViewModel)
     }
 }

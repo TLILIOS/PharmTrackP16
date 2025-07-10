@@ -3,7 +3,7 @@ import Combine
 import Foundation
 
 struct ContentView: View {
-    @EnvironmentObject var session: SessionStore
+    @StateObject private var session: SessionStore
     
     // Shared auth repository instance
     private static let sharedAuthRepository = FirebaseAuthRepository()
@@ -20,8 +20,12 @@ struct ContentView: View {
     }()
     
     @StateObject private var appCoordinator: AppCoordinator = {
-        return AppCoordinator.createWithRealFirebase()
+        return AppCoordinator.createWithRealFirebase(authRepository: ContentView.sharedAuthRepository)
     }()
+    
+    init() {
+        self._session = StateObject(wrappedValue: SessionStore(authRepository: ContentView.sharedAuthRepository))
+    }
 
     var body: some View {
         ZStack {
@@ -68,6 +72,6 @@ class MockAuthRepository: AuthRepositoryProtocol {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().environmentObject(SessionStore())
+        ContentView()
     }
 }

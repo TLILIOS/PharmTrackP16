@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MedicineListView: View {
-    @StateObject private var viewModel = MedicineStockViewModel()
+    @StateObject private var viewModel: MedicineStockViewModel
     @State private var searchText = ""
     @State private var selectedAisle: Aisle?
     @State private var sortOption: SortOption = .nameAscending
@@ -321,7 +321,7 @@ struct MedicineToolbarButton: View {
     
     var body: some View {
         Button(action: {
-            appCoordinator.medicineNavigationPath.append(NavigationDestination.medicineForm(nil))
+            appCoordinator.navigateTo(.medicineForm(nil))
         }) {
             Image(systemName: "plus")
         }
@@ -503,7 +503,7 @@ struct MedicineCard: View {
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         .onTapGesture {
-            appCoordinator.navigateTo(.adjustStock(medicine.id))
+            appCoordinator.navigateTo(.medicineDetail(medicine.id))
         }
     }
     
@@ -585,5 +585,5 @@ struct MedicineListFilter {
 
 
 #Preview {
-    MedicineListView(medicineStockViewModel: MedicineStockViewModel())
+    MedicineListView(medicineStockViewModel: AppCoordinator.preview.medicineListViewModel)
 }

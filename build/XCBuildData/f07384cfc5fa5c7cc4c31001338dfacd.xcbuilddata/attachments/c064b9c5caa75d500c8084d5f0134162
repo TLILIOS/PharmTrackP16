@@ -1,4 +1,0 @@
-module GoogleUtilities_Environment {
-umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/GoogleUtilities/GoogleUtilities/Environment/Public"
-export *
-}

@@ -1,4 +1,0 @@
-module nanopb {
-umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/nanopb/spm_headers"
-export *
-}

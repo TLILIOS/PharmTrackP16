@@ -165,10 +165,9 @@ struct DashboardView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 15) {
                     ForEach(viewModel.criticalStockMedicines.prefix(5)) { medicine in
-                        CriticalStockCard(medicine: medicine)
-                            .onTapGesture {
-                                viewModel.navigateToMedicineDetail(medicine)
-                            }
+                        CriticalStockCard(medicine: medicine) {
+                            appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
+                        }
                     }
                 }
                 .padding(.bottom, 5)
@@ -210,16 +209,7 @@ struct DashboardView: View {
                     icon: "arrow.up.arrow.down",
                     color: .orange
                 ) {
-                    // Vérifier s'il y a des médicaments disponibles
-                    if let criticalMedicine = viewModel.criticalStockMedicines.first {
-                        appCoordinator.navigateFromDashboard(.adjustStock(criticalMedicine.id))
-                    } else if let anyMedicine = viewModel.medicines.first {
-                        // Sinon, ajuster le premier médicament disponible
-                        appCoordinator.navigateFromDashboard(.adjustStock(anyMedicine.id))
-                    } else {
-                        // Si aucun médicament, aller à l'onglet médicaments
-                        viewModel.navigateToMedicineList()
-                    }
+                    appCoordinator.navigateFromDashboard(.criticalStock)
                 }
                 
                 // Consulter l'historique
@@ -386,6 +376,7 @@ struct DashboardCard: View {
 
 struct CriticalStockCard: View {
     let medicine: Medicine
+    let onAdjustStock: () -> Void
     
     private var stockPercentage: Double {
         guard medicine.maxQuantity > 0 else { return 0 }
@@ -393,8 +384,8 @@ struct CriticalStockCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(medicine.name)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(medicine.name ?? "Nom non spécifié")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .lineLimit(1)
@@ -404,7 +395,7 @@ struct CriticalStockCard: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text(medicine.unit)
+                Text(medicine.unit ?? "")
                     .font(.caption2)
                     .foregroundColor(.gray)
             }
@@ -413,13 +404,32 @@ struct CriticalStockCard: View {
                 .tint(.red)
             
             HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.red)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 8))
+                            .foregroundColor(.red)
+                        
+                        Text("Stock critique")
+                            .font(.caption2)
+                            .foregroundColor(.red)
+                    }
+                }
                 
-                Text("Stock critique")
-                    .font(.caption2)
-                    .foregroundColor(.red)
+                Spacer()
+                
+                Button(action: {
+                    onAdjustStock()
+                }) {
+                    Text("Ajuster")
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.accentApp)
+                        .cornerRadius(6)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding()

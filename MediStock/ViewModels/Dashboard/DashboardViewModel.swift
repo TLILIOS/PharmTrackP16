@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import SwiftUI
 
-enum DashboardViewState {
+enum DashboardViewState: Equatable {
     case idle
     case loading
     case success
@@ -28,6 +28,9 @@ class DashboardViewModel: ObservableObject {
     @Published private(set) var medicines: [Medicine] = []
     @Published private(set) var aisles: [Aisle] = []
     
+    private var lastFetchTime: Date?
+    private let cacheExpirationInterval: TimeInterval = 300
+    
     // Navigation handlers - Ces propriétés seraient définies par l'AppCoordinator
     var navigateToMedicineDetailHandler: ((Medicine) -> Void)?
     var navigateToMedicineListHandler: (() -> Void)?
@@ -37,18 +40,23 @@ class DashboardViewModel: ObservableObject {
     var navigateToExpiringMedicinesHandler: (() -> Void)?
     var navigateToAdjustStockHandler: (() -> Void)?
     
+    // NOUVEAU: AppCoordinator injection (transition progressive)
+    private weak var appCoordinator: AppCoordinator?
+    
     // MARK: - Initialization
     
     init(
         getUserUseCase: GetUserUseCaseProtocol,
         getMedicinesUseCase: GetMedicinesUseCaseProtocol,
         getAislesUseCase: GetAislesUseCaseProtocol,
-        getRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol
+        getRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol,
+        appCoordinator: AppCoordinator? = nil
     ) {
         self.getUserUseCase = getUserUseCase
         self.getMedicinesUseCase = getMedicinesUseCase
         self.getAislesUseCase = getAislesUseCase
         self.getRecentHistoryUseCase = getRecentHistoryUseCase
+        self.appCoordinator = appCoordinator
     }
     
     // MARK: - Public Methods
@@ -59,6 +67,12 @@ class DashboardViewModel: ObservableObject {
     
     @MainActor
     func fetchData() async {
+        if let lastFetch = lastFetchTime,
+           Date().timeIntervalSince(lastFetch) < cacheExpirationInterval,
+           !medicines.isEmpty && !aisles.isEmpty {
+            return
+        }
+        
         state = .loading
         
         do {
@@ -97,6 +111,7 @@ class DashboardViewModel: ObservableObject {
             // Récupérer l'historique récent (les 10 dernières entrées)
             recentHistory = try await getRecentHistoryUseCase.execute(limit: 10)
             
+            lastFetchTime = Date()
             state = .success
         } catch {
             state = .error("Erreur lors du chargement des données: \(error.localizedDescription)")
@@ -110,27 +125,53 @@ class DashboardViewModel: ObservableObject {
     }
     
     func navigateToMedicineList() {
-        navigateToMedicineListHandler?()
+        // Nouveau système avec AppCoordinator
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.medicineList)
+        } else {
+            // Fallback système handlers existant
+            navigateToMedicineListHandler?()
+        }
     }
     
     func navigateToAisles() {
-        navigateToAislesHandler?()
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.aisles)
+        } else {
+            navigateToAislesHandler?()
+        }
     }
     
     func navigateToHistory() {
-        navigateToHistoryHandler?()
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.history)
+        } else {
+            navigateToHistoryHandler?()
+        }
     }
     
     func navigateToCriticalStock() {
-        navigateToCriticalStockHandler?()
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.criticalStock)
+        } else {
+            navigateToCriticalStockHandler?()
+        }
     }
     
     func navigateToExpiringMedicines() {
-        navigateToExpiringMedicinesHandler?()
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.expiringMedicines)
+        } else {
+            navigateToExpiringMedicinesHandler?()
+        }
     }
     
     func navigateToAdjustStock() {
-        navigateToAdjustStockHandler?()
+        if let coordinator = appCoordinator {
+            coordinator.navigateFromDashboard(.adjustStock(""))
+        } else {
+            navigateToAdjustStockHandler?()
+        }
     }
     
     // MARK: - Helper Methods

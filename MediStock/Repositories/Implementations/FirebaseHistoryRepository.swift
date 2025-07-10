@@ -38,9 +38,20 @@ class FirebaseHistoryRepository: HistoryRepositoryProtocol {
             let querySnapshot = try await db.collection(historyCollection)
                 .whereField("medicineId", isEqualTo: medicineId)
                 .order(by: "timestamp", descending: true)
-                .getDocuments()
+                .getDocuments(source: .cache)
+                
+            if !querySnapshot.isEmpty {
+                return querySnapshot.documents.compactMap { document in
+                    try? document.data(as: HistoryEntryDTO.self).toDomain()
+                }
+            }
             
-            return querySnapshot.documents.compactMap { document in
+            let serverSnapshot = try await db.collection(historyCollection)
+                .whereField("medicineId", isEqualTo: medicineId)
+                .order(by: "timestamp", descending: true)
+                .getDocuments(source: .server)
+            
+            return serverSnapshot.documents.compactMap { document in
                 try? document.data(as: HistoryEntryDTO.self).toDomain()
             }
         } catch {
@@ -52,9 +63,19 @@ class FirebaseHistoryRepository: HistoryRepositoryProtocol {
         do {
             let querySnapshot = try await db.collection(historyCollection)
                 .order(by: "timestamp", descending: true)
-                .getDocuments()
+                .getDocuments(source: .cache)
+                
+            if !querySnapshot.isEmpty {
+                return querySnapshot.documents.compactMap { document in
+                    try? document.data(as: HistoryEntryDTO.self).toDomain()
+                }
+            }
             
-            return querySnapshot.documents.compactMap { document in
+            let serverSnapshot = try await db.collection(historyCollection)
+                .order(by: "timestamp", descending: true)
+                .getDocuments(source: .server)
+            
+            return serverSnapshot.documents.compactMap { document in
                 try? document.data(as: HistoryEntryDTO.self).toDomain()
             }
         } catch {

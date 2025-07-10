@@ -1,7 +1,13 @@
 import Foundation
 
-struct User: Identifiable {
-    let id: String
-    var email: String?
-    var displayName: String?
+public struct User: Identifiable {
+    public let id: String
+    public var email: String?
+    public var displayName: String?
+    
+    public init(id: String, email: String? = nil, displayName: String? = nil) {
+        self.id = id
+        self.email = email
+        self.displayName = displayName
+    }
 }

@@ -11,7 +11,15 @@
       "Bash(sed:*)",
       "Bash(rg:*)",
       "Bash(ls:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(xcrun simctl install:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(true)",
+      "Bash(swift:*)",
+      "Bash(xcrun xccov view:*)",
+      "Bash(mv:*)",
+      "Bash(timeout:*)",
+      "Bash(gtimeout:*)"
     ],
     "deny": []
   }

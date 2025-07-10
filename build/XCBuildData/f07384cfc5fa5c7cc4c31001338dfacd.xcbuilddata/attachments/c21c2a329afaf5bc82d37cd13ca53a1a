@@ -1,4 +1,0 @@
-module opensslWrapper {
-umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/grpc-binary/openssl-grpc-Wrapper/include"
-export *
-}

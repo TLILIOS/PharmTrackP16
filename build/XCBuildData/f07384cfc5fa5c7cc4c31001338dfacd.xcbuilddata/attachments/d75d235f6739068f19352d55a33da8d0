@@ -1,4 +1,0 @@
-module abslWrapper {
-umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/abseil-cpp-binary/absl-Wrapper/include"
-export *
-}

@@ -2,16 +2,15 @@ import SwiftUI
 
 struct AislesView: View {
     @StateObject private var viewModel: AislesViewModel
+    @EnvironmentObject var appCoordinator: AppCoordinator
     @State private var showingAddAisle = false
     @State private var searchText = ""
-    @State private var isRefreshing = false
     @State private var editMode: EditMode = .inactive
     @State private var selectedAisleForEdit: Aisle?
     
     // Animation properties
     @State private var listItemsOpacity: [String: Double] = [:]
     @State private var listItemsOffset: [String: CGFloat] = [:]
-    @Namespace private var aisleAnimation
     
     init(aislesViewModel: AislesViewModel) {
         self._viewModel = StateObject(wrappedValue: aislesViewModel)
@@ -62,8 +61,13 @@ struct AislesView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3)
                     }
+                    .disabled(editMode.isEditing)
                     
-                    EditButton()
+                    Button(editMode.isEditing ? "Terminé" : "Modifier") {
+                        withAnimation {
+                            editMode = editMode.isEditing ? .inactive : .active
+                        }
+                    }
                 }
             }
             .environment(\.editMode, $editMode)
@@ -132,16 +136,17 @@ struct AislesView: View {
                     .onTapGesture {
                         if editMode.isEditing {
                             selectedAisleForEdit = aisle
+                        } else {
+                            appCoordinator.navigateTo(.medicinesByAisle(aisle.id))
                         }
                     }
             }
             .onDelete { indexSet in
-                // Récupérer les IDs des rayons à supprimer
-                let idsToDelete = indexSet.map { filteredAisles[$0].id }
-                
-                // Supprimer chaque rayon
-                for id in idsToDelete {
-                    Task {
+                Task {
+                    let idsToDelete = indexSet.map { filteredAisles[$0].id }
+                    
+                    // Supprimer séquentiellement pour éviter les conflits
+                    for id in idsToDelete {
                         await viewModel.deleteAisle(id: id)
                     }
                 }
@@ -149,9 +154,7 @@ struct AislesView: View {
         }
         .listStyle(.plain)
         .refreshable {
-            isRefreshing = true
             await viewModel.fetchAisles()
-            isRefreshing = false
         }
     }
     
@@ -176,60 +179,54 @@ struct AislesView: View {
 struct AisleRowView: View {
     let aisle: Aisle
     let medicineCount: Int
-    @EnvironmentObject var appCoordinator: AppCoordinator
     
     var body: some View {
-        Button(action: {
-            appCoordinator.navigateTo(.medicinesByAisle(aisle.id))
-        }) {
-            HStack(spacing: 15) {
-                Circle()
-                    .fill(aisle.color)
-                    .frame(width: 50, height: 50)
-                    .overlay {
-                        if !aisle.icon.isEmpty {
-                            Image(systemName: aisle.icon)
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                        }
-                    }
-                
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(aisle.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    if let description = aisle.description, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
+        HStack(spacing: 15) {
+            Circle()
+                .fill(aisle.color)
+                .frame(width: 50, height: 50)
+                .overlay {
+                    if !aisle.icon.isEmpty {
+                        Image(systemName: aisle.icon)
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
                     }
                 }
+            
+            VStack(alignment: .leading, spacing: 5) {
+                Text(aisle.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
                 
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(medicineCount)")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(aisle.color)
-                    
-                    Text("médicaments")
-                        .font(.caption)
+                if let description = aisle.description, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 2)
+                        .lineLimit(1)
                 }
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(medicineCount)")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(aisle.color)
+                
+                Text("médicaments")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 2)
+            }
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         .padding(.horizontal)
         .padding(.vertical, 4)
     }
@@ -244,5 +241,8 @@ struct AisleRowView: View {
         getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase()
     )
     
-    AislesView(aislesViewModel: mockViewModel)
+    NavigationStack {
+        AislesView(aislesViewModel: mockViewModel)
+            .environmentObject(AppCoordinator())
+    }
 }

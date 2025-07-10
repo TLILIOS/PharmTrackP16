@@ -16,8 +16,8 @@ struct MainTabView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
-                // Tableau de bord
-                NavigationStack(path: $appCoordinator.dashboardNavigationPath) {
+                // Tableau de bord - Stack global
+                NavigationStack(path: $appCoordinator.globalNavigationPath) {
                     DashboardView(dashboardViewModel: appCoordinator.dashboardViewModel)
                         .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
@@ -30,8 +30,8 @@ struct MainTabView: View {
                 }
                 .tag(0)
                 
-                // Liste des médicaments
-                NavigationStack(path: $appCoordinator.medicineNavigationPath) {
+                // Liste des médicaments - Stack global
+                NavigationStack(path: $appCoordinator.globalNavigationPath) {
                     MedicineListView(medicineStockViewModel: appCoordinator.medicineListViewModel)
                         .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
@@ -44,8 +44,8 @@ struct MainTabView: View {
                 }
                 .tag(1)
                 
-                // Gestion des rayons
-                NavigationStack(path: $appCoordinator.aislesNavigationPath) {
+                // Gestion des rayons - Stack global
+                NavigationStack(path: $appCoordinator.globalNavigationPath) {
                     AislesView(aislesViewModel: appCoordinator.aislesViewModel)
                         .environmentObject(appCoordinator)
                         .navigationDestination(for: NavigationDestination.self) { destination in
@@ -58,8 +58,8 @@ struct MainTabView: View {
                 }
                 .tag(2)
                 
-                // Historique
-                NavigationStack(path: $appCoordinator.historyNavigationPath) {
+                // Historique - Stack global
+                NavigationStack(path: $appCoordinator.globalNavigationPath) {
                     HistoryView(historyViewModel: appCoordinator.historyViewModel)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
@@ -71,8 +71,8 @@ struct MainTabView: View {
                 }
                 .tag(3)
                 
-                // Profil
-                NavigationStack(path: $appCoordinator.profileNavigationPath) {
+                // Profil - Stack global
+                NavigationStack(path: $appCoordinator.globalNavigationPath) {
                     ProfileView(viewModel: appCoordinator.profileViewModel)
                         .navigationDestination(for: NavigationDestination.self) { destination in
                             appCoordinator.view(for: destination)
@@ -115,37 +115,13 @@ struct MainTabView: View {
     }
     
     private func configureNavigationHandlers() {
-        // Configuration des handlers de navigation pour le ViewModel du tableau de bord
+        // Configuration simplifiée avec stack global - plus besoin de changer d'onglets
         appCoordinator.dashboardViewModel.navigateToMedicineDetailHandler = { medicine in
             appCoordinator.navigateTo(.medicineDetail(medicine.id))
         }
         
-        appCoordinator.dashboardViewModel.navigateToMedicineListHandler = {
-            selectedTab = 1 // Switch to Medicines tab
-        }
-        
-        appCoordinator.dashboardViewModel.navigateToAislesHandler = {
-            selectedTab = 2 // Switch to Aisles tab
-        }
-        
-        appCoordinator.dashboardViewModel.navigateToHistoryHandler = {
-            selectedTab = 3 // Switch to History tab
-        }
-        
-        appCoordinator.dashboardViewModel.navigateToCriticalStockHandler = {
-            selectedTab = 1 // Switch to Medicines tab
-            // appCoordinator.medicineListViewModel.filterByStockStatus(.critical)
-        }
-        
-        appCoordinator.dashboardViewModel.navigateToExpiringMedicinesHandler = {
-            selectedTab = 1 // Switch to Medicines tab
-            // appCoordinator.medicineListViewModel.filterByExpiryStatus(.soon)
-        }
-        
-        appCoordinator.dashboardViewModel.navigateToAdjustStockHandler = {
-            // Aller à l'onglet Médicaments pour permettre de choisir un médicament
-            selectedTab = 1 // Switch to Medicines tab
-        }
+        // Note: Avec le stack global, les autres handlers legacy ne sont plus nécessaires
+        // La navigation se fait automatiquement via navigateFromDashboard() et navigateTo()
     }
     
     private func animateTabBar() {

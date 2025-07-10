@@ -1,23 +1,36 @@
 import Foundation
-import FirebaseFirestore
+import Combine
+
 @MainActor
 class MedicineStockViewModel: ObservableObject {
     @Published var medicines: [Medicine] = []
     @Published var aisles: [String] = []
     @Published var aisleObjects: [Aisle] = []
     @Published var history: [HistoryEntry] = []
-    private var db = Firestore.firestore()
     @Published var isLoading = false
-    private var medicinesListener: ListenerRegistration?
-    private var aislesListener: ListenerRegistration?
+    @Published var errorMessage: String?
     
-    init() {
+    private var lastFetchTime: Date?
+    private let cacheExpirationInterval: TimeInterval = 300
+    
+    private let medicineRepository: MedicineRepositoryProtocol
+    private let aisleRepository: AisleRepositoryProtocol
+    private let historyRepository: HistoryRepositoryProtocol
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(
+        medicineRepository: MedicineRepositoryProtocol,
+        aisleRepository: AisleRepositoryProtocol,
+        historyRepository: HistoryRepositoryProtocol
+    ) {
+        self.medicineRepository = medicineRepository
+        self.aisleRepository = aisleRepository
+        self.historyRepository = historyRepository
         startListening()
     }
     
     deinit {
-        medicinesListener?.remove()
-        aislesListener?.remove()
+        cancellables.removeAll()
     }
     
     private func startListening() {
@@ -25,116 +38,81 @@ class MedicineStockViewModel: ObservableObject {
         startAislesListener()
     }
     
-    private func stopListening() {
-        medicinesListener?.remove()
-        aislesListener?.remove()
-    }
-    
     private func startMedicinesListener() {
-        medicinesListener = db.collection("medicines").addSnapshotListener { [weak self] querySnapshot, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                print("Error listening to medicines: \(error)")
-                return
-            }
-            
-            guard let documents = querySnapshot?.documents else {
-                print("No medicines documents")
-                return
-            }
-            
-            Task { @MainActor in
-                self.medicines = documents.compactMap { document in
-                    do {
-                        return try document.data(as: MedicineDTO.self).toDomain()
-                    } catch {
-                        print("Error decoding medicine: \(error)")
-                        return nil
+        medicineRepository.observeMedicines()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
                     }
+                },
+                receiveValue: { [weak self] medicines in
+                    self?.medicines = medicines
                 }
-            }
-        }
+            )
+            .store(in: &cancellables)
     }
     
     private func startAislesListener() {
-        aislesListener = db.collection("aisles").addSnapshotListener { [weak self] querySnapshot, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                print("Error listening to aisles: \(error)")
-                return
-            }
-            
-            guard let documents = querySnapshot?.documents else {
-                print("No aisles documents")
-                return
-            }
-            
-            Task { @MainActor in
-                self.aisleObjects = documents.compactMap { document in
-                    do {
-                        return try document.data(as: AisleDTO.self).toDomain()
-                    } catch {
-                        print("Error decoding aisle: \(error)")
-                        return nil
+        aisleRepository.observeAisles()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.errorMessage = error.localizedDescription
                     }
+                },
+                receiveValue: { [weak self] aisles in
+                    self?.aisleObjects = aisles
+                    self?.aisles = aisles.map { $0.name }.sorted()
                 }
-                self.aisles = self.aisleObjects.map { $0.name }.sorted()
-            }
-        }
+            )
+            .store(in: &cancellables)
     }
     
     func fetchMedicines() async {
-        // Cette méthode est maintenant utilisée pour le refresh manuel
-        isLoading = true
-        do {
-            let querySnapshot = try await db.collection("medicines").getDocuments()
-            await MainActor.run {
-                self.medicines = querySnapshot.documents.compactMap { document in
-                    do {
-                        return try document.data(as: MedicineDTO.self).toDomain()
-                    } catch {
-                        print("Error decoding medicine: \(error)")
-                        return nil
-                    }
-                }
-                self.isLoading = false
-            }
-        } catch {
-            print("Error getting documents: \(error)")
-            await MainActor.run {
-                self.isLoading = false
-            }
+        if let lastFetch = lastFetchTime,
+           Date().timeIntervalSince(lastFetch) < cacheExpirationInterval,
+           !medicines.isEmpty {
+            return
         }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            medicines = try await medicineRepository.getMedicines()
+            lastFetchTime = Date()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
     }
     
     func fetchAisles() async {
-        // Cette méthode est maintenant utilisée pour le refresh manuel
-        isLoading = true
-        do {
-            let querySnapshot = try await db.collection("aisles").getDocuments()
-            await MainActor.run {
-                self.aisleObjects = querySnapshot.documents.compactMap { document in
-                    do {
-                        return try document.data(as: AisleDTO.self).toDomain()
-                    } catch {
-                        print("Error decoding aisle: \(error)")
-                        return nil
-                    }
-                }
-                self.aisles = self.aisleObjects.map { $0.name }.sorted()
-                self.isLoading = false
-            }
-        } catch {
-            print("Error getting aisles: \(error)")
-            await MainActor.run {
-                self.isLoading = false
-            }
+        if let lastFetch = lastFetchTime,
+           Date().timeIntervalSince(lastFetch) < cacheExpirationInterval,
+           !aisleObjects.isEmpty {
+            return
         }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            aisleObjects = try await aisleRepository.getAisles()
+            aisles = aisleObjects.map { $0.name }.sorted()
+            lastFetchTime = Date()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
     }
     
-    func addRandomMedicine(user: String) {
+    func addRandomMedicine(user: String) async {
         let medicine = Medicine(
             id: UUID().uuidString,
             name: "Medicine \(Int.random(in: 1...100))",
@@ -152,79 +130,82 @@ class MedicineStockViewModel: ObservableObject {
             createdAt: Date(),
             updatedAt: Date()
         )
+        
         do {
-            try db.collection("medicines").document(medicine.id).setData(from: medicine)
-            addHistory(action: "Added \(medicine.name)", user: user, medicineId: medicine.id, details: "Added new medicine")
-        } catch let error {
-            print("Error adding document: \(error)")
+            _ = try await medicineRepository.saveMedicine(medicine)
+            await addHistory(action: "Added \(medicine.name)", user: user, medicineId: medicine.id, details: "Added new medicine")
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
     
-    func deleteMedicines(at offsets: IndexSet) {
-        offsets.map { medicines[$0] }.forEach { medicine in
-            let id = medicine.id
-            db.collection("medicines").document(id).delete { error in
-                if let error = error {
-                    print("Error removing document: \(error)")
-                }
+    func deleteMedicines(at offsets: IndexSet) async {
+        for index in offsets {
+            let medicine = medicines[index]
+            do {
+                try await medicineRepository.deleteMedicine(id: medicine.id)
+            } catch {
+                errorMessage = error.localizedDescription
             }
         }
     }
     
     
-    func increaseStock(_ medicine: Medicine, user: String) {
-        updateStock(medicine, by: 1, user: user)
+    func increaseStock(_ medicine: Medicine, user: String) async {
+        await updateStock(medicine, by: 1, user: user)
     }
     
-    func decreaseStock(_ medicine: Medicine, user: String) {
-        updateStock(medicine, by: -1, user: user)
+    func decreaseStock(_ medicine: Medicine, user: String) async {
+        await updateStock(medicine, by: -1, user: user)
     }
     
-    private func updateStock(_ medicine: Medicine, by amount: Int, user: String) {
-        let id = medicine.id
+    private func updateStock(_ medicine: Medicine, by amount: Int, user: String) async {
         let newStock = medicine.currentQuantity + amount
-        db.collection("medicines").document(id).updateData([
-            "currentQuantity": newStock
-        ]) { error in
-            if let error = error {
-                print("Error updating stock: \(error)")
-            } else {
-                // Medicine struct is immutable, will be updated when Firestore data changes
-                self.addHistory(action: "\(amount > 0 ? "Increased" : "Decreased") stock of \(medicine.name) by \(amount)", user: user, medicineId: id, details: "Stock changed from \(medicine.currentQuantity) to \(newStock)")
-            }
-        }
-    }
-    
-    func updateMedicine(_ medicine: Medicine, user: String) {
-        let id = medicine.id
+        
         do {
-            try db.collection("medicines").document(id).setData(from: medicine)
-            addHistory(action: "Updated \(medicine.name)", user: user, medicineId: id, details: "Updated medicine details")
-        } catch let error {
-            print("Error updating document: \(error)")
+            _ = try await medicineRepository.updateMedicineStock(id: medicine.id, newStock: newStock)
+            await addHistory(
+                action: "\(amount > 0 ? "Increased" : "Decreased") stock of \(medicine.name) by \(abs(amount))",
+                user: user,
+                medicineId: medicine.id,
+                details: "Stock changed from \(medicine.currentQuantity) to \(newStock)"
+            )
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
     
-    private func addHistory(action: String, user: String, medicineId: String, details: String) {
-        let history = HistoryEntry(id: UUID().uuidString, medicineId: medicineId, userId: user, action: action, details: details, timestamp: Date())
-        let historyDTO = HistoryEntryDTO.fromDomain(history)
+    func updateMedicine(_ medicine: Medicine, user: String) async {
         do {
-            try db.collection("history").document(history.id).setData(from: historyDTO)
-        } catch let error {
-            print("Error adding history: \(error)")
+            _ = try await medicineRepository.saveMedicine(medicine)
+            await addHistory(action: "Updated \(medicine.name)", user: user, medicineId: medicine.id, details: "Updated medicine details")
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
     
-    func fetchHistory(for medicine: Medicine) {
-        let medicineId = medicine.id
-        db.collection("history").whereField("medicineId", isEqualTo: medicineId).addSnapshotListener { (querySnapshot, error) in
-            if let error = error {
-                print("Error getting history: \(error)")
-            } else {
-                self.history = querySnapshot?.documents.compactMap { document in
-                    try? document.data(as: HistoryEntryDTO.self).toDomain()
-                } ?? []
-            }
+    private func addHistory(action: String, user: String, medicineId: String, details: String) async {
+        let historyEntry = HistoryEntry(
+            id: UUID().uuidString,
+            medicineId: medicineId,
+            userId: user,
+            action: action,
+            details: details,
+            timestamp: Date()
+        )
+        
+        do {
+            try await historyRepository.addHistoryEntry(historyEntry)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func fetchHistory(for medicine: Medicine) async {
+        do {
+            history = try await historyRepository.getHistoryForMedicine(medicineId: medicine.id)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }

@@ -45,6 +45,7 @@ struct MedicinesByAisleViewWrapper: View {
 struct MedicinesByAisleView: View {
     let aisle: Aisle
     @ObservedObject var medicineStockViewModel: MedicineStockViewModel
+    @EnvironmentObject var appCoordinator: AppCoordinator
     @State private var isRefreshing = false
     
     private var medicinesInAisle: [Medicine] {
@@ -67,6 +68,15 @@ struct MedicinesByAisleView: View {
             }
             .navigationTitle(aisle.name)
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        appCoordinator.navigateTo(.medicineForm(nil))
+                    }) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
         }
         .onAppear {
             Task {
@@ -116,7 +126,7 @@ struct MedicineEmptyStateView: View {
                 title: "Ajouter un médicament",
                 icon: "plus"
             ) {
-                appCoordinator.medicineNavigationPath.append(.medicineForm(nil))
+                appCoordinator.navigateTo(.medicineForm(nil))
             }
             .frame(maxWidth: 250)
             .padding(.top, 10)
@@ -137,7 +147,7 @@ struct MedicineEmptyStateView: View {
     
     MedicinesByAisleView(
         aisle: mockAisle,
-        medicineStockViewModel: MedicineStockViewModel()
+        medicineStockViewModel: AppCoordinator.preview.medicineListViewModel
     )
     .environmentObject(AppCoordinator.preview)
 }

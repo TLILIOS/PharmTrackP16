@@ -24,6 +24,9 @@ class AislesViewModel: ObservableObject {
     @Published private(set) var state: AislesViewState = .idle
     @Published private(set) var isLoading: Bool = false
     
+    private var lastFetchTime: Date?
+    private let cacheExpirationInterval: TimeInterval = 300
+    
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
@@ -50,6 +53,12 @@ class AislesViewModel: ObservableObject {
     
     @MainActor
     func fetchAisles() async {
+        if let lastFetch = lastFetchTime,
+           Date().timeIntervalSince(lastFetch) < cacheExpirationInterval,
+           !aisles.isEmpty {
+            return
+        }
+        
         isLoading = true
         state = .loading
         
@@ -59,6 +68,7 @@ class AislesViewModel: ObservableObject {
             // Récupérer le nombre de médicaments pour chaque rayon
             await fetchMedicineCounts()
             
+            lastFetchTime = Date()
             state = .success
         } catch {
             state = .error("Erreur lors du chargement des rayons: \(error.localizedDescription)")

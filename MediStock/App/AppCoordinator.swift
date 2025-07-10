@@ -181,7 +181,7 @@ private let generalMedicines: [MedicineTemplate] = [
 // MARK: - Use Case Protocols
 
 // Authentication Use Cases
-protocol GetUserUseCaseProtocol {
+public protocol GetUserUseCaseProtocol {
     func execute() async throws -> User
 }
 
@@ -193,7 +193,7 @@ protocol SignUpUseCaseProtocol {
     func execute(email: String, password: String, name: String) async throws
 }
 
-protocol SignOutUseCaseProtocol {
+public protocol SignOutUseCaseProtocol {
     func execute() async throws
 }
 
@@ -300,6 +300,8 @@ enum NavigationDestination: Hashable {
     case expiringMedicines
     case history
     case settings
+    case medicineList // Liste des médicaments
+    case aisles // Liste des rayons
     
     func hash(into hasher: inout Hasher) {
         switch self {
@@ -326,6 +328,10 @@ enum NavigationDestination: Hashable {
             hasher.combine("history")
         case .settings:
             hasher.combine("settings")
+        case .medicineList:
+            hasher.combine("medicineList")
+        case .aisles:
+            hasher.combine("aisles")
         }
     }
     
@@ -344,7 +350,9 @@ enum NavigationDestination: Hashable {
         case (.criticalStock, .criticalStock),
              (.expiringMedicines, .expiringMedicines),
              (.history, .history),
-             (.settings, .settings):
+             (.settings, .settings),
+             (.medicineList, .medicineList),
+             (.aisles, .aisles):
             return true
         default:
             return false
@@ -357,6 +365,10 @@ enum NavigationDestination: Hashable {
 class AppCoordinator: ObservableObject {
     // MARK: - Navigation Paths
     
+    // Stack global unique pour toute l'application
+    @Published var globalNavigationPath: [NavigationDestination] = []
+    
+    // Anciens stacks (conservés temporairement pour compatibilité)
     @Published var dashboardNavigationPath: [NavigationDestination] = []
     @Published var medicineNavigationPath: [NavigationDestination] = []
     @Published var aislesNavigationPath: [NavigationDestination] = []
@@ -365,159 +377,95 @@ class AppCoordinator: ObservableObject {
     
     @Published var globalErrorMessage: String?
     
+    // MARK: - Repositories
+    
+    private lazy var medicineRepository: MedicineRepositoryProtocol = FirebaseMedicineRepository()
+    private lazy var aisleRepository: AisleRepositoryProtocol = FirebaseAisleRepository()
+    private lazy var historyRepository: HistoryRepositoryProtocol = FirebaseHistoryRepository()
+    private let authRepository: AuthRepositoryProtocol
+    
     // MARK: - Use Cases
     
-    // Auth
-    private let getUserUseCase: GetUserUseCaseProtocol
-    private let signOutUseCase: SignOutUseCaseProtocol
-    
-    // Medicines
-    private let getMedicinesUseCase: GetMedicinesUseCaseProtocol
-    let getMedicineUseCase: GetMedicineUseCaseProtocol // Public for wrapper views
-    private let addMedicineUseCase: AddMedicineUseCaseProtocol
-    private let updateMedicineUseCase: UpdateMedicineUseCaseProtocol
-    private let deleteMedicineUseCase: DeleteMedicineUseCaseProtocol
-    private let updateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol
-    private let adjustStockUseCase: AdjustStockUseCaseProtocol
-    let searchMedicineUseCase: SearchMedicineUseCaseProtocol // Public for DashboardView
-    
-    // Aisles
-    let getAislesUseCase: GetAislesUseCaseProtocol
-    private let addAisleUseCase: AddAisleUseCaseProtocol
-    private let updateAisleUseCase: UpdateAisleUseCaseProtocol
-    private let deleteAisleUseCase: DeleteAisleUseCaseProtocol
-    let searchAisleUseCase: SearchAisleUseCaseProtocol // Public for DashboardView
-    private let getMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseProtocol
-    
-    // History
-    private let getHistoryUseCase: GetHistoryUseCaseProtocol
-    private let getRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol
-    private let exportHistoryUseCase: ExportHistoryUseCaseProtocol
+    lazy var getUserUseCase: GetUserUseCaseProtocol = RealGetUserUseCase(authRepository: authRepository)
+    lazy var signOutUseCase: SignOutUseCaseProtocol = RealSignOutUseCase(authRepository: authRepository)
+    lazy var getMedicineUseCase: GetMedicineUseCaseProtocol = RealGetMedicineUseCase(medicineRepository: medicineRepository)
+    lazy var searchMedicineUseCase: SearchMedicineUseCaseProtocol = RealSearchMedicineUseCase(medicineRepository: medicineRepository)
+    lazy var getAislesUseCase: GetAislesUseCaseProtocol = RealGetAislesUseCase(aisleRepository: aisleRepository)
+    lazy var searchAisleUseCase: SearchAisleUseCaseProtocol = RealSearchAisleUseCase(aisleRepository: aisleRepository)
+    lazy var addMedicineUseCase: AddMedicineUseCaseProtocol = RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
     
     // MARK: - ViewModels
     
-    // Ces propriétés sont accédées directement par la MainTabView
-    let dashboardViewModel: DashboardViewModel
-    let medicineListViewModel: MedicineStockViewModel
-    let aislesViewModel: AislesViewModel
-    let historyViewModel: HistoryViewModel
-    let profileViewModel: ProfileViewModel
+    lazy var dashboardViewModel: DashboardViewModel = {
+        DashboardViewModel(
+            getUserUseCase: getUserUseCase,
+            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: medicineRepository),
+            getAislesUseCase: getAislesUseCase,
+            getRecentHistoryUseCase: RealGetRecentHistoryUseCase(historyRepository: historyRepository),
+            appCoordinator: self
+        )
+    }()
+    
+    lazy var medicineListViewModel: MedicineStockViewModel = {
+        MedicineStockViewModel(
+            medicineRepository: medicineRepository,
+            aisleRepository: aisleRepository,
+            historyRepository: historyRepository
+        )
+    }()
+    
+    lazy var aislesViewModel: AislesViewModel = {
+        AislesViewModel(
+            getAislesUseCase: getAislesUseCase,
+            addAisleUseCase: RealAddAisleUseCase(aisleRepository: aisleRepository),
+            updateAisleUseCase: RealUpdateAisleUseCase(aisleRepository: aisleRepository),
+            deleteAisleUseCase: RealDeleteAisleUseCase(aisleRepository: aisleRepository),
+            getMedicineCountByAisleUseCase: RealGetMedicineCountByAisleUseCase(aisleRepository: aisleRepository)
+        )
+    }()
+    
+    lazy var historyViewModel: HistoryViewModel = {
+        return HistoryViewModel(
+            getHistoryUseCase: RealGetHistoryUseCase(historyRepository: historyRepository),
+            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: medicineRepository),
+            exportHistoryUseCase: RealExportHistoryUseCase(historyRepository: historyRepository)
+        )
+    }()
+    
+    lazy var profileViewModel: ProfileViewModel = {
+        return ProfileViewModel(
+            getUserUseCase: getUserUseCase,
+            signOutUseCase: signOutUseCase,
+            testDataService: TestMedicineDataService(
+                getAislesUseCase: getAislesUseCase,
+                addMedicineUseCase: addMedicineUseCase
+            )
+        )
+    }()
     
     // MARK: - Initialization
     
-    init(
-        // Auth
-        getUserUseCase: GetUserUseCaseProtocol,
-        signOutUseCase: SignOutUseCaseProtocol,
-        
-        // Medicines
-        getMedicinesUseCase: GetMedicinesUseCaseProtocol,
-        getMedicineUseCase: GetMedicineUseCaseProtocol,
-        addMedicineUseCase: AddMedicineUseCaseProtocol,
-        updateMedicineUseCase: UpdateMedicineUseCaseProtocol,
-        deleteMedicineUseCase: DeleteMedicineUseCaseProtocol,
-        updateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol,
-        adjustStockUseCase: AdjustStockUseCaseProtocol,
-        searchMedicineUseCase: SearchMedicineUseCaseProtocol,
-        
-        // Aisles
-        getAislesUseCase: GetAislesUseCaseProtocol,
-        addAisleUseCase: AddAisleUseCaseProtocol,
-        updateAisleUseCase: UpdateAisleUseCaseProtocol,
-        deleteAisleUseCase: DeleteAisleUseCaseProtocol,
-        searchAisleUseCase: SearchAisleUseCaseProtocol,
-        getMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseProtocol,
-        
-        // History
-        getHistoryUseCase: GetHistoryUseCaseProtocol,
-        getRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol,
-        exportHistoryUseCase: ExportHistoryUseCaseProtocol
-    ) {
-        // Auth
-        self.getUserUseCase = getUserUseCase
-        self.signOutUseCase = signOutUseCase
-        
-        // Medicines
-        self.getMedicinesUseCase = getMedicinesUseCase
-        self.getMedicineUseCase = getMedicineUseCase
-        self.addMedicineUseCase = addMedicineUseCase
-        self.updateMedicineUseCase = updateMedicineUseCase
-        self.deleteMedicineUseCase = deleteMedicineUseCase
-        self.updateMedicineStockUseCase = updateMedicineStockUseCase
-        self.adjustStockUseCase = adjustStockUseCase
-        self.searchMedicineUseCase = searchMedicineUseCase
-        
-        // Aisles
-        self.getAislesUseCase = getAislesUseCase
-        self.addAisleUseCase = addAisleUseCase
-        self.updateAisleUseCase = updateAisleUseCase
-        self.deleteAisleUseCase = deleteAisleUseCase
-        self.searchAisleUseCase = searchAisleUseCase
-        self.getMedicineCountByAisleUseCase = getMedicineCountByAisleUseCase
-        
-        // History
-        self.getHistoryUseCase = getHistoryUseCase
-        self.getRecentHistoryUseCase = getRecentHistoryUseCase
-        self.exportHistoryUseCase = exportHistoryUseCase
-        
-        // Initialiser les ViewModels
-        self.dashboardViewModel = DashboardViewModel(
-            getUserUseCase: getUserUseCase,
-            getMedicinesUseCase: getMedicinesUseCase,
-            getAislesUseCase: getAislesUseCase,
-            getRecentHistoryUseCase: getRecentHistoryUseCase
-        )
-        
-        self.medicineListViewModel = MedicineStockViewModel()
-        
-        self.aislesViewModel = AislesViewModel(
-            getAislesUseCase: getAislesUseCase,
-            addAisleUseCase: addAisleUseCase,
-            updateAisleUseCase: updateAisleUseCase,
-            deleteAisleUseCase: deleteAisleUseCase,
-            getMedicineCountByAisleUseCase: getMedicineCountByAisleUseCase
-        )
-        
-        self.historyViewModel = HistoryViewModel(
-            getHistoryUseCase: getHistoryUseCase,
-            getMedicinesUseCase: getMedicinesUseCase,
-            exportHistoryUseCase: exportHistoryUseCase
-        )
-        
-        // Create TestDataService
-        let testDataService = TestMedicineDataService(
-            getAislesUseCase: getAislesUseCase,
-            addMedicineUseCase: addMedicineUseCase
-        )
-        
-        self.profileViewModel = ProfileViewModel(
-            getUserUseCase: getUserUseCase,
-            signOutUseCase: signOutUseCase,
-            testDataService: testDataService
-        )
+    init(authRepository: AuthRepositoryProtocol = FirebaseAuthRepository()) {
+        self.authRepository = authRepository
     }
     
     // MARK: - Navigation Methods
     
     func navigateTo(_ destination: NavigationDestination) {
-        switch destination {
-        case .medicineDetail, .medicineForm, .adjustStock:
-            medicineNavigationPath.append(destination)
-        case .aisle:
-            aislesNavigationPath.append(destination)
-        case .medicinesByAisle:
-            aislesNavigationPath.append(destination)
-        case .criticalStock, .expiringMedicines:
-            medicineNavigationPath.append(destination)
-        case .history:
-            historyNavigationPath.append(destination)
-        case .settings:
-            profileNavigationPath.append(destination)
-        }
+        // Navigation simplifiée : toutes les destinations vont dans le stack global
+        globalNavigationPath.append(destination)
     }
     
+    // Note: Logique de navigation contextuelle supprimée - plus nécessaire avec le stack global
+    
     func navigateFromDashboard(_ destination: NavigationDestination) {
-        dashboardNavigationPath.append(destination)
+        // Navigation simplifiée : utilise le stack global
+        globalNavigationPath.append(destination)
+    }
+    
+    func navigateFromAisle(_ destination: NavigationDestination) {
+        // Navigation simplifiée : utilise le stack global
+        globalNavigationPath.append(destination)
     }
     
     func dismissGlobalError() {
@@ -544,13 +492,17 @@ class AppCoordinator: ObservableObject {
         case .medicinesByAisle(let aisleId):
             AisleMedicinesView(aisleId: aisleId, appCoordinator: self)
         case .criticalStock:
-            Text("Stocks critiques") // À implémenter
+            CriticalStockViewWrapper(dashboardViewModel: dashboardViewModel)
         case .expiringMedicines:
-            Text("Médicaments expirant bientôt") // À implémenter
+            ExpiringMedicinesInlineView(dashboardViewModel: dashboardViewModel)
         case .history:
             HistoryView(historyViewModel: historyViewModel)
         case .settings:
             Text("Paramètres") // À implémenter
+        case .medicineList:
+            MedicineListView(medicineStockViewModel: medicineListViewModel)
+        case .aisles:
+            AislesView(aislesViewModel: aislesViewModel)
         }
     }
     
@@ -560,8 +512,8 @@ class AppCoordinator: ObservableObject {
         return MedicineDetailViewModel(
             medicine: medicine,
             getMedicineUseCase: getMedicineUseCase,
-            updateMedicineStockUseCase: updateMedicineStockUseCase,
-            deleteMedicineUseCase: deleteMedicineUseCase,
+            updateMedicineStockUseCase: RealUpdateMedicineStockUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
+            deleteMedicineUseCase: RealDeleteMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
             getHistoryUseCase: MockGetHistoryForMedicineUseCase()
         )
     }
@@ -570,8 +522,8 @@ class AppCoordinator: ObservableObject {
         return MedicineFormViewModel(
             getMedicineUseCase: getMedicineUseCase,
             getAislesUseCase: getAislesUseCase,
-            addMedicineUseCase: addMedicineUseCase,
-            updateMedicineUseCase: updateMedicineUseCase,
+            addMedicineUseCase: RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
+            updateMedicineUseCase: RealUpdateMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
             medicine: medicine
         )
     }
@@ -640,7 +592,7 @@ struct MedicineDetailViewWrapper: View {
             if isLoading {
                 ProgressView("Chargement...")
             } else if let medicine = medicine {
-                MedicineDetailView(medicine: medicine)
+                MedicineDetailView(viewModel: appCoordinator.createMedicineDetailViewModel(for: medicine))
             } else {
                 Text("Médicament introuvable")
             }
@@ -718,15 +670,19 @@ struct AisleMedicinesView: View {
             if isLoading {
                 ProgressView("Chargement...")
             } else if let aisle = aisle {
-                MedicineListView(medicineStockViewModel: appCoordinator.medicineListViewModel)
-                    .navigationTitle(aisle.name)
-                    .onAppear {
-                        // Pre-select this aisle in the medicine list filter
-                        Task {
-                            await appCoordinator.medicineListViewModel.fetchMedicines()
-                            await appCoordinator.medicineListViewModel.fetchAisles()
-                        }
+                AisleMedicineListWrapper(
+                    aisle: aisle,
+                    medicineStockViewModel: appCoordinator.medicineListViewModel,
+                    appCoordinator: appCoordinator
+                )
+                .navigationTitle(aisle.name)
+                .onAppear {
+                    // Pre-select this aisle in the medicine list filter
+                    Task {
+                        await appCoordinator.medicineListViewModel.fetchMedicines()
+                        try await appCoordinator.medicineListViewModel.fetchAisles()
                     }
+                }
             } else {
                 Text("Rayon introuvable")
             }
@@ -744,6 +700,140 @@ struct AisleMedicinesView: View {
             print("Error loading aisle: \(error)")
         }
         isLoading = false
+    }
+}
+
+// MARK: - Wrapper pour navigation correcte depuis rayons
+struct AisleMedicineListWrapper: View {
+    let aisle: Aisle
+    let medicineStockViewModel: MedicineStockViewModel
+    let appCoordinator: AppCoordinator
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Liste des médicaments avec navigation corrigée
+            if medicineStockViewModel.isLoading {
+                Spacer()
+                ProgressView("Chargement des médicaments...")
+                Spacer()
+            } else if medicineStockViewModel.medicines.isEmpty {
+                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "pills")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                    Text("Aucun médicament")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+            } else {
+                List {
+                    ForEach(medicinesInAisle) { medicine in
+                        AisleMedicineCard(medicine: medicine) {
+                            // Navigation corrigée: utilise aislesNavigationPath
+                            appCoordinator.navigateFromAisle(.medicineDetail(medicine.id))
+                        }
+                    }
+                }
+                .listStyle(PlainListStyle())
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    // Navigation corrigée pour ajouter médicament
+                    appCoordinator.navigateFromAisle(.medicineForm(nil))
+                }) {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .onAppear {
+            Task {
+                await medicineStockViewModel.fetchMedicines()
+            }
+        }
+    }
+    
+    // Filtre les médicaments pour cet aisle
+    private var medicinesInAisle: [Medicine] {
+        medicineStockViewModel.medicines.filter { medicine in
+            medicine.aisleId == aisle.id
+        }
+    }
+}
+
+// MARK: - Medicine Card pour navigation depuis Rayon
+struct AisleMedicineCard: View {
+    let medicine: Medicine
+    let onTap: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Statut du stock
+            Circle()
+                .fill(stockColor)
+                .frame(width: 12, height: 12)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(medicine.name ?? "Nom non spécifié")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(medicine.dosage ?? "Dosage non spécifié")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                HStack {
+                    Text("Stock: \(medicine.currentQuantity)")
+                        .font(.caption)
+                        .foregroundColor(stockColor)
+                    
+                    Spacer()
+                    
+                    if let expiryDate = medicine.expiryDate {
+                        Text("Exp: \(formatDate(expiryDate))")
+                            .font(.caption)
+                            .foregroundColor(isExpiringSoon(expiryDate) ? .orange : .secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .onTapGesture {
+            onTap()
+        }
+    }
+    
+    private var stockColor: Color {
+        if medicine.currentQuantity <= medicine.criticalThreshold {
+            return .red
+        } else if medicine.currentQuantity <= medicine.warningThreshold {
+            return .orange
+        } else {
+            return .green
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func isExpiringSoon(_ date: Date) -> Bool {
+        let thirtyDaysFromNow = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+        return date <= thirtyDaysFromNow
     }
 }
 
@@ -1038,14 +1128,14 @@ class RealGetMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseProtocol
     func execute(aisleId: String) async throws -> Int { try await aisleRepository.getMedicineCountByAisle(aisleId: aisleId) }
 }
 
-class RealGetUserUseCase: GetUserUseCaseProtocol {
+public class RealGetUserUseCase: GetUserUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
-    init(authRepository: AuthRepositoryProtocol) {
+    public init(authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
     }
     
-    func execute() async throws -> User {
+    public func execute() async throws -> User {
         guard let currentUser = authRepository.currentUser else {
             throw AuthError.userNotFound
         }
@@ -1053,14 +1143,14 @@ class RealGetUserUseCase: GetUserUseCaseProtocol {
     }
 }
 
-class RealSignOutUseCase: SignOutUseCaseProtocol {
+public class RealSignOutUseCase: SignOutUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
-    init(authRepository: AuthRepositoryProtocol) {
+    public init(authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
     }
     
-    func execute() async throws {
+    public func execute() async throws {
         try await authRepository.signOut()
     }
 }
@@ -1395,136 +1485,156 @@ class MedicineListViewModel: ObservableObject {
 // MARK: - Preview Helper
 
 extension AppCoordinator {
-    static func createWithRealAuth() -> AppCoordinator {
-        let authRepository = FirebaseAuthRepository()
-        
-        // Create real auth use cases but inline to avoid external dependencies
-        let getUserUseCase = RealGetUserUseCase(authRepository: authRepository)
-        let signOutUseCase = RealSignOutUseCase(authRepository: authRepository)
-        
-        return AppCoordinator(
-            // Auth - using real implementations
-            getUserUseCase: getUserUseCase,
-            signOutUseCase: signOutUseCase,
-            
-            // Medicines - using mock for now (can be replaced later)
-            getMedicinesUseCase: MockGetMedicinesUseCase(),
-            getMedicineUseCase: MockGetMedicineUseCase(),
-            addMedicineUseCase: MockAddMedicineUseCase(),
-            updateMedicineUseCase: MockUpdateMedicineUseCase(),
-            deleteMedicineUseCase: MockDeleteMedicineUseCase(),
-            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
-            adjustStockUseCase: MockAdjustStockUseCase(),
-            searchMedicineUseCase: MockSearchMedicineUseCase(),
-            
-            // Aisles
-            getAislesUseCase: MockGetAislesUseCase(),
-            addAisleUseCase: MockAddAisleUseCase(),
-            updateAisleUseCase: MockUpdateAisleUseCase(),
-            deleteAisleUseCase: MockDeleteAisleUseCase(),
-            searchAisleUseCase: MockSearchAisleUseCase(),
-            getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase(),
-            
-            // History
-            getHistoryUseCase: MockGetHistoryUseCase(),
-            getRecentHistoryUseCase: MockGetRecentHistoryUseCase(),
-            exportHistoryUseCase: MockExportHistoryUseCase()
-        )
-    }
-    
-    static func createWithRealFirebase() -> AppCoordinator {
-        // Create Firebase repositories
-        let authRepository = FirebaseAuthRepository()
-        let medicineRepository = FirebaseMedicineRepository()
-        let aisleRepository = FirebaseAisleRepository()
-        let historyRepository = FirebaseHistoryRepository()
-        
-        // Auth use cases
-        let getUserUseCase = RealGetUserUseCase(authRepository: authRepository)
-        let signOutUseCase = RealSignOutUseCase(authRepository: authRepository)
-        
-        // Medicine use cases with real Firebase
-        let getMedicinesUseCase = RealGetMedicinesUseCase(medicineRepository: medicineRepository)
-        let getMedicineUseCase = RealGetMedicineUseCase(medicineRepository: medicineRepository)
-        let addMedicineUseCase = RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
-        let updateMedicineUseCase = RealUpdateMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
-        let deleteMedicineUseCase = RealDeleteMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
-        let updateMedicineStockUseCase = RealUpdateMedicineStockUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
-        let searchMedicineUseCase = RealSearchMedicineUseCase(medicineRepository: medicineRepository)
-        
-        // Aisle use cases with real Firebase
-        let getAislesUseCase = RealGetAislesUseCase(aisleRepository: aisleRepository)
-        let addAisleUseCase = RealAddAisleUseCase(aisleRepository: aisleRepository)
-        let updateAisleUseCase = RealUpdateAisleUseCase(aisleRepository: aisleRepository)
-        let deleteAisleUseCase = RealDeleteAisleUseCase(aisleRepository: aisleRepository)
-        let getMedicineCountByAisleUseCase = RealGetMedicineCountByAisleUseCase(aisleRepository: aisleRepository)
-        let searchAisleUseCase = RealSearchAisleUseCase(aisleRepository: aisleRepository)
-        
-        // History use cases with real Firebase
-        let getHistoryUseCase = RealGetHistoryUseCase(historyRepository: historyRepository)
-        let getRecentHistoryUseCase = RealGetRecentHistoryUseCase(historyRepository: historyRepository)
-        let exportHistoryUseCase = RealExportHistoryUseCase(historyRepository: historyRepository)
-        
-        return AppCoordinator(
-            // Auth - using real implementations
-            getUserUseCase: getUserUseCase,
-            signOutUseCase: signOutUseCase,
-            
-            // Medicines - using real Firebase implementations
-            getMedicinesUseCase: getMedicinesUseCase,
-            getMedicineUseCase: getMedicineUseCase,
-            addMedicineUseCase: addMedicineUseCase,
-            updateMedicineUseCase: updateMedicineUseCase,
-            deleteMedicineUseCase: deleteMedicineUseCase,
-            updateMedicineStockUseCase: updateMedicineStockUseCase,
-            adjustStockUseCase: MockAdjustStockUseCase(), // TODO: Implement real adjust stock
-            searchMedicineUseCase: searchMedicineUseCase,
-            
-            // Aisles - using real Firebase implementations
-            getAislesUseCase: getAislesUseCase,
-            addAisleUseCase: addAisleUseCase,
-            updateAisleUseCase: updateAisleUseCase,
-            deleteAisleUseCase: deleteAisleUseCase,
-            searchAisleUseCase: searchAisleUseCase,
-            getMedicineCountByAisleUseCase: getMedicineCountByAisleUseCase,
-            
-            // History - using real Firebase implementations
-            getHistoryUseCase: getHistoryUseCase,
-            getRecentHistoryUseCase: getRecentHistoryUseCase,
-            exportHistoryUseCase: exportHistoryUseCase
-        )
-    }
-    
     static var preview: AppCoordinator {
-        AppCoordinator(
-            // Auth
-            getUserUseCase: MockGetUserUseCase(),
-            signOutUseCase: MockSignOutUseCase(),
-            
-            // Medicines
-            getMedicinesUseCase: MockGetMedicinesUseCase(),
-            getMedicineUseCase: MockGetMedicineUseCase(),
-            addMedicineUseCase: MockAddMedicineUseCase(),
-            updateMedicineUseCase: MockUpdateMedicineUseCase(),
-            deleteMedicineUseCase: MockDeleteMedicineUseCase(),
-            updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
-            adjustStockUseCase: MockAdjustStockUseCase(),
-            searchMedicineUseCase: MockSearchMedicineUseCase(),
-            
-            // Aisles
-            getAislesUseCase: MockGetAislesUseCase(),
-            addAisleUseCase: MockAddAisleUseCase(),
-            updateAisleUseCase: MockUpdateAisleUseCase(),
-            deleteAisleUseCase: MockDeleteAisleUseCase(),
-            searchAisleUseCase: MockSearchAisleUseCase(),
-            getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase(),
-            
-            // History
-            getHistoryUseCase: MockGetHistoryUseCase(),
-            getRecentHistoryUseCase: MockGetRecentHistoryUseCase(),
-            exportHistoryUseCase: MockExportHistoryUseCase()
-        )
+        AppCoordinator(authRepository: FirebaseAuthRepository())
     }
+    
+    static func createWithRealFirebase(authRepository: AuthRepositoryProtocol) -> AppCoordinator {
+        AppCoordinator(authRepository: authRepository)
+    }
+}
+
+// MARK: - View Wrappers
+
+struct CriticalStockViewWrapper: View {
+    let dashboardViewModel: DashboardViewModel
+    @EnvironmentObject var appCoordinator: AppCoordinator
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            
+            if dashboardViewModel.criticalStockMedicines.isEmpty {
+                VStack(spacing: 20) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 80))
+                        .foregroundColor(.green)
+                    
+                    Text("Aucun stock critique")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Tous vos médicaments ont des stocks suffisants.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .padding()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(dashboardViewModel.criticalStockMedicines, id: \.id) { medicine in
+                            CriticalStockMedicineRowWrapper(medicine: medicine) {
+                                appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
+                            } onAdjustStock: {
+                                appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
+                            }
+                        }
+                    }
+                    .padding()
+                }
+            }
+            
+            Spacer()
+        }
+        .navigationTitle("Stocks critiques")
+        .navigationBarTitleDisplayMode(.large)
+        .onAppear {
+            Task {
+                await dashboardViewModel.fetchData()
+            }
+        }
+    }
+}
+
+struct CriticalStockMedicineRowWrapper: View {
+    let medicine: Medicine
+    let onTap: () -> Void
+    let onAdjustStock: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(medicine.name ?? "Nom non spécifié")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text(medicine.dosage ?? "Dosage non spécifié")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(medicine.currentQuantity)")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.red)
+                    
+                    Text("/ \(medicine.maxQuantity)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            // Barre de progression
+            ProgressView(value: Double(medicine.currentQuantity), total: Double(medicine.maxQuantity))
+                .progressViewStyle(LinearProgressViewStyle(tint: .red))
+                .scaleEffect(x: 1, y: 2, anchor: .center)
+            
+            HStack {
+                Text("Seuil critique: \(medicine.criticalThreshold)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Button(action: onAdjustStock) {
+                    Label("Ajuster", systemImage: "plus.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.accentApp)
+                        .cornerRadius(15)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onTapGesture {
+            onTap()
+        }
+    }
+}
+
+// MARK: - Temporary Mock Classes for Compilation
+
+@MainActor
+func MockHistoryViewModel() -> HistoryViewModel {
+    return HistoryViewModel(
+        getHistoryUseCase: MockGetHistoryUseCase(),
+        getMedicinesUseCase: MockGetMedicinesUseCase(),
+        exportHistoryUseCase: MockExportHistoryUseCase()
+    )
+}
+
+@MainActor
+func MockProfileViewModel() -> ProfileViewModel {
+    return ProfileViewModel(
+        getUserUseCase: MockGetUserUseCase(),
+        signOutUseCase: MockSignOutUseCase(),
+        testDataService: TestMedicineDataService(
+            getAislesUseCase: MockGetAislesUseCase(),
+            addMedicineUseCase: MockAddMedicineUseCase()
+        )
+    )
 }
 
 // MARK: - ProfileViewModel
@@ -1672,5 +1782,201 @@ struct ProfileView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+}
+
+// MARK: - Expiring Medicines Inline View
+
+struct ExpiringMedicinesInlineView: View {
+    @ObservedObject var dashboardViewModel: DashboardViewModel
+    @EnvironmentObject var appCoordinator: AppCoordinator
+    @State private var isRefreshing = false
+    
+    var body: some View {
+        ZStack {
+            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+            
+            VStack {
+                if dashboardViewModel.state == .loading {
+                    Spacer()
+                    ProgressView("Chargement des médicaments expirant...")
+                    Spacer()
+                } else if dashboardViewModel.expiringMedicines.isEmpty {
+                    ExpiringMedicinesEmptyInlineView()
+                } else {
+                    expiringMedicinesList
+                }
+            }
+            .navigationTitle("Expirations proches")
+            .navigationBarTitleDisplayMode(.large)
+            
+            if case .error(let message) = dashboardViewModel.state {
+                VStack {
+                    Spacer()
+                    MessageView(message: message, type: .error) {
+                        dashboardViewModel.resetState()
+                    }
+                    .padding()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .animation(.easeInOut, value: dashboardViewModel.state)
+                .zIndex(1)
+            }
+        }
+        .onAppear {
+            Task {
+                await dashboardViewModel.fetchData()
+            }
+        }
+        .refreshable {
+            await performRefresh()
+        }
+    }
+    
+    private var expiringMedicinesList: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(dashboardViewModel.expiringMedicines, id: \.id) { medicine in
+                    ExpiringMedicineInlineRow(medicine: medicine) {
+                        appCoordinator.navigateFromDashboard(.medicineDetail(medicine.id))
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+    
+    private func performRefresh() async {
+        isRefreshing = true
+        await dashboardViewModel.fetchData()
+        isRefreshing = false
+    }
+}
+
+struct ExpiringMedicineInlineRow: View {
+    let medicine: Medicine
+    let onTap: () -> Void
+    
+    private var daysUntilExpiry: Int {
+        guard let expiryDate = medicine.expiryDate else { return 0 }
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: Date(), to: expiryDate).day ?? 0
+        return max(0, days)
+    }
+    
+    private var expiryColor: Color {
+        let days = daysUntilExpiry
+        if days <= 7 {
+            return .red
+        } else if days <= 14 {
+            return .orange
+        } else {
+            return .yellow
+        }
+    }
+    
+    private var expiryText: String {
+        let days = daysUntilExpiry
+        if days == 0 {
+            return "Expire aujourd'hui"
+        } else if days == 1 {
+            return "Expire demain"
+        } else {
+            return "Expire dans \(days) jours"
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(medicine.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text(medicine.dosage ?? "Dosage non spécifié")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    if let expiryDate = medicine.expiryDate {
+                        Text(formatDate(expiryDate))
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(expiryColor)
+                    }
+                    
+                    Text("Stock: \(medicine.currentQuantity)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            HStack {
+                Image(systemName: "clock.fill")
+                    .font(.caption)
+                    .foregroundColor(expiryColor)
+                
+                Text(expiryText)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(expiryColor)
+                
+                Spacer()
+                
+                Button(action: onTap) {
+                    Label("Voir détails", systemImage: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.accentApp)
+                        .cornerRadius(15)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            ProgressView(value: max(0, Double(30 - daysUntilExpiry)), total: 30.0)
+                .progressViewStyle(LinearProgressViewStyle(tint: expiryColor))
+                .scaleEffect(x: 1, y: 2, anchor: .center)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onTapGesture {
+            onTap()
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: date)
+    }
+}
+
+struct ExpiringMedicinesEmptyInlineView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.green)
+            
+            Text("Aucune expiration proche")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+            
+            Text("Tous vos médicaments ont des dates d'expiration suffisamment éloignées.")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+        }
+        .padding()
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum AuthError: LocalizedError {
+enum AuthError: LocalizedError, Equatable {
     case invalidEmail
     case invalidPassword
     case weakPassword
@@ -28,6 +28,23 @@ enum AuthError: LocalizedError {
             return "Une erreur réseau est survenue. Vérifiez votre connexion internet."
         case .unknownError(let error):
             return error?.localizedDescription ?? "Une erreur inconnue est survenue."
+        }
+    }
+    
+    static func == (lhs: AuthError, rhs: AuthError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidEmail, .invalidEmail),
+             (.invalidPassword, .invalidPassword),
+             (.weakPassword, .weakPassword),
+             (.emailAlreadyInUse, .emailAlreadyInUse),
+             (.userNotFound, .userNotFound),
+             (.wrongPassword, .wrongPassword),
+             (.networkError, .networkError):
+            return true
+        case (.unknownError(let lhsError), .unknownError(let rhsError)):
+            return lhsError?.localizedDescription == rhsError?.localizedDescription
+        default:
+            return false
         }
     }
 }

@@ -1,4 +1,0 @@
-module GoogleAppMeasurementOnDeviceConversionTarget {
-umbrella "/Users/macbookair/Library/Developer/Xcode/DerivedData/MediStock-fqrpeytodagkofghvutdjpautrum/SourcePackages/checkouts/GoogleAppMeasurement/GoogleAppMeasurementOnDeviceConversionWrapper/include"
-export *
-}

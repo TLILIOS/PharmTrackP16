@@ -10,18 +10,30 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
     // MARK: - Basic CRUD Operations
     
     func getMedicines() async throws -> [Medicine] {
-        let snapshot = try await db.collection(collection).getDocuments()
+        let snapshot = try await db.collection(collection).getDocuments(source: .cache)
         
-        return snapshot.documents.compactMap { document in
+        if !snapshot.isEmpty {
+            return snapshot.documents.compactMap { document in
+                try? document.data(as: MedicineDTO.self).toDomain()
+            }
+        }
+        
+        let serverSnapshot = try await db.collection(collection).getDocuments(source: .server)
+        return serverSnapshot.documents.compactMap { document in
             try? document.data(as: MedicineDTO.self).toDomain()
         }
     }
     
     func getMedicine(id: String) async throws -> Medicine? {
-        let document = try await db.collection(collection).document(id).getDocument()
+        let document = try await db.collection(collection).document(id).getDocument(source: .cache)
         
-        guard document.exists,
-              let medicineDTO = try? document.data(as: MedicineDTO.self) else {
+        if document.exists, let medicineDTO = try? document.data(as: MedicineDTO.self) {
+            return medicineDTO.toDomain()
+        }
+        
+        let serverDocument = try await db.collection(collection).document(id).getDocument(source: .server)
+        guard serverDocument.exists,
+              let medicineDTO = try? serverDocument.data(as: MedicineDTO.self) else {
             return nil
         }
         

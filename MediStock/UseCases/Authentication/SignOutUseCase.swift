@@ -1,13 +1,13 @@
 import Foundation
 
-class SignOutUseCase: SignOutUseCaseProtocol {
+public class SignOutUseCase: SignOutUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
-    init(authRepository: AuthRepositoryProtocol) {
+    public init(authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
     }
     
-    func execute() async throws {
+    public func execute() async throws {
         try await authRepository.signOut()
     }
 }

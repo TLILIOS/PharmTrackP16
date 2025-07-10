@@ -1,4 +1,0 @@
-module FirebaseDatabaseSwift {
-header "FirebaseDatabaseSwift-Swift.h"
-export *
-}

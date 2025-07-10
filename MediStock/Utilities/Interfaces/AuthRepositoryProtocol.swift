@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-protocol AuthRepositoryProtocol {
+public protocol AuthRepositoryProtocol {
     /// L'utilisateur actuellement authentifié, nil si aucun
     var currentUser: User? { get }
     
