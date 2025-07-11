@@ -2,7 +2,7 @@ import XCTest
 import Firebase
 import FirebaseFirestore
 @testable import MediStock
-
+@MainActor
 final class FirebaseHistoryRepositoryTests: XCTestCase {
     
     var sut: FirebaseHistoryRepository!
@@ -148,8 +148,9 @@ final class FirebaseHistoryRepositoryTests: XCTestCase {
         
         // Test that repository is properly deallocated
         // Note: This might not work in all test scenarios due to Firebase internal references
-        // XCTAssertNil(weakRepository, "Repository should be deallocated")
-        XCTAssertNotNil(weakRepository) // Firestore might hold references
+        // Firebase typically holds internal references, so we expect the repository to still exist
+        // This is normal behavior for Firebase repositories
+        XCTAssertNil(weakRepository, "Repository should be deallocated if no Firebase references exist")
     }
     
     // MARK: - Configuration Tests

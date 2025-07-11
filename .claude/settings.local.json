@@ -19,7 +19,8 @@
       "Bash(xcrun xccov view:*)",
       "Bash(mv:*)",
       "Bash(timeout:*)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Bash(code --version)"
     ],
     "deny": []
   }

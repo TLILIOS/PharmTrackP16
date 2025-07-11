@@ -1,488 +1,706 @@
 import XCTest
+import Combine
 @testable import MediStock
 
 @MainActor
 final class MedicineFormViewModelTests: XCTestCase {
     
     var sut: MedicineFormViewModel!
+    var mockGetMedicineUseCase: MockGetMedicineUseCase!
+    var mockGetAislesUseCase: MockGetAislesUseCase!
     var mockAddMedicineUseCase: MockAddMedicineUseCase!
     var mockUpdateMedicineUseCase: MockUpdateMedicineUseCase!
-    var mockGetAislesUseCase: MockGetAislesUseCase!
+    var cancellables: Set<AnyCancellable>!
     
     override func setUp() {
         super.setUp()
+        cancellables = Set<AnyCancellable>()
+        
+        mockGetMedicineUseCase = MockGetMedicineUseCase()
+        mockGetAislesUseCase = MockGetAislesUseCase()
         mockAddMedicineUseCase = MockAddMedicineUseCase()
         mockUpdateMedicineUseCase = MockUpdateMedicineUseCase()
-        mockGetAislesUseCase = MockGetAislesUseCase()
         
         sut = MedicineFormViewModel(
+            getMedicineUseCase: mockGetMedicineUseCase,
+            getAislesUseCase: mockGetAislesUseCase,
             addMedicineUseCase: mockAddMedicineUseCase,
-            updateMedicineUseCase: mockUpdateMedicineUseCase,
-            getAislesUseCase: mockGetAislesUseCase
+            updateMedicineUseCase: mockUpdateMedicineUseCase
         )
     }
     
     override func tearDown() {
+        cancellables = nil
         sut = nil
+        mockGetMedicineUseCase = nil
+        mockGetAislesUseCase = nil
         mockAddMedicineUseCase = nil
         mockUpdateMedicineUseCase = nil
-        mockGetAislesUseCase = nil
         super.tearDown()
     }
     
-    // MARK: - Initial State Tests
+    // MARK: - Initialization Tests
     
-    func testInitialState() {
-        XCTAssertEqual(sut.name, "")
-        XCTAssertEqual(sut.description, "")
-        XCTAssertEqual(sut.dosage, "")
-        XCTAssertEqual(sut.form, "")
-        XCTAssertEqual(sut.reference, "")
-        XCTAssertEqual(sut.unit, "")
-        XCTAssertEqual(sut.currentQuantity, 0)
-        XCTAssertEqual(sut.maxQuantity, 100)
-        XCTAssertEqual(sut.warningThreshold, 20)
-        XCTAssertEqual(sut.criticalThreshold, 10)
-        XCTAssertNil(sut.expiryDate)
-        XCTAssertEqual(sut.selectedAisleId, "")
-        XCTAssertTrue(sut.availableAisles.isEmpty)
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertNil(sut.errorMessage)
-        XCTAssertFalse(sut.isEditMode)
+    func testInitialization_WithoutMedicine() {
+        XCTAssertNil(sut.medicine)
+        XCTAssertEqual(sut.aisles.count, 0)
+        XCTAssertEqual(sut.state, .idle)
     }
     
-    // MARK: - Load Aisles Tests
-    
-    func testLoadAisles_Success() async {
+    func testInitialization_WithMedicine() {
         // Given
-        let expectedAisles = TestDataFactory.createMultipleAisles(count: 3)
-        mockGetAislesUseCase.aisles = expectedAisles
+        let testMedicine = TestHelpers.createTestMedicine(
+            id: "test-med",
+            name: "Test Medicine"
+        )
         
         // When
-        await sut.loadAisles()
+        sut = MedicineFormViewModel(
+            getMedicineUseCase: mockGetMedicineUseCase,
+            getAislesUseCase: mockGetAislesUseCase,
+            addMedicineUseCase: mockAddMedicineUseCase,
+            updateMedicineUseCase: mockUpdateMedicineUseCase,
+            medicine: testMedicine
+        )
         
         // Then
-        XCTAssertEqual(sut.availableAisles.count, expectedAisles.count)
-        XCTAssertEqual(sut.availableAisles, expectedAisles)
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertNotNil(sut.medicine)
+        XCTAssertEqual(sut.medicine?.id, "test-med")
+        XCTAssertEqual(sut.medicine?.name, "Test Medicine")
+        XCTAssertEqual(sut.state, .idle)
     }
     
-    func testLoadAisles_Failure() async {
+    // MARK: - Published Properties Tests
+    
+    func testMedicinePropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "Medicine change through add")
+        
+        let testMedicine = TestHelpers.createTestMedicine(
+            name: "Added Medicine"
+        )
+        
+        sut.$medicine
+            .dropFirst()
+            .sink { medicine in
+                if medicine?.name == "Added Medicine" {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        await sut.addMedicine(testMedicine)
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
+    func testAislesPropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "Aisles change through fetch")
+        
+        let testAisles = [
+            TestHelpers.createTestAisle(id: "aisle1", name: "Aisle 1", colorHex: "#007AFF"),
+            TestHelpers.createTestAisle(id: "aisle2", name: "Aisle 2", colorHex: "#007AFF")
+        ]
+        mockGetAislesUseCase.returnAisles = testAisles
+        
+        sut.$aisles
+            .dropFirst()
+            .sink { aisles in
+                if aisles.count == 2 {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        await sut.fetchAisles()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
+    func testStatePropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "State change through fetch")
+        
+        mockGetAislesUseCase.returnAisles = []
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                if case .loading = state {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        await sut.fetchAisles()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
+    // MARK: - Reset State Tests
+    
+    func testResetState() async {
+        // Given - First trigger a state change
+        mockGetAislesUseCase.shouldThrowError = true
+        mockGetAislesUseCase.errorToThrow = NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+        
+        await sut.fetchAisles()
+        
+        // Verify we're in error state
+        if case .error = sut.state {
+            // Expected
+        } else {
+            XCTFail("Expected error state")
+        }
+        
+        // When
+        sut.resetState()
+        
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+    }
+    
+    // MARK: - Fetch Aisles Tests
+    
+    func testFetchAisles_Success() async {
+        // Given
+        let testAisles = [
+            TestHelpers.createTestAisle(id: "aisle1", name: "Pharmacy", colorHex: "#007AFF"),
+            TestHelpers.createTestAisle(id: "aisle2", name: "Emergency", colorHex: "#FF0000"),
+            TestHelpers.createTestAisle(id: "aisle3", name: "Storage", colorHex: "#00FF00")
+        ]
+        mockGetAislesUseCase.returnAisles = testAisles
+        
+        // When
+        await sut.fetchAisles()
+        
+        // Then
+        XCTAssertEqual(sut.state, .idle) // Should return to idle after successful fetch
+        XCTAssertEqual(sut.aisles.count, 3)
+        XCTAssertEqual(sut.aisles[0].name, "Pharmacy")
+        XCTAssertEqual(sut.aisles[1].name, "Emergency")
+        XCTAssertEqual(sut.aisles[2].name, "Storage")
+        XCTAssertEqual(mockGetAislesUseCase.callCount, 1)
+    }
+    
+    func testFetchAisles_WithError_ShowsError() async {
         // Given
         mockGetAislesUseCase.shouldThrowError = true
-        let expectedError = "Failed to load aisles"
         mockGetAislesUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "AisleError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Failed to load aisles"]
         )
         
         // When
-        await sut.loadAisles()
+        await sut.fetchAisles()
         
         // Then
-        XCTAssertTrue(sut.availableAisles.isEmpty)
-        XCTAssertEqual(sut.errorMessage, expectedError)
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Failed to load aisles"))
+        } else {
+            XCTFail("Expected error state")
+        }
+        XCTAssertEqual(sut.aisles.count, 0)
     }
     
-    func testLoadAisles_EmptyResult() async {
+    func testFetchAisles_LoadingStates() async {
         // Given
-        mockGetAislesUseCase.aisles = []
+        mockGetAislesUseCase.returnAisles = []
+        
+        let loadingExpectation = XCTestExpectation(description: "Loading state changes")
+        loadingExpectation.expectedFulfillmentCount = 2 // loading then idle
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                loadingExpectation.fulfill()
+            }
+            .store(in: &cancellables)
         
         // When
-        await sut.loadAisles()
+        await sut.fetchAisles()
         
         // Then
-        XCTAssertTrue(sut.availableAisles.isEmpty)
-        XCTAssertNil(sut.errorMessage)
+        await fulfillment(of: [loadingExpectation], timeout: 2.0)
+        XCTAssertEqual(sut.state, .idle)
     }
     
-    // MARK: - Form Setup Tests
-    
-    func testSetupForEditing() {
+    func testFetchAisles_EmptyResult() async {
         // Given
-        let existingMedicine = TestDataFactory.createTestMedicine(
-            id: "test-id",
-            name: "Test Medicine",
+        mockGetAislesUseCase.returnAisles = []
+        
+        // When
+        await sut.fetchAisles()
+        
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.aisles.count, 0)
+        XCTAssertEqual(mockGetAislesUseCase.callCount, 1)
+    }
+    
+    // MARK: - Add Medicine Tests
+    
+    func testAddMedicine_Success() async {
+        // Given
+        let testMedicine = TestHelpers.createTestMedicine(
+            id: "new-medicine",
+            name: "New Medicine",
             description: "Test Description",
-            dosage: "500mg",
-            form: "Tablet",
-            reference: "TEST-001",
-            unit: "tablet",
-            currentQuantity: 50,
-            maxQuantity: 100,
-            warningThreshold: 20,
-            criticalThreshold: 10,
-            aisleId: "aisle-1"
+            dosage: "250mg"
         )
         
         // When
-        sut.setupForEditing(medicine: existingMedicine)
+        await sut.addMedicine(testMedicine)
         
         // Then
-        XCTAssertTrue(sut.isEditMode)
-        XCTAssertEqual(sut.name, "Test Medicine")
-        XCTAssertEqual(sut.description, "Test Description")
-        XCTAssertEqual(sut.dosage, "500mg")
-        XCTAssertEqual(sut.form, "Tablet")
-        XCTAssertEqual(sut.reference, "TEST-001")
-        XCTAssertEqual(sut.unit, "tablet")
-        XCTAssertEqual(sut.currentQuantity, 50)
-        XCTAssertEqual(sut.maxQuantity, 100)
-        XCTAssertEqual(sut.warningThreshold, 20)
-        XCTAssertEqual(sut.criticalThreshold, 10)
-        XCTAssertEqual(sut.selectedAisleId, "aisle-1")
-    }
-    
-    func testSetupForNew() {
-        // Given - Set some values first
-        sut.name = "Old Name"
-        sut.isEditMode = true
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertNotNil(sut.medicine)
+        XCTAssertEqual(sut.medicine?.id, "new-medicine")
+        XCTAssertEqual(sut.medicine?.name, "New Medicine")
+        XCTAssertEqual(sut.medicine?.dosage, "250mg")
         
-        // When
-        sut.setupForNew()
-        
-        // Then
-        XCTAssertFalse(sut.isEditMode)
-        XCTAssertEqual(sut.name, "")
-        XCTAssertEqual(sut.description, "")
-        XCTAssertEqual(sut.selectedAisleId, "")
-    }
-    
-    // MARK: - Save Medicine Tests
-    
-    func testSaveMedicine_NewMedicine_Success() async {
-        // Given
-        sut.name = "New Medicine"
-        sut.description = "New Description"
-        sut.dosage = "250mg"
-        sut.form = "Capsule"
-        sut.reference = "NEW-001"
-        sut.unit = "capsule"
-        sut.currentQuantity = 30
-        sut.maxQuantity = 100
-        sut.warningThreshold = 15
-        sut.criticalThreshold = 5
-        sut.selectedAisleId = "aisle-1"
-        sut.expiryDate = Date()
-        
-        // When
-        let success = await sut.saveMedicine()
-        
-        // Then
-        XCTAssertTrue(success)
+        // Verify use case was called
         XCTAssertEqual(mockAddMedicineUseCase.addedMedicines.count, 1)
-        let addedMedicine = mockAddMedicineUseCase.addedMedicines.first!
-        XCTAssertEqual(addedMedicine.name, "New Medicine")
-        XCTAssertEqual(addedMedicine.dosage, "250mg")
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertEqual(mockAddMedicineUseCase.addedMedicines[0].name, "New Medicine")
     }
     
-    func testSaveMedicine_EditMode_Success() async {
+    func testAddMedicine_WithError_ShowsError() async {
         // Given
-        let existingMedicine = TestDataFactory.createTestMedicine(id: "test-id")
-        sut.setupForEditing(medicine: existingMedicine)
-        sut.name = "Updated Medicine"
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
         
-        // When
-        let success = await sut.saveMedicine()
-        
-        // Then
-        XCTAssertTrue(success)
-        XCTAssertEqual(mockUpdateMedicineUseCase.updatedMedicines.count, 1)
-        let updatedMedicine = mockUpdateMedicineUseCase.updatedMedicines.first!
-        XCTAssertEqual(updatedMedicine.name, "Updated Medicine")
-        XCTAssertNil(sut.errorMessage)
-    }
-    
-    func testSaveMedicine_AddFailure() async {
-        // Given
-        sut.name = "New Medicine"
         mockAddMedicineUseCase.shouldThrowError = true
-        let expectedError = "Failed to add medicine"
         mockAddMedicineUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "AddError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Failed to add medicine"]
         )
         
         // When
-        let success = await sut.saveMedicine()
+        await sut.addMedicine(testMedicine)
         
         // Then
-        XCTAssertFalse(success)
-        XCTAssertEqual(sut.errorMessage, expectedError)
-        XCTAssertTrue(mockAddMedicineUseCase.addedMedicines.isEmpty)
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Failed to add medicine"))
+        } else {
+            XCTFail("Expected error state")
+        }
+        
+        // Medicine is reset on error
+        XCTAssertNil(sut.medicine)
+        XCTAssertEqual(mockAddMedicineUseCase.addedMedicines.count, 0)
     }
     
-    func testSaveMedicine_UpdateFailure() async {
+    func testAddMedicine_LoadingStates() async {
         // Given
-        let existingMedicine = TestDataFactory.createTestMedicine(id: "test-id")
-        sut.setupForEditing(medicine: existingMedicine)
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
+        
+        let loadingExpectation = XCTestExpectation(description: "Loading state changes")
+        loadingExpectation.expectedFulfillmentCount = 2 // loading then success
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                loadingExpectation.fulfill()
+            }
+            .store(in: &cancellables)
+        
+        // When
+        await sut.addMedicine(testMedicine)
+        
+        // Then
+        await fulfillment(of: [loadingExpectation], timeout: 2.0)
+        XCTAssertEqual(sut.state, .success)
+    }
+    
+    func testAddMedicine_WithComplexData() async {
+        // Given
+        let complexMedicine = TestHelpers.createTestMedicine(
+            id: "complex-med",
+            name: "Complex Medicine",
+            description: "A very detailed description of this medicine",
+            dosage: "500mg twice daily",
+            form: "Extended Release Tablet",
+            reference: "COMP-001",
+            unit: "tablet",
+            currentQuantity: 100,
+            maxQuantity: 200,
+            warningThreshold: 50,
+            criticalThreshold: 20
+        )
+        
+        // When
+        await sut.addMedicine(complexMedicine)
+        
+        // Then
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(sut.medicine?.name, "Complex Medicine")
+        XCTAssertEqual(sut.medicine?.description, "A very detailed description of this medicine")
+        XCTAssertEqual(sut.medicine?.dosage, "500mg twice daily")
+        XCTAssertEqual(sut.medicine?.form, "Extended Release Tablet")
+        XCTAssertEqual(sut.medicine?.currentQuantity, 100)
+        XCTAssertEqual(sut.medicine?.maxQuantity, 200)
+    }
+    
+    // MARK: - Update Medicine Tests
+    
+    func testUpdateMedicine_Success() async {
+        // Given
+        let originalMedicine = TestHelpers.createTestMedicine(
+            id: "existing-med",
+            name: "Original Medicine",
+            dosage: "100mg"
+        )
+        
+        let updatedMedicine = TestHelpers.createTestMedicine(
+            id: "existing-med",
+            name: "Updated Medicine",
+            dosage: "200mg"
+        )
+        
+        // Set initial medicine
+        sut = MedicineFormViewModel(
+            getMedicineUseCase: mockGetMedicineUseCase,
+            getAislesUseCase: mockGetAislesUseCase,
+            addMedicineUseCase: mockAddMedicineUseCase,
+            updateMedicineUseCase: mockUpdateMedicineUseCase,
+            medicine: originalMedicine
+        )
+        
+        // When
+        await sut.updateMedicine(updatedMedicine)
+        
+        // Then
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(sut.medicine?.name, "Updated Medicine")
+        XCTAssertEqual(sut.medicine?.dosage, "200mg")
+        
+        // Verify use case was called
+        XCTAssertEqual(mockUpdateMedicineUseCase.updatedMedicines.count, 1)
+        XCTAssertEqual(mockUpdateMedicineUseCase.updatedMedicines[0].name, "Updated Medicine")
+    }
+    
+    func testUpdateMedicine_WithError_ShowsError() async {
+        // Given
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
+        
         mockUpdateMedicineUseCase.shouldThrowError = true
-        let expectedError = "Failed to update medicine"
         mockUpdateMedicineUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "UpdateError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Failed to update medicine"]
         )
         
         // When
-        let success = await sut.saveMedicine()
+        await sut.updateMedicine(testMedicine)
         
         // Then
-        XCTAssertFalse(success)
-        XCTAssertEqual(sut.errorMessage, expectedError)
-        XCTAssertTrue(mockUpdateMedicineUseCase.updatedMedicines.isEmpty)
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Failed to update medicine"))
+        } else {
+            XCTFail("Expected error state")
+        }
+        
+        // Medicine is reset on error
+        XCTAssertNil(sut.medicine)
+        XCTAssertEqual(mockUpdateMedicineUseCase.updatedMedicines.count, 0)
     }
     
-    // MARK: - Form Validation Tests
-    
-    func testIsFormValid_ValidForm() {
+    func testUpdateMedicine_LoadingStates() async {
         // Given
-        sut.name = "Valid Medicine"
-        sut.description = "Valid Description"
-        sut.dosage = "500mg"
-        sut.form = "Tablet"
-        sut.unit = "tablet"
-        sut.selectedAisleId = "aisle-1"
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
+        
+        let loadingExpectation = XCTestExpectation(description: "Loading state changes")
+        loadingExpectation.expectedFulfillmentCount = 2 // loading then success
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                loadingExpectation.fulfill()
+            }
+            .store(in: &cancellables)
         
         // When
-        let isValid = sut.isFormValid
+        await sut.updateMedicine(testMedicine)
         
         // Then
-        XCTAssertTrue(isValid)
+        await fulfillment(of: [loadingExpectation], timeout: 2.0)
+        XCTAssertEqual(sut.state, .success)
     }
     
-    func testIsFormValid_EmptyName() {
+    // MARK: - Refresh Medicine Tests
+    
+    func testRefreshMedicine_Success() async {
         // Given
-        sut.name = ""
-        sut.description = "Valid Description"
-        sut.dosage = "500mg"
-        sut.form = "Tablet"
-        sut.unit = "tablet"
-        sut.selectedAisleId = "aisle-1"
+        let refreshedMedicine = TestHelpers.createTestMedicine(
+            id: "refresh-med",
+            name: "Refreshed Medicine",
+            description: "Updated description"
+        )
+        mockGetMedicineUseCase.medicine = refreshedMedicine
         
         // When
-        let isValid = sut.isFormValid
+        await sut.refreshMedicine(id: "refresh-med")
         
         // Then
-        XCTAssertFalse(isValid)
+        XCTAssertEqual(sut.state, .idle) // Should return to idle after successful refresh
+        XCTAssertNotNil(sut.medicine)
+        XCTAssertEqual(sut.medicine?.id, "refresh-med")
+        XCTAssertEqual(sut.medicine?.name, "Refreshed Medicine")
+        XCTAssertEqual(sut.medicine?.description, "Updated description")
+        XCTAssertEqual(mockGetMedicineUseCase.lastId, "refresh-med")
     }
     
-    func testIsFormValid_EmptyDescription() {
+    func testRefreshMedicine_WithError_ShowsError() async {
         // Given
-        sut.name = "Valid Medicine"
-        sut.description = ""
-        sut.dosage = "500mg"
-        sut.form = "Tablet"
-        sut.unit = "tablet"
-        sut.selectedAisleId = "aisle-1"
+        mockGetMedicineUseCase.shouldThrowError = true
+        mockGetMedicineUseCase.errorToThrow = NSError(
+            domain: "RefreshError",
+            code: 404,
+            userInfo: [NSLocalizedDescriptionKey: "Medicine not found"]
+        )
         
         // When
-        let isValid = sut.isFormValid
+        await sut.refreshMedicine(id: "nonexistent-med")
         
         // Then
-        XCTAssertFalse(isValid)
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Medicine not found"))
+        } else {
+            XCTFail("Expected error state")
+        }
+        XCTAssertEqual(mockGetMedicineUseCase.lastId, "nonexistent-med")
     }
     
-    func testIsFormValid_NoAisleSelected() {
+    func testRefreshMedicine_LoadingStates() async {
         // Given
-        sut.name = "Valid Medicine"
-        sut.description = "Valid Description"
-        sut.dosage = "500mg"
-        sut.form = "Tablet"
-        sut.unit = "tablet"
-        sut.selectedAisleId = ""
+        let testMedicine = TestHelpers.createTestMedicine(id: "test-med")
+        mockGetMedicineUseCase.medicine = testMedicine
+        
+        let loadingExpectation = XCTestExpectation(description: "Loading state changes")
+        loadingExpectation.expectedFulfillmentCount = 2 // loading then idle
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                loadingExpectation.fulfill()
+            }
+            .store(in: &cancellables)
         
         // When
-        let isValid = sut.isFormValid
+        await sut.refreshMedicine(id: "test-med")
         
         // Then
-        XCTAssertFalse(isValid)
+        await fulfillment(of: [loadingExpectation], timeout: 2.0)
+        XCTAssertEqual(sut.state, .idle)
     }
     
-    // MARK: - Quantity Validation Tests
+    // MARK: - Integration Tests
     
-    func testQuantityValidation_ValidValues() {
+    func testCompleteWorkflow_FetchAislesAndAddMedicine() async {
         // Given
-        sut.currentQuantity = 50
-        sut.maxQuantity = 100
-        sut.warningThreshold = 20
-        sut.criticalThreshold = 10
+        let testAisles = [
+            TestHelpers.createTestAisle(id: "aisle1", name: "Pharmacy", colorHex: "#007AFF")
+        ]
+        let newMedicine = TestHelpers.createTestMedicine(
+            name: "New Medicine",
+            aisleId: "aisle1"
+        )
         
-        // Then
-        XCTAssertLessThan(sut.criticalThreshold, sut.warningThreshold)
-        XCTAssertLessThan(sut.warningThreshold, sut.maxQuantity)
-        XCTAssertLessThanOrEqual(sut.currentQuantity, sut.maxQuantity)
+        mockGetAislesUseCase.returnAisles = testAisles
+        
+        // When - Fetch aisles first
+        await sut.fetchAisles()
+        
+        // Then - Verify aisles loaded
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.aisles.count, 1)
+        
+        // When - Add medicine
+        await sut.addMedicine(newMedicine)
+        
+        // Then - Verify medicine added
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertNotNil(sut.medicine)
+        XCTAssertEqual(sut.medicine?.name, "New Medicine")
+        XCTAssertEqual(sut.medicine?.aisleId, "aisle1")
+        
+        // Verify use cases were called
+        XCTAssertEqual(mockGetAislesUseCase.callCount, 1)
+        XCTAssertEqual(mockAddMedicineUseCase.addedMedicines.count, 1)
     }
     
-    func testQuantityValidation_InvalidThresholds() {
+    func testEditWorkflow_RefreshAndUpdate() async {
         // Given
-        sut.maxQuantity = 100
-        sut.warningThreshold = 50
-        sut.criticalThreshold = 60 // Critical > Warning (invalid)
+        let originalMedicine = TestHelpers.createTestMedicine(
+            id: "edit-med",
+            name: "Original Name",
+            dosage: "100mg"
+        )
+        let updatedMedicine = TestHelpers.createTestMedicine(
+            id: "edit-med",
+            name: "Updated Name",
+            dosage: "200mg"
+        )
         
-        // When saving, this should be handled by validation logic
-        // For now, we just verify the values are set
-        XCTAssertGreaterThan(sut.criticalThreshold, sut.warningThreshold)
+        mockGetMedicineUseCase.medicine = originalMedicine
+        
+        // When - Refresh medicine first
+        await sut.refreshMedicine(id: "edit-med")
+        
+        // Then - Verify original loaded
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.medicine?.name, "Original Name")
+        
+        // When - Update medicine
+        await sut.updateMedicine(updatedMedicine)
+        
+        // Then - Verify medicine updated
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(sut.medicine?.name, "Updated Name")
+        XCTAssertEqual(sut.medicine?.dosage, "200mg")
+        
+        // Verify use cases were called
+        XCTAssertEqual(mockGetMedicineUseCase.lastId, "edit-med")
+        XCTAssertEqual(mockUpdateMedicineUseCase.updatedMedicines.count, 1)
     }
     
-    // MARK: - Clear Error Tests
-    
-    func testClearError() {
+    func testStateConsistency_MultipleOperations() async {
         // Given
-        sut.errorMessage = "Some error"
+        let testAisles = [TestHelpers.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")]
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
         
-        // When
-        sut.clearError()
+        mockGetAislesUseCase.returnAisles = testAisles
         
-        // Then
-        XCTAssertNil(sut.errorMessage)
+        // When - Perform multiple operations
+        await sut.fetchAisles()
+        XCTAssertEqual(sut.state, .idle)
+        
+        await sut.addMedicine(testMedicine)
+        XCTAssertEqual(sut.state, .success)
+        
+        sut.resetState()
+        XCTAssertEqual(sut.state, .idle)
+        
+        // Then - State should be consistent
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.aisles.count, 1)
+        XCTAssertNotNil(sut.medicine)
     }
     
-    // MARK: - Reset Form Tests
-    
-    func testResetForm() {
+    func testConcurrentOperations() async {
         // Given
-        sut.name = "Test Medicine"
-        sut.description = "Test Description"
-        sut.currentQuantity = 50
-        sut.isEditMode = true
-        sut.errorMessage = "Some error"
+        let testAisles = [TestHelpers.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")]
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
         
-        // When
-        sut.resetForm()
+        mockGetAislesUseCase.returnAisles = testAisles
+        mockGetMedicineUseCase.medicine = testMedicine
         
-        // Then
-        XCTAssertEqual(sut.name, "")
-        XCTAssertEqual(sut.description, "")
-        XCTAssertEqual(sut.currentQuantity, 0)
-        XCTAssertFalse(sut.isEditMode)
-        XCTAssertNil(sut.errorMessage)
-    }
-    
-    // MARK: - Date Handling Tests
-    
-    func testExpiryDateHandling() {
-        // Given
-        let futureDate = Calendar.current.date(byAdding: .year, value: 2, to: Date())!
+        // When - Start operations concurrently
+        async let fetchTask = sut.fetchAisles()
+        async let refreshTask = sut.refreshMedicine(id: "test-id")
         
-        // When
-        sut.expiryDate = futureDate
+        // Wait for both to complete
+        await fetchTask
+        await refreshTask
         
-        // Then
-        XCTAssertEqual(sut.expiryDate, futureDate)
-    }
-    
-    func testExpiryDateHandling_NilDate() {
-        // Given
-        sut.expiryDate = Date()
-        
-        // When
-        sut.expiryDate = nil
-        
-        // Then
-        XCTAssertNil(sut.expiryDate)
-    }
-    
-    // MARK: - Reference Generation Tests
-    
-    func testReferenceGeneration() {
-        // Given
-        sut.name = "Test Medicine"
-        
-        // When
-        sut.generateReference()
-        
-        // Then
-        XCTAssertFalse(sut.reference.isEmpty)
-        XCTAssertTrue(sut.reference.count >= 3)
-    }
-    
-    func testReferenceGeneration_EmptyName() {
-        // Given
-        sut.name = ""
-        
-        // When
-        sut.generateReference()
-        
-        // Then
-        XCTAssertFalse(sut.reference.isEmpty) // Should generate something even with empty name
+        // Then - Both should succeed without conflicts
+        XCTAssertEqual(sut.aisles.count, 1)
+        XCTAssertNotNil(sut.medicine)
     }
     
     // MARK: - Edge Cases Tests
     
-    func testNegativeQuantities() {
+    func testAddMedicine_WithMinimalData() async {
         // Given
-        sut.currentQuantity = -10
-        sut.maxQuantity = -5
-        sut.warningThreshold = -15
-        sut.criticalThreshold = -20
-        
-        // When saving, validation should handle negative values
-        // For now, we just verify they can be set
-        XCTAssertEqual(sut.currentQuantity, -10)
-        XCTAssertEqual(sut.maxQuantity, -5)
-    }
-    
-    func testVeryLargeQuantities() {
-        // Given
-        sut.currentQuantity = 999999
-        sut.maxQuantity = 1000000
-        
-        // When
-        XCTAssertEqual(sut.currentQuantity, 999999)
-        XCTAssertEqual(sut.maxQuantity, 1000000)
-    }
-    
-    func testVeryLongStrings() {
-        // Given
-        let longString = String(repeating: "a", count: 1000)
+        let minimalMedicine = Medicine(
+            id: "minimal",
+            name: "Minimal Medicine",
+            description: "",
+            dosage: "",
+            form: "",
+            reference: "",
+            unit: "",
+            currentQuantity: 0,
+            maxQuantity: 0,
+            warningThreshold: 0,
+            criticalThreshold: 0,
+            expiryDate: nil,
+            aisleId: "",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
         
         // When
-        sut.name = longString
-        sut.description = longString
+        await sut.addMedicine(minimalMedicine)
         
         // Then
-        XCTAssertEqual(sut.name.count, 1000)
-        XCTAssertEqual(sut.description.count, 1000)
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(sut.medicine?.name, "Minimal Medicine")
+        XCTAssertEqual(sut.medicine?.description, "")
+        XCTAssertEqual(sut.medicine?.currentQuantity, 0)
     }
     
-    // MARK: - Medicine Creation Tests
-    
-    func testCreateMedicineObject() async {
+    func testFetchAisles_LargeDataset() async {
         // Given
-        sut.name = "Test Medicine"
-        sut.description = "Test Description"
-        sut.dosage = "500mg"
-        sut.form = "Tablet"
-        sut.reference = "TEST-001"
-        sut.unit = "tablet"
-        sut.currentQuantity = 50
-        sut.maxQuantity = 100
-        sut.warningThreshold = 20
-        sut.criticalThreshold = 10
-        sut.selectedAisleId = "aisle-1"
-        sut.expiryDate = Date()
+        let largeAisleList = (1...50).map { index in
+            TestHelpers.createTestAisle(
+                id: "aisle\(index)",
+                name: "Aisle \(index)",
+                colorHex: "#007AFF"
+            )
+        }
+        mockGetAislesUseCase.returnAisles = largeAisleList
         
         // When
-        let success = await sut.saveMedicine()
+        await sut.fetchAisles()
         
         // Then
-        XCTAssertTrue(success)
-        let createdMedicine = mockAddMedicineUseCase.addedMedicines.first!
-        XCTAssertEqual(createdMedicine.name, "Test Medicine")
-        XCTAssertEqual(createdMedicine.description, "Test Description")
-        XCTAssertEqual(createdMedicine.dosage, "500mg")
-        XCTAssertEqual(createdMedicine.form, "Tablet")
-        XCTAssertEqual(createdMedicine.reference, "TEST-001")
-        XCTAssertEqual(createdMedicine.unit, "tablet")
-        XCTAssertEqual(createdMedicine.currentQuantity, 50)
-        XCTAssertEqual(createdMedicine.maxQuantity, 100)
-        XCTAssertEqual(createdMedicine.warningThreshold, 20)
-        XCTAssertEqual(createdMedicine.criticalThreshold, 10)
-        XCTAssertEqual(createdMedicine.aisleId, "aisle-1")
-        XCTAssertNotNil(createdMedicine.expiryDate)
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.aisles.count, 50)
+        XCTAssertEqual(sut.aisles[0].name, "Aisle 1")
+        XCTAssertEqual(sut.aisles[49].name, "Aisle 50")
+    }
+    
+    func testErrorRecovery() async {
+        // Given
+        mockAddMedicineUseCase.shouldThrowError = true
+        mockAddMedicineUseCase.errorToThrow = NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+        
+        let testMedicine = TestHelpers.createTestMedicine(name: "Test Medicine")
+        
+        // When - First attempt fails
+        await sut.addMedicine(testMedicine)
+        
+        // Then - Should be in error state
+        if case .error = sut.state {
+            // Expected
+        } else {
+            XCTFail("Expected error state")
+        }
+        
+        // When - Fix error and retry
+        mockAddMedicineUseCase.shouldThrowError = false
+        await sut.addMedicine(testMedicine)
+        
+        // Then - Should succeed
+        XCTAssertEqual(sut.state, .success)
+        XCTAssertNotNil(sut.medicine)
+    }
+    
+    func testFormModeDetection() {
+        // Test Add Mode
+        XCTAssertNil(sut.medicine)
+        
+        // Test Edit Mode
+        let editMedicine = TestHelpers.createTestMedicine(name: "Edit Medicine")
+        sut = MedicineFormViewModel(
+            getMedicineUseCase: mockGetMedicineUseCase,
+            getAislesUseCase: mockGetAislesUseCase,
+            addMedicineUseCase: mockAddMedicineUseCase,
+            updateMedicineUseCase: mockUpdateMedicineUseCase,
+            medicine: editMedicine
+        )
+        
+        XCTAssertNotNil(sut.medicine)
+        XCTAssertEqual(sut.medicine?.name, "Edit Medicine")
     }
 }

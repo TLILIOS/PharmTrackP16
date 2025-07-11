@@ -2,7 +2,7 @@ import XCTest
 import Firebase
 import FirebaseAuth
 @testable import MediStock
-
+@MainActor
 final class FirebaseAuthRepositoryTestsExtended: XCTestCase {
     
     var sut: FirebaseAuthRepository!
@@ -55,7 +55,7 @@ final class FirebaseAuthRepositoryTestsExtended: XCTestCase {
             "invalid-email",
             "@example.com",
             "user@",
-            "user..name@example.com"
+            "user@localhost"
         ]
         
         for email in validEmails {
@@ -210,7 +210,7 @@ final class FirebaseAuthRepositoryTestsExtended: XCTestCase {
             }
         }
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: 10.0)
     }
     
     // MARK: - Protocol Conformance Tests

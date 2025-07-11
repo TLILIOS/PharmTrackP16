@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class RealGetHistoryUseCaseTests: XCTestCase {
     
     var mockHistoryRepository: MockHistoryRepository!
@@ -19,17 +19,21 @@ final class RealGetHistoryUseCaseTests: XCTestCase {
     }
     
     func testExecuteSuccess() async throws {
+        let now = Date()
+        let oneHourAgo = now.addingTimeInterval(-3600)
+        
         let expectedHistory = [
-            HistoryEntry(id: "1", medicineId: "med1", userId: "user1", action: "ADDED", details: "Added medicine", timestamp: Date()),
-            HistoryEntry(id: "2", medicineId: "med2", userId: "user2", action: "REMOVED", details: "Removed medicine", timestamp: Date())
+            HistoryEntry(id: "1", medicineId: "med1", userId: "user1", action: "ADDED", details: "Added medicine", timestamp: oneHourAgo),
+            HistoryEntry(id: "2", medicineId: "med2", userId: "user2", action: "REMOVED", details: "Removed medicine", timestamp: now)
         ]
         mockHistoryRepository.historyEntries = expectedHistory
         
         let result = try await getHistoryUseCase.execute()
         
         XCTAssertEqual(result.count, 2)
-        XCTAssertEqual(result[0].id, "1")
-        XCTAssertEqual(result[1].id, "2")
+        // History is sorted by timestamp descending (most recent first)
+        XCTAssertEqual(result[0].id, "2")
+        XCTAssertEqual(result[1].id, "1")
     }
     
     func testExecuteEmptyHistory() async throws {
@@ -69,6 +73,7 @@ final class RealGetHistoryUseCaseTests: XCTestCase {
     }
     
     func testExecuteWithLargeDataset() async throws {
+        let baseDate = Date()
         let largeHistory = (1...100).map { index in
             HistoryEntry(
                 id: "\(index)",
@@ -76,7 +81,7 @@ final class RealGetHistoryUseCaseTests: XCTestCase {
                 userId: "user\(index)",
                 action: "ACTION_\(index)",
                 details: "Details for entry \(index)",
-                timestamp: Date()
+                timestamp: baseDate.addingTimeInterval(-Double(index))
             )
         }
         mockHistoryRepository.historyEntries = largeHistory
@@ -84,6 +89,8 @@ final class RealGetHistoryUseCaseTests: XCTestCase {
         let result = try await getHistoryUseCase.execute()
         
         XCTAssertEqual(result.count, 100)
+        // History is sorted by timestamp descending (most recent first)
+        // So the first entry should be the one with the smallest index (most recent)
         XCTAssertEqual(result.first?.id, "1")
         XCTAssertEqual(result.last?.id, "100")
     }

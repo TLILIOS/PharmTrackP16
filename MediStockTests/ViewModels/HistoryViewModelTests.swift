@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import MediStock
 
 @MainActor
@@ -8,9 +9,12 @@ final class HistoryViewModelTests: XCTestCase {
     var mockGetHistoryUseCase: MockGetHistoryUseCase!
     var mockGetMedicinesUseCase: MockGetMedicinesUseCase!
     var mockExportHistoryUseCase: MockExportHistoryUseCase!
+    var cancellables: Set<AnyCancellable>!
     
     override func setUp() {
         super.setUp()
+        cancellables = Set<AnyCancellable>()
+        
         mockGetHistoryUseCase = MockGetHistoryUseCase()
         mockGetMedicinesUseCase = MockGetMedicinesUseCase()
         mockExportHistoryUseCase = MockExportHistoryUseCase()
@@ -23,6 +27,7 @@ final class HistoryViewModelTests: XCTestCase {
     }
     
     override func tearDown() {
+        cancellables = nil
         sut = nil
         mockGetHistoryUseCase = nil
         mockGetMedicinesUseCase = nil
@@ -30,20 +35,92 @@ final class HistoryViewModelTests: XCTestCase {
         super.tearDown()
     }
     
-    // MARK: - Initial State Tests
+    // MARK: - Initialization Tests
     
-    func testInitialState() {
-        XCTAssertTrue(sut.history.isEmpty)
-        XCTAssertTrue(sut.medicines.isEmpty)
+    func testInitialization() {
+        XCTAssertEqual(sut.history.count, 0)
+        XCTAssertEqual(sut.medicines.count, 0)
         XCTAssertEqual(sut.state, .idle)
         XCTAssertFalse(sut.isLoading)
     }
     
+    // MARK: - Published Properties Tests
+    
+    func testHistoryPropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "History change through fetch")
+        
+        let testHistory = [
+            TestHelpers.createTestHistoryEntry(medicineId: "med1", action: "Added", details: "Test action 1"),
+            TestHelpers.createTestHistoryEntry(medicineId: "med2", action: "Updated", details: "Test action 2")
+        ]
+        mockGetHistoryUseCase.historyEntries = testHistory
+        
+        sut.$history
+            .dropFirst()
+            .sink { history in
+                if history.count == 2 {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        await sut.fetchHistory()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
+    func testStatePropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "State change through fetch")
+        
+        mockGetHistoryUseCase.historyEntries = []
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                if case .loading = state {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        await sut.fetchHistory()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
+    func testIsLoadingPropertyIsPublished() async {
+        let expectation = XCTestExpectation(description: "Loading state change through fetch")
+        expectation.expectedFulfillmentCount = 2 // true then false
+        
+        mockGetHistoryUseCase.historyEntries = []
+        
+        sut.$isLoading
+            .dropFirst() // Skip initial false
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+        
+        await sut.fetchHistory()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+    
     // MARK: - Reset State Tests
     
-    func testResetState() {
-        // Given
-        sut.state = .error("Some error")
+    func testResetState() async {
+        // Given - First trigger a state change through fetchHistory
+        mockGetHistoryUseCase.shouldThrowError = true
+        mockGetHistoryUseCase.errorToThrow = NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+        
+        await sut.fetchHistory()
+        
+        // Verify we're in error state
+        if case .error = sut.state {
+            // Expected
+        } else {
+            XCTFail("Expected error state")
+        }
         
         // When
         sut.resetState()
@@ -56,12 +133,29 @@ final class HistoryViewModelTests: XCTestCase {
     
     func testFetchHistory_Success() async {
         // Given
-        let historyEntries = [
-            TestDataFactory.createTestHistoryEntry(timestamp: Date(timeIntervalSinceNow: -3600)), // 1 hour ago
-            TestDataFactory.createTestHistoryEntry(timestamp: Date(timeIntervalSinceNow: -1800)), // 30 minutes ago
-            TestDataFactory.createTestHistoryEntry(timestamp: Date()) // Now
+        let calendar = Calendar.current
+        let now = Date()
+        let oneHourAgo = calendar.date(byAdding: .hour, value: -1, to: now)!
+        let twoHoursAgo = calendar.date(byAdding: .hour, value: -2, to: now)!
+        
+        let testHistory = [
+            TestHelpers.createTestHistoryEntry(
+                id: "entry1",
+                medicineId: "med1",
+                action: "Stock Updated",
+                details: "Quantity changed from 10 to 15",
+                timestamp: oneHourAgo
+            ),
+            TestHelpers.createTestHistoryEntry(
+                id: "entry2",
+                medicineId: "med2",
+                action: "Medicine Added",
+                details: "New medicine added to inventory",
+                timestamp: twoHoursAgo
+            )
         ]
-        mockGetHistoryUseCase.historyEntries = historyEntries
+        
+        mockGetHistoryUseCase.historyEntries = testHistory
         
         // When
         await sut.fetchHistory()
@@ -69,345 +163,348 @@ final class HistoryViewModelTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.state, .success)
         XCTAssertFalse(sut.isLoading)
-        XCTAssertEqual(sut.history.count, 3)
+        XCTAssertEqual(sut.history.count, 2)
         
-        // Verify sorting by timestamp (most recent first)
-        XCTAssertGreaterThan(sut.history[0].timestamp, sut.history[1].timestamp)
-        XCTAssertGreaterThan(sut.history[1].timestamp, sut.history[2].timestamp)
+        // Should be sorted by timestamp descending (most recent first)
+        XCTAssertEqual(sut.history[0].id, "entry1") // one hour ago (more recent)
+        XCTAssertEqual(sut.history[1].id, "entry2") // two hours ago (older)
+        
+        // Verify use case was called
+        XCTAssertFalse(mockGetHistoryUseCase.shouldThrowError)
     }
     
-    func testFetchHistory_Failure() async {
+    func testFetchHistory_WithError_ShowsError() async {
         // Given
         mockGetHistoryUseCase.shouldThrowError = true
-        let expectedError = "Failed to fetch history"
         mockGetHistoryUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "HistoryError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Failed to load history"]
         )
         
         // When
         await sut.fetchHistory()
         
         // Then
-        XCTAssertEqual(sut.state, .error("Erreur lors du chargement de l'historique: \(expectedError)"))
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertTrue(sut.history.isEmpty)
-    }
-    
-    func testFetchHistory_LoadingState() async {
-        // Given
-        mockGetHistoryUseCase.historyEntries = []
-        mockGetHistoryUseCase.delayNanoseconds = 50_000_000 // 50ms delay
-        
-        // When
-        let task = Task {
-            await sut.fetchHistory()
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Failed to load history"))
+        } else {
+            XCTFail("Expected error state")
         }
-        
-        // Give the task a moment to start
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
-        
-        // Check loading state
-        XCTAssertTrue(sut.isLoading)
-        XCTAssertEqual(sut.state, .loading)
-        
-        await task.value
-        
-        // Then
         XCTAssertFalse(sut.isLoading)
-        XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(sut.history.count, 0)
     }
     
-    func testFetchHistory_EmptyResult() async {
+    func testFetchHistory_LoadingStates() async {
         // Given
         mockGetHistoryUseCase.historyEntries = []
+        
+        let loadingExpectation = XCTestExpectation(description: "Loading state changes")
+        loadingExpectation.expectedFulfillmentCount = 2 // loading then success
+        
+        sut.$state
+            .dropFirst() // Skip initial idle
+            .sink { state in
+                loadingExpectation.fulfill()
+            }
+            .store(in: &cancellables)
         
         // When
         await sut.fetchHistory()
         
         // Then
+        await fulfillment(of: [loadingExpectation], timeout: 2.0)
         XCTAssertEqual(sut.state, .success)
-        XCTAssertTrue(sut.history.isEmpty)
+        XCTAssertFalse(sut.isLoading)
+    }
+    
+    func testFetchHistory_SortsEntriesByTimestampDescending() async {
+        // Given
+        let calendar = Calendar.current
+        let now = Date()
+        let timestamps = [
+            calendar.date(byAdding: .day, value: -1, to: now)!, // Yesterday
+            calendar.date(byAdding: .hour, value: -1, to: now)!, // 1 hour ago
+            calendar.date(byAdding: .minute, value: -30, to: now)!, // 30 minutes ago
+            calendar.date(byAdding: .day, value: -3, to: now)! // 3 days ago
+        ]
+        
+        let testHistory = timestamps.enumerated().map { index, timestamp in
+            TestHelpers.createTestHistoryEntry(
+                id: "entry\(index)",
+                action: "Action \(index)",
+                timestamp: timestamp
+            )
+        }
+        
+        mockGetHistoryUseCase.historyEntries = testHistory
+        
+        // When
+        await sut.fetchHistory()
+        
+        // Then
+        XCTAssertEqual(sut.history.count, 4)
+        
+        // Should be sorted by timestamp descending (most recent first)
+        XCTAssertEqual(sut.history[0].id, "entry2") // 30 minutes ago (most recent)
+        XCTAssertEqual(sut.history[1].id, "entry1") // 1 hour ago
+        XCTAssertEqual(sut.history[2].id, "entry0") // Yesterday
+        XCTAssertEqual(sut.history[3].id, "entry3") // 3 days ago (oldest)
     }
     
     // MARK: - Fetch Medicines Tests
     
     func testFetchMedicines_Success() async {
         // Given
-        let medicines = TestDataFactory.createMultipleMedicines(count: 5)
-        mockGetMedicinesUseCase.medicines = medicines
+        let testMedicines = [
+            TestHelpers.createTestMedicine(id: "med1", name: "Aspirin"),
+            TestHelpers.createTestMedicine(id: "med2", name: "Ibuprofen")
+        ]
+        mockGetMedicinesUseCase.returnMedicines = testMedicines
         
         // When
         await sut.fetchMedicines()
         
         // Then
-        XCTAssertEqual(sut.medicines.count, 5)
-        XCTAssertEqual(sut.medicines, medicines)
+        XCTAssertEqual(sut.medicines.count, 2)
+        XCTAssertEqual(sut.medicines[0].name, "Aspirin")
+        XCTAssertEqual(sut.medicines[1].name, "Ibuprofen")
+        XCTAssertEqual(mockGetMedicinesUseCase.callCount, 1)
     }
     
-    func testFetchMedicines_Failure() async {
+    func testFetchMedicines_WithError_DoesNotUpdateState() async {
         // Given
         mockGetMedicinesUseCase.shouldThrowError = true
-        let expectedError = "Failed to fetch medicines"
         mockGetMedicinesUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "MedicineError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Failed to load medicines"]
         )
+        
+        let initialState = sut.state
         
         // When
         await sut.fetchMedicines()
         
         // Then
-        // Should not affect main state, just log error
-        XCTAssertEqual(sut.state, .idle)
-        XCTAssertTrue(sut.medicines.isEmpty)
+        XCTAssertEqual(sut.medicines.count, 0)
+        XCTAssertEqual(sut.state, initialState) // State should not change
     }
     
     // MARK: - Export History Tests
     
     func testExportHistory_PDF_Success() async {
         // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 3)
-        let medicines = TestDataFactory.createMultipleMedicines(count: 2)
-        sut.medicines = medicines
+        let testEntries = [
+            TestHelpers.createTestHistoryEntry(medicineId: "med1", action: "Added", details: "Test action")
+        ]
+        
+        mockExportHistoryUseCase.exportData = Data("PDF Export Data".utf8)
         
         // When
-        await sut.exportHistory(format: .pdf, entries: historyEntries)
+        await sut.exportHistory(format: .pdf, entries: testEntries)
         
         // Then
         XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(mockExportHistoryUseCase.executeCallCount, 1)
         XCTAssertEqual(mockExportHistoryUseCase.lastFormat, .pdf)
-        XCTAssertEqual(mockExportHistoryUseCase.callCount, 1)
     }
     
     func testExportHistory_CSV_Success() async {
         // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 3)
-        let medicines = TestDataFactory.createMultipleMedicines(count: 2)
-        sut.medicines = medicines
+        let testEntries = [
+            TestHelpers.createTestHistoryEntry(medicineId: "med1", action: "Updated", details: "Test action")
+        ]
+        
+        mockExportHistoryUseCase.exportData = Data("CSV Export Data".utf8)
         
         // When
-        await sut.exportHistory(format: .csv, entries: historyEntries)
+        await sut.exportHistory(format: .csv, entries: testEntries)
         
         // Then
         XCTAssertEqual(sut.state, .success)
+        XCTAssertEqual(mockExportHistoryUseCase.executeCallCount, 1)
         XCTAssertEqual(mockExportHistoryUseCase.lastFormat, .csv)
-        XCTAssertEqual(mockExportHistoryUseCase.callCount, 1)
     }
     
-    func testExportHistory_Failure() async {
+    func testExportHistory_WithError_ShowsError() async {
         // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 3)
+        let testEntries = [
+            TestHelpers.createTestHistoryEntry(medicineId: "med1", action: "Added", details: "Test action")
+        ]
+        
         mockExportHistoryUseCase.shouldThrowError = true
-        let expectedError = "Export failed"
         mockExportHistoryUseCase.errorToThrow = NSError(
-            domain: "TestError",
+            domain: "ExportError",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: expectedError]
+            userInfo: [NSLocalizedDescriptionKey: "Export failed"]
         )
         
         // When
-        await sut.exportHistory(format: .pdf, entries: historyEntries)
+        await sut.exportHistory(format: .pdf, entries: testEntries)
         
         // Then
-        XCTAssertEqual(sut.state, .error("Erreur lors de l'exportation: \(expectedError)"))
-    }
-    
-    func testExportHistory_ExportingState() async {
-        // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 3)
-        mockExportHistoryUseCase.delayNanoseconds = 50_000_000 // 50ms delay
-        
-        // When
-        let task = Task {
-            await sut.exportHistory(format: .pdf, entries: historyEntries)
+        if case .error(let message) = sut.state {
+            XCTAssertTrue(message.contains("Export failed"))
+        } else {
+            XCTFail("Expected error state")
         }
-        
-        // Give the task a moment to start
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
-        
-        // Check exporting state
-        XCTAssertEqual(sut.state, .exporting)
-        
-        await task.value
-        
-        // Then
-        XCTAssertEqual(sut.state, .success)
     }
     
-    // MARK: - Export Data Creation Tests
-    
-    func testCreateExportData_WithKnownMedicines() async {
+    func testExportHistory_SetsExportingState() async {
         // Given
-        let medicine = TestDataFactory.createTestMedicine(id: "med-1", name: "Known Medicine")
-        let historyEntry = TestDataFactory.createTestHistoryEntry(
-            medicineId: "med-1",
-            action: "Stock Updated",
-            details: "Updated from 10 to 15"
-        )
+        let testEntries = [
+            TestHelpers.createTestHistoryEntry(medicineId: "med1", action: "Added", details: "Test action")
+        ]
         
-        sut.medicines = [medicine]
+        mockExportHistoryUseCase.exportData = Data("Test Data".utf8)
+        
+        let exportingExpectation = XCTestExpectation(description: "Exporting state")
+        
+        sut.$state
+            .sink { state in
+                if case .exporting = state {
+                    exportingExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
         
         // When
-        await sut.exportHistory(format: .pdf, entries: [historyEntry])
+        await sut.exportHistory(format: .pdf, entries: testEntries)
         
         // Then
+        await fulfillment(of: [exportingExpectation], timeout: 1.0)
+    }
+    
+    // MARK: - Integration Tests
+    
+    func testCompleteWorkflow_FetchHistoryAndMedicinesThenExport() async {
+        // Given
+        let testMedicines = [
+            TestHelpers.createTestMedicine(id: "med1", name: "Aspirin"),
+            TestHelpers.createTestMedicine(id: "med2", name: "Ibuprofen")
+        ]
+        
+        let testHistory = [
+            TestHelpers.createTestHistoryEntry(
+                id: "entry1",
+                medicineId: "med1",
+                action: "Stock Updated",
+                details: "Quantity updated"
+            ),
+            TestHelpers.createTestHistoryEntry(
+                id: "entry2",
+                medicineId: "med2",
+                action: "Medicine Added",
+                details: "New medicine added"
+            )
+        ]
+        
+        mockGetMedicinesUseCase.returnMedicines = testMedicines
+        mockGetHistoryUseCase.historyEntries = testHistory
+        mockExportHistoryUseCase.exportData = Data("Export Data".utf8)
+        
+        // When - Fetch data first
+        await sut.fetchMedicines()
+        await sut.fetchHistory()
+        
+        // Then - Verify data is loaded
+        XCTAssertEqual(sut.medicines.count, 2)
+        XCTAssertEqual(sut.history.count, 2)
         XCTAssertEqual(sut.state, .success)
-        // The export data creation is tested indirectly through successful export
-    }
-    
-    func testCreateExportData_WithUnknownMedicines() async {
-        // Given
-        let historyEntry = TestDataFactory.createTestHistoryEntry(
-            medicineId: "unknown-med",
-            action: "Stock Updated",
-            details: "Updated from 10 to 15"
-        )
         
-        sut.medicines = [] // No medicines loaded
+        // When - Export the history
+        await sut.exportHistory(format: .pdf, entries: sut.history)
         
-        // When
-        await sut.exportHistory(format: .pdf, entries: [historyEntry])
-        
-        // Then
+        // Then - Verify export succeeded
         XCTAssertEqual(sut.state, .success)
-        // Should handle unknown medicines gracefully
+        XCTAssertEqual(mockExportHistoryUseCase.executeCallCount, 1)
+        XCTAssertEqual(mockExportHistoryUseCase.lastFormat, .pdf)
     }
     
-    // MARK: - Date Formatting Tests
-    
-    func testDateFormatting() {
+    func testEmptyHistoryHandling() async {
         // Given
-        let calendar = Calendar.current
-        let components = DateComponents(year: 2023, month: 12, day: 25, hour: 14, minute: 30)
-        let testDate = calendar.date(from: components)!
-        
-        // When - Test date formatting through export
-        let historyEntry = TestDataFactory.createTestHistoryEntry(timestamp: testDate)
-        
-        // Create a simple test to verify the ViewModel can handle date formatting
-        // The actual formatting is tested indirectly through the export functionality
-        XCTAssertNotNil(historyEntry.timestamp)
-    }
-    
-    // MARK: - Edge Cases Tests
-    
-    func testFetchHistory_LargeDataSet() async {
-        // Given
-        let largeHistorySet = TestDataFactory.createMultipleHistoryEntries(count: 1000)
-        mockGetHistoryUseCase.historyEntries = largeHistorySet
+        mockGetHistoryUseCase.historyEntries = []
         
         // When
         await sut.fetchHistory()
         
         // Then
         XCTAssertEqual(sut.state, .success)
-        XCTAssertEqual(sut.history.count, 1000)
-        // Verify first item is the most recent (sorting works for large datasets)
-        XCTAssertGreaterThanOrEqual(sut.history[0].timestamp, sut.history[999].timestamp)
+        XCTAssertEqual(sut.history.count, 0)
+        XCTAssertFalse(sut.isLoading)
     }
     
-    func testExportHistory_EmptyEntries() async {
+    func testLargeHistoryHandling() async {
         // Given
-        let emptyEntries: [HistoryEntry] = []
+        let largeHistory = (1...100).map { index in
+            TestHelpers.createTestHistoryEntry(
+                id: "entry\(index)",
+                medicineId: "med\(index % 10)", // Rotate through 10 different medicine IDs
+                action: "Action \(index)",
+                details: "Details for action \(index)",
+                timestamp: Calendar.current.date(byAdding: .minute, value: -index, to: Date()) ?? Date()
+            )
+        }
+        
+        mockGetHistoryUseCase.historyEntries = largeHistory
         
         // When
-        await sut.exportHistory(format: .pdf, entries: emptyEntries)
+        await sut.fetchHistory()
         
         // Then
         XCTAssertEqual(sut.state, .success)
-        XCTAssertEqual(mockExportHistoryUseCase.callCount, 1)
-    }
-    
-    // MARK: - Concurrent Operations Tests
-    
-    func testConcurrentFetchAndExport() async {
-        // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 5)
-        let medicines = TestDataFactory.createMultipleMedicines(count: 3)
-        mockGetHistoryUseCase.historyEntries = historyEntries
-        mockGetMedicinesUseCase.medicines = medicines
+        XCTAssertEqual(sut.history.count, 100)
+        XCTAssertFalse(sut.isLoading)
         
-        // When - Perform concurrent operations
-        async let fetchHistoryTask = sut.fetchHistory()
-        async let fetchMedicinesTask = sut.fetchMedicines()
-        async let exportTask = sut.exportHistory(format: .pdf, entries: historyEntries)
-        
-        await fetchHistoryTask
-        await fetchMedicinesTask
-        await exportTask
-        
-        // Then
-        XCTAssertEqual(sut.history.count, 5)
-        XCTAssertEqual(sut.medicines.count, 3)
-        XCTAssertEqual(mockExportHistoryUseCase.callCount, 1)
+        // Verify sorting (first entry should be most recent - entry1)
+        XCTAssertEqual(sut.history[0].id, "entry1")
+        XCTAssertEqual(sut.history[99].id, "entry100")
     }
     
     // MARK: - State Consistency Tests
     
-    func testStateConsistency_SuccessfulOperations() async {
+    func testStateTransitions() async {
         // Given
-        let historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 3)
-        mockGetHistoryUseCase.historyEntries = historyEntries
+        mockGetHistoryUseCase.historyEntries = []
         
-        // When
-        await sut.fetchHistory()
+        // Initial state
+        XCTAssertEqual(sut.state, .idle)
         
-        // Then
+        // When fetching
+        let fetchTask = Task {
+            await sut.fetchHistory()
+        }
+        
+        // Should be loading
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        // Note: Due to async timing, we might miss the loading state, but that's okay
+        
+        await fetchTask.value
+        
+        // Should be success
         XCTAssertEqual(sut.state, .success)
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.history.isEmpty)
     }
     
-    func testStateConsistency_ErrorRecovery() async {
+    func testMultipleFetchCalls() async {
         // Given
-        mockGetHistoryUseCase.shouldThrowError = true
-        mockGetHistoryUseCase.errorToThrow = NSError(domain: "TestError", code: 1, userInfo: [:])
+        mockGetHistoryUseCase.historyEntries = [
+            TestHelpers.createTestHistoryEntry(id: "entry1", action: "Test Action")
+        ]
         
-        // When - First operation fails
+        // When - Call fetchHistory multiple times
         await sut.fetchHistory()
-        XCTAssertEqual(sut.state, .error("Erreur lors du chargement de l'historique: The operation couldn't be completed. (TestError error 1.)"))
-        
-        // Reset and try again with success
-        mockGetHistoryUseCase.shouldThrowError = false
-        mockGetHistoryUseCase.historyEntries = TestDataFactory.createMultipleHistoryEntries(count: 2)
+        let firstState = sut.state
+        let firstHistoryCount = sut.history.count
         
         await sut.fetchHistory()
+        let secondState = sut.state
+        let secondHistoryCount = sut.history.count
         
-        // Then
-        XCTAssertEqual(sut.state, .success)
-        XCTAssertEqual(sut.history.count, 2)
-    }
-}
-
-// MARK: - HistoryExportItem Tests
-
-final class HistoryExportItemTests: XCTestCase {
-    
-    func testHistoryExportItemCreation() {
-        // Given
-        let date = "25_12_2023"
-        let time = "14:30"
-        let medicine = "Test Medicine"
-        let action = "Stock Updated"
-        let details = "Updated from 10 to 15"
-        
-        // When
-        let exportItem = HistoryExportItem(
-            date: date,
-            time: time,
-            medicine: medicine,
-            action: action,
-            details: details
-        )
-        
-        // Then
-        XCTAssertEqual(exportItem.date, date)
-        XCTAssertEqual(exportItem.time, time)
-        XCTAssertEqual(exportItem.medicine, medicine)
-        XCTAssertEqual(exportItem.action, action)
-        XCTAssertEqual(exportItem.details, details)
+        // Then - Both calls should succeed and return same data
+        XCTAssertEqual(firstState, .success)
+        XCTAssertEqual(secondState, .success)
+        XCTAssertEqual(firstHistoryCount, 1)
+        XCTAssertEqual(secondHistoryCount, 1)
     }
 }

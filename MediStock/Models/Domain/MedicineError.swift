@@ -1,6 +1,6 @@
 import Foundation
 
-enum MedicineError: LocalizedError {
+enum MedicineError: LocalizedError, Equatable {
     case notFound
     case invalidData
     case saveFailed
@@ -21,9 +21,23 @@ enum MedicineError: LocalizedError {
             return error?.localizedDescription ?? "Une erreur inconnue est survenue."
         }
     }
+    
+    static func == (lhs: MedicineError, rhs: MedicineError) -> Bool {
+        switch (lhs, rhs) {
+        case (.notFound, .notFound),
+             (.invalidData, .invalidData),
+             (.saveFailed, .saveFailed),
+             (.deleteFailed, .deleteFailed):
+            return true
+        case (.unknownError(let lhsError), .unknownError(let rhsError)):
+            return lhsError?.localizedDescription == rhsError?.localizedDescription
+        default:
+            return false
+        }
+    }
 }
 
-enum StockError: LocalizedError {
+enum StockError: LocalizedError, Equatable {
     case insufficientStock
     case invalidAmount
     

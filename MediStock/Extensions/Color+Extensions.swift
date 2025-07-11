@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 extension Color {
     init?(hex: String) {
@@ -44,3 +45,4 @@ extension Color {
     static let errorColor = Color.red
     static let infoColor = Color.blue
 }
+

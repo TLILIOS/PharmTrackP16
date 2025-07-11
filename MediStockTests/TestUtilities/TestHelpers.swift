@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 @testable import MediStock
 
 // MARK: - Test Data Factory
@@ -42,7 +43,23 @@ struct TestDataFactory {
     static func createTestAisle(
         id: String = "test-aisle-1",
         name: String = "Test Aisle",
-        description: String = "Test Aisle Description",
+        description: String? = "Test Aisle Description",
+        color: SwiftUI.Color = SwiftUI.Color.blue,
+        icon: String = "pills"
+    ) -> Aisle {
+        Aisle(
+            id: id,
+            name: name,
+            description: description,
+            color: color,
+            icon: icon
+        )
+    }
+    
+    static func createTestAisle(
+        id: String = "test-aisle-1",
+        name: String = "Test Aisle",
+        description: String? = "Test Aisle Description",
         colorHex: String = "#007AFF",
         icon: String = "pills"
     ) -> Aisle {
@@ -88,7 +105,8 @@ struct TestDataFactory {
     // MARK: - Bulk Test Data
     
     static func createMultipleMedicines(count: Int = 5) -> [Medicine] {
-        (1...count).map { index in
+        guard count > 0 else { return [] }
+        return (1...count).map { index in
             createTestMedicine(
                 id: "test-medicine-\(index)",
                 name: "Medicine \(index)",
@@ -99,20 +117,22 @@ struct TestDataFactory {
     }
     
     static func createMultipleAisles(count: Int = 3) -> [Aisle] {
-        let colors = ["#007AFF", "#34C759", "#FF9500", "#FF3B30", "#AF52DE"]
+        guard count > 0 else { return [] }
+        let colors: [SwiftUI.Color] = [.blue, .green, .orange, .red, .purple]
         let icons = ["pills", "cross.fill", "heart", "bandage", "syringe"]
         
         return (1...count).map { index in
             createTestAisle(
                 id: "test-aisle-\(index)",
                 name: "Aisle \(index)",
-                colorHex: colors[index % colors.count],
+                color: colors[index % colors.count],
                 icon: icons[index % icons.count]
             )
         }
     }
     
     static func createMultipleHistoryEntries(count: Int = 10) -> [HistoryEntry] {
+        guard count > 0 else { return [] }
         let actions = ["Added", "Updated", "Stock Increased", "Stock Decreased", "Deleted"]
         
         return (1...count).map { index in
@@ -203,3 +223,7 @@ public struct TestExpectations {
     public static let defaultTimeout: TimeInterval = 2.0
     public static let longTimeout: TimeInterval = 5.0
 }
+
+// MARK: - TestHelpers Alias for Compatibility
+
+typealias TestHelpers = TestDataFactory

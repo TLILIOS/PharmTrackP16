@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class HistoryEntryTests: XCTestCase {
     
     // MARK: - Initialization Tests
@@ -282,18 +282,26 @@ final class HistoryEntryTests: XCTestCase {
         XCTAssertEqual(historyEntry.details, "Descripción del cambio 🇪🇸 - 薬を追加しました 🇯🇵")
     }
     
-    // MARK: - Memory Management Tests
+    // MARK: - Value Type Tests
     
-    func testHistoryEntryMemoryManagement() {
+    func testHistoryEntryValueTypeSemantics() {
         // Given
-        var historyEntry: HistoryEntry? = TestDataFactory.createTestHistoryEntry()
-        weak var weakHistoryEntry = historyEntry
+        var entry1 = TestDataFactory.createTestHistoryEntry(action: "Original Action")
+        var entry2 = entry1
         
         // When
-        historyEntry = nil
+        entry2 = HistoryEntry(
+            id: entry2.id,
+            medicineId: entry2.medicineId,
+            userId: entry2.userId,
+            action: "Modified Action",
+            details: entry2.details,
+            timestamp: entry2.timestamp
+        )
         
-        // Then
-        XCTAssertNil(weakHistoryEntry)
+        // Then - Value types should not affect each other
+        XCTAssertEqual(entry1.action, "Original Action")
+        XCTAssertEqual(entry2.action, "Modified Action")
     }
     
     // MARK: - Array and Collection Tests
@@ -318,15 +326,16 @@ final class HistoryEntryTests: XCTestCase {
     }
     
     func testHistoryEntryInSet() {
-        // Given
-        let entry1 = TestDataFactory.createTestHistoryEntry(id: "1", action: "Added")
-        let entry2 = TestDataFactory.createTestHistoryEntry(id: "2", action: "Updated")
-        let entry3 = TestDataFactory.createTestHistoryEntry(id: "1", action: "Added") // Same as entry1
+        // Given - Create identical entries (same ID and all other fields)
+        let timestamp = Date()
+        let entry1 = TestDataFactory.createTestHistoryEntry(id: "1", action: "Added", timestamp: timestamp)
+        let entry2 = TestDataFactory.createTestHistoryEntry(id: "2", action: "Updated", timestamp: timestamp)
+        let entry3 = TestDataFactory.createTestHistoryEntry(id: "1", action: "Added", timestamp: timestamp) // Truly identical to entry1
         
         // When
         let entrySet: Set<HistoryEntry> = [entry1, entry2, entry3]
         
-        // Then
+        // Then - Since HistoryEntry uses struct equality (all fields), entries must be truly identical
         XCTAssertEqual(entrySet.count, 2) // entry3 should be the same as entry1
         XCTAssertTrue(entrySet.contains(entry1))
         XCTAssertTrue(entrySet.contains(entry2))

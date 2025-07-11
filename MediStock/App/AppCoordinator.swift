@@ -1176,7 +1176,8 @@ class RealGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
     
     func execute(limit: Int) async throws -> [HistoryEntry] {
         let allHistory = try await historyRepository.getAllHistory()
-        return Array(allHistory.prefix(limit))
+        let safeLimit = max(0, limit)
+        return Array(allHistory.prefix(safeLimit))
     }
 }
 

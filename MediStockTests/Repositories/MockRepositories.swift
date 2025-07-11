@@ -3,16 +3,41 @@ import Combine
 @testable import MediStock
 
 // MARK: - Mock Medicine Repository
-
+@MainActor
 public class MockMedicineRepository: MedicineRepositoryProtocol {
     public var shouldThrowError = false
     public var medicines: [Medicine] = []
+    public var returnMedicines: [Medicine] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    
+    // Call tracking
+    public var getMedicinesCallCount = 0
+    public var saveMedicineCallCount = 0
+    public var deleteMedicineCallCount = 0
+    public var updateMedicineStockCallCount = 0
+    public var callCount: Int { getMedicinesCallCount }
+    
+    // Last call parameters
+    public var lastSavedMedicine: Medicine?
+    public var deletedMedicineIds: [String] = []
+    public var lastUpdatedMedicineId: String?
+    public var lastNewStock: Int?
+    public var lastUpdateMedicineStockCall: (id: String, newStock: Int)?
+    
+    // Additional test properties
+    public var savedMedicine: Medicine?
+    public var savedMedicines: [Medicine] = []
+    public var returnSavedMedicine: Medicine?
+    public var updatedMedicine: Medicine?
+    public var returnUpdatedMedicine: Medicine?
+    public var addedMedicines: [Medicine] = []
     
     public init() {}
     
     public func getMedicines() async throws -> [Medicine] {
+        getMedicinesCallCount += 1
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -20,7 +45,7 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
         if shouldThrowError {
             throw errorToThrow
         }
-        return medicines
+        return returnMedicines.isEmpty ? medicines : returnMedicines
     }
     
     public func getMedicine(id: String) async throws -> Medicine? {
@@ -31,8 +56,16 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
     }
     
     public func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
+        saveMedicineCallCount += 1
+        lastSavedMedicine = medicine
+        savedMedicines.append(medicine)
+        
         if shouldThrowError {
             throw errorToThrow
+        }
+        
+        if let returnMedicine = returnSavedMedicine {
+            return returnMedicine
         }
         
         if let index = medicines.firstIndex(where: { $0.id == medicine.id }) {
@@ -56,14 +89,27 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
                 updatedAt: Date()
             )
             medicines.append(newMedicine)
+            addedMedicines.append(newMedicine)
+            if let saved = savedMedicine {
+                return saved
+            }
             return newMedicine
         }
-        return medicine
+        return savedMedicine ?? medicine
     }
     
     public func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
+        updateMedicineStockCallCount += 1
+        lastUpdatedMedicineId = id
+        lastNewStock = newStock
+        lastUpdateMedicineStockCall = (id: id, newStock: newStock)
+        
         if shouldThrowError {
             throw errorToThrow
+        }
+        
+        if let configured = returnUpdatedMedicine ?? updatedMedicine {
+            return configured
         }
         
         guard let index = medicines.firstIndex(where: { $0.id == id }) else {
@@ -71,7 +117,7 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
         }
         
         let medicine = medicines[index]
-        let updatedMedicine = Medicine(
+        let updatedMed = Medicine(
             id: medicine.id,
             name: medicine.name,
             description: medicine.description,
@@ -89,14 +135,18 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
             updatedAt: Date()
         )
         
-        medicines[index] = updatedMedicine
-        return updatedMedicine
+        medicines[index] = updatedMed
+        return updatedMed
     }
     
     public func deleteMedicine(id: String) async throws {
+        deleteMedicineCallCount += 1
+        
         if shouldThrowError {
             throw errorToThrow
         }
+        
+        deletedMedicineIds.append(id)
         medicines.removeAll { $0.id == id }
     }
     
@@ -120,6 +170,38 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
+    
+    // Observer simulation methods
+    public func simulateMedicinesUpdate(_ medicines: [Medicine]) {
+        self.medicines = medicines
+    }
+    
+    public func simulateError(_ error: Error) {
+        self.errorToThrow = error
+        self.shouldThrowError = true
+    }
+    
+    public func searchMedicines(query: String) async throws -> [Medicine] {
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If query is empty, return all medicines
+        if trimmedQuery.isEmpty {
+            return medicines
+        }
+        
+        // Filter medicines based on name, description, dosage, form, unit containing the query (case insensitive)
+        return medicines.filter { medicine in
+            medicine.name.localizedCaseInsensitiveContains(trimmedQuery) ||
+            (medicine.description?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            (medicine.dosage?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            (medicine.form?.localizedCaseInsensitiveContains(trimmedQuery) ?? false) ||
+            medicine.unit.localizedCaseInsensitiveContains(trimmedQuery)
+        }
+    }
 }
 
 // MARK: - Mock Aisle Repository
@@ -127,16 +209,20 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
 public class MockAisleRepository: AisleRepositoryProtocol {
     public var shouldThrowError = false
     public var aisles: [Aisle] = []
+    public var returnAisles: [Aisle] = []
     public var medicineCount = 5
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public init() {}
     
     public func getAisles() async throws -> [Aisle] {
+        callCount += 1
         if shouldThrowError {
             throw errorToThrow
         }
-        return aisles
+        return returnAisles.isEmpty ? aisles : returnAisles
     }
     
     public func getAisle(id: String) async throws -> Aisle? {
@@ -202,6 +288,34 @@ public class MockAisleRepository: AisleRepositoryProtocol {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
+    
+    // Observer simulation methods
+    public func simulateAislesUpdate(_ aisles: [Aisle]) {
+        self.aisles = aisles
+    }
+    
+    public func simulateAislesError(_ error: Error) {
+        // Simulate error in observer
+    }
+    
+    public func searchAisles(query: String) async throws -> [Aisle] {
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If query is empty, return all aisles
+        if trimmedQuery.isEmpty {
+            return aisles
+        }
+        
+        // Filter aisles based on name, description containing the query (case insensitive)
+        return aisles.filter { aisle in
+            aisle.name.localizedCaseInsensitiveContains(trimmedQuery) ||
+            (aisle.description?.localizedCaseInsensitiveContains(trimmedQuery) ?? false)
+        }
+    }
 }
 
 // MARK: - Mock History Repository
@@ -209,7 +323,16 @@ public class MockAisleRepository: AisleRepositoryProtocol {
 public class MockHistoryRepository: HistoryRepositoryProtocol {
     public var shouldThrowError = false
     public var historyEntries: [HistoryEntry] = []
+    public var historyForMedicine: [HistoryEntry] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    
+    // Call tracking
+    public var addHistoryEntryCallCount = 0
+    public var getHistoryForMedicineCallCount = 0
+    public var lastAddedHistoryEntry: HistoryEntry?
+    public var lastMedicineId: String?
+    public var lastMedicineIdForHistory: String?
+    public var addedEntries: [HistoryEntry] = []
     
     public init() {}
     
@@ -220,16 +343,36 @@ public class MockHistoryRepository: HistoryRepositoryProtocol {
         return historyEntries.sorted { $0.timestamp > $1.timestamp }
     }
     
-    public func getHistoryForMedicine(medicineId: String) async throws -> [HistoryEntry] {
+    public func getRecentHistory(limit: Int) async throws -> [HistoryEntry] {
         if shouldThrowError {
             throw errorToThrow
         }
+        let safeLimit = max(0, limit)
+        return Array(historyEntries.sorted { $0.timestamp > $1.timestamp }.prefix(safeLimit))
+    }
+    
+    public func getHistoryForMedicine(medicineId: String) async throws -> [HistoryEntry] {
+        getHistoryForMedicineCallCount += 1
+        lastMedicineId = medicineId
+        lastMedicineIdForHistory = medicineId
+        
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        
+        if !historyForMedicine.isEmpty {
+            return historyForMedicine.sorted { $0.timestamp > $1.timestamp }
+        }
+        
         return historyEntries
             .filter { $0.medicineId == medicineId }
             .sorted { $0.timestamp > $1.timestamp }
     }
     
     public func addHistoryEntry(_ entry: HistoryEntry) async throws -> HistoryEntry {
+        addHistoryEntryCallCount += 1
+        lastAddedHistoryEntry = entry
+        
         if shouldThrowError {
             throw errorToThrow
         }
@@ -242,6 +385,7 @@ public class MockHistoryRepository: HistoryRepositoryProtocol {
             timestamp: entry.timestamp
         )
         historyEntries.append(newEntry)
+        addedEntries.append(newEntry)
         return newEntry
     }
     
@@ -284,13 +428,6 @@ public class MockHistoryRepository: HistoryRepositoryProtocol {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
-    
-    public func getRecentHistory(limit: Int) async throws -> [HistoryEntry] {
-        if shouldThrowError {
-            throw errorToThrow
-        }
-        return Array(historyEntries.sorted { $0.timestamp > $1.timestamp }.prefix(limit))
-    }
 }
 
 // MARK: - Mock Auth Repository
@@ -298,8 +435,34 @@ public class MockHistoryRepository: HistoryRepositoryProtocol {
 public class MockAuthRepository: AuthRepositoryProtocol {
     public var shouldThrowError = false
     public var shouldThrowOnSignOut = false
+    public var shouldThrowOnSignIn = false
+    public var shouldThrowOnSignUp = false
+    public var shouldThrowOnUpdateProfile = false
     public var _currentUser: User? = User(id: "mock-user", email: "test@example.com", displayName: "Mock User")
     public var errorToThrow: Error = AuthError.networkError
+    
+    // Call tracking
+    public var signOutCallCount = 0
+    public var resetPasswordCallCount = 0
+    public var lastResetEmail: String?
+    
+    // Additional aliases for test compatibility
+    public var shouldThrowErrorOnSignOut: Bool {
+        get { shouldThrowOnSignOut }
+        set { shouldThrowOnSignOut = newValue }
+    }
+    public var shouldThrowErrorOnResetPassword: Bool {
+        get { shouldThrowError }
+        set { shouldThrowError = newValue }
+    }
+    public var signOutError: Error {
+        get { errorToThrow }
+        set { errorToThrow = newValue }
+    }
+    public var resetPasswordError: Error {
+        get { errorToThrow }
+        set { errorToThrow = newValue }
+    }
     
     private let authStateSubject = CurrentValueSubject<User?, Never>(nil)
     
@@ -336,7 +499,7 @@ public class MockAuthRepository: AuthRepositoryProtocol {
     }
     
     public func signUp(email: String, password: String) async throws -> User {
-        if shouldThrowError {
+        if shouldThrowError || shouldThrowOnSignUp {
             throw errorToThrow
         }
         // Return the pre-configured currentUser if it exists and has matching email, otherwise create new
@@ -348,7 +511,18 @@ public class MockAuthRepository: AuthRepositoryProtocol {
         return user
     }
     
+    public func signUp(email: String, password: String, name: String) async throws -> User {
+        if shouldThrowError || shouldThrowOnSignUp {
+            throw errorToThrow
+        }
+        // Mock always returns "Mock User" as displayName regardless of input name
+        let user = User(id: "mock-user", email: email, displayName: "Mock User")
+        currentUser = user
+        return user
+    }
+    
     public func signOut() async throws {
+        signOutCallCount += 1
         if shouldThrowError || shouldThrowOnSignOut {
             throw errorToThrow
         }
@@ -356,6 +530,8 @@ public class MockAuthRepository: AuthRepositoryProtocol {
     }
     
     public func resetPassword(email: String) async throws {
+        resetPasswordCallCount += 1
+        lastResetEmail = email
         if shouldThrowError {
             throw errorToThrow
         }
@@ -363,9 +539,17 @@ public class MockAuthRepository: AuthRepositoryProtocol {
     }
     
     public func updateUserProfile(user: User) async throws {
-        if shouldThrowError {
+        if shouldThrowError || shouldThrowOnUpdateProfile {
             throw errorToThrow
         }
+        currentUser = user
+    }
+    
+    public func updateProfile(user: User) async throws {
+        try await updateUserProfile(user: user)
+    }
+    
+    public func simulateAuthStateChange(user: User?) {
         currentUser = user
     }
 }

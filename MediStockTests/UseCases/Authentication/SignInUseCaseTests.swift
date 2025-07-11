@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class SignInUseCaseTests: XCTestCase {
     
     var mockAuthRepository: MockAuthRepository!
@@ -28,7 +28,8 @@ final class SignInUseCaseTests: XCTestCase {
     }
     
     func testExecuteThrowsError() async {
-        mockAuthRepository.shouldThrowOnSignIn = true
+        mockAuthRepository.shouldThrowError = true
+        mockAuthRepository.errorToThrow = AuthError.wrongPassword
         
         do {
             try await signInUseCase.execute(email: "test@example.com", password: "wrongpassword")

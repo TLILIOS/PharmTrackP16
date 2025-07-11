@@ -2,35 +2,50 @@ import Foundation
 @testable import MediStock
 
 // MARK: - Mock Medicine Use Cases
-
+@MainActor
 public class MockGetMedicinesUseCase: GetMedicinesUseCaseProtocol {
     public var shouldThrowError = false
     public var medicines: [Medicine] = []
+    public var returnMedicines: [Medicine] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var callCount = 0
     
     public init() {}
     
     public func execute() async throws -> [Medicine] {
+        callCount += 1
+        
         if shouldThrowError {
             throw errorToThrow
         }
-        return medicines
+        return returnMedicines.isEmpty ? medicines : returnMedicines
     }
 }
 
 public class MockGetMedicineUseCase: GetMedicineUseCaseProtocol {
     public var shouldThrowError = false
     public var medicine: Medicine?
+    public var returnMedicine: Medicine?
+    public var requestedMedicineIds: [String] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var delayNanoseconds: UInt64 = 0
+    public var lastId: String?
     
     public init() {}
     
     public func execute(id: String) async throws -> Medicine {
+        lastId = id
+        requestedMedicineIds.append(id)
+        
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        
         if shouldThrowError {
             throw errorToThrow
         }
         
-        guard let medicine = medicine else {
+        guard let medicine = returnMedicine ?? medicine else {
             throw NSError(domain: "MockError", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
         }
         
@@ -123,11 +138,18 @@ public class MockSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var searchResults: [Medicine] = []
+    public var returnMedicines: [Medicine] = []
     public var lastSearchQuery: String?
+    public var lastQuery: String?
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute(query: String) async throws -> [Medicine] {
+        callCount += 1
+        lastSearchQuery = query
+        lastQuery = query
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -135,8 +157,8 @@ public class MockSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
         if shouldThrowError {
             throw errorToThrow
         }
-        lastSearchQuery = query
-        return searchResults
+        
+        return returnMedicines.isEmpty ? searchResults : returnMedicines
     }
 }
 
@@ -146,10 +168,14 @@ public class MockGetAislesUseCase: GetAislesUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var aisles: [Aisle] = []
+    public var returnAisles: [Aisle] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute() async throws -> [Aisle] {
+        callCount += 1
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -157,7 +183,7 @@ public class MockGetAislesUseCase: GetAislesUseCaseProtocol {
         if shouldThrowError {
             throw errorToThrow
         }
-        return aisles
+        return returnAisles.isEmpty ? aisles : returnAisles
     }
 }
 
@@ -207,11 +233,18 @@ public class MockSearchAisleUseCase: SearchAisleUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var searchResults: [Aisle] = []
+    public var returnAisles: [Aisle] = []
     public var lastSearchQuery: String?
+    public var lastQuery: String?
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute(query: String) async throws -> [Aisle] {
+        callCount += 1
+        lastSearchQuery = query
+        lastQuery = query
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -219,8 +252,8 @@ public class MockSearchAisleUseCase: SearchAisleUseCaseProtocol {
         if shouldThrowError {
             throw errorToThrow
         }
-        lastSearchQuery = query
-        return searchResults
+        
+        return returnAisles.isEmpty ? searchResults : returnAisles
     }
 }
 
@@ -228,13 +261,19 @@ public class MockGetMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseP
     public init() {}
     public var shouldThrowError = false
     public var medicineCount = 5
+    public var countsPerAisle: [String: Int] = [:]
+    public var callCount = 0
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     
     public func execute(aisleId: String) async throws -> Int {
+        callCount += 1
+        
         if shouldThrowError {
             throw errorToThrow
         }
-        return medicineCount
+        
+        // Return specific count for this aisle if set, otherwise default
+        return countsPerAisle[aisleId] ?? medicineCount
     }
 }
 
@@ -244,10 +283,14 @@ public class MockGetUserUseCase: GetUserUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var user: User? = User(id: "mock-user", email: "test@example.com", displayName: "Mock User")
+    public var returnUser: User? = User(id: "mock-user", email: "test@example.com", displayName: "Mock User")
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute() async throws -> User {
+        callCount += 1
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -256,7 +299,7 @@ public class MockGetUserUseCase: GetUserUseCaseProtocol {
             throw errorToThrow
         }
         
-        guard let user = user else {
+        guard let user = returnUser ?? user else {
             throw NSError(domain: "MockError", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found"])
         }
         
@@ -303,11 +346,16 @@ public class MockGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var historyEntries: [HistoryEntry] = []
+    public var returnHistory: [HistoryEntry] = []
     public var lastLimit: Int?
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute(limit: Int) async throws -> [HistoryEntry] {
+        callCount += 1
+        lastLimit = limit
+        
         if delayNanoseconds > 0 {
             try await Task.sleep(nanoseconds: delayNanoseconds)
         }
@@ -315,8 +363,10 @@ public class MockGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
         if shouldThrowError {
             throw errorToThrow
         }
-        lastLimit = limit
-        return Array(historyEntries.prefix(limit))
+        
+        let sourceHistory = returnHistory.isEmpty ? historyEntries : returnHistory
+        let safeLimit = max(0, limit)
+        return Array(sourceHistory.prefix(safeLimit))
     }
 }
 
@@ -350,8 +400,16 @@ public class MockGetHistoryForMedicineUseCase: GetHistoryForMedicineUseCaseProto
     public var historyEntries: [HistoryEntry] = []
     public var lastMedicineId: String?
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var delayNanoseconds: UInt64 = 0
+    public var callCount = 0
     
     public func execute(medicineId: String) async throws -> [HistoryEntry] {
+        callCount += 1
+        
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        
         if shouldThrowError {
             throw errorToThrow
         }
@@ -360,18 +418,81 @@ public class MockGetHistoryForMedicineUseCase: GetHistoryForMedicineUseCaseProto
     }
 }
 
+// MARK: - Mock Auth Use Cases - Additional
+
+public class MockSignInUseCase: SignInUseCaseProtocol {
+    public init() {}
+    public var shouldThrowError = false
+    public var lastCredentials: (email: String, password: String)?
+    public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var callCount = 0
+    public var delayNanoseconds: UInt64 = 0
+    
+    public func execute(email: String, password: String) async throws {
+        callCount += 1
+        
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        lastCredentials = (email, password)
+    }
+}
+
+public class MockSignUpUseCase: SignUpUseCaseProtocol {
+    public init() {}
+    public var shouldThrowError = false
+    public var lastCredentials: (email: String, password: String, name: String)?
+    public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+    public var callCount = 0
+    public var delayNanoseconds: UInt64 = 0
+    
+    public func execute(email: String, password: String, name: String) async throws {
+        callCount += 1
+        
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        lastCredentials = (email, password, name)
+    }
+}
+
+
 // MARK: - Mock Other Use Cases
 
 public class MockAdjustStockUseCase: AdjustStockUseCaseProtocol {
     public init() {}
     public var shouldThrowError = false
     public var lastAdjustment: (medicineId: String, adjustment: Int, reason: String)?
+    public var adjustmentCalls: [(medicineId: String, adjustment: Int, reason: String)] = []
     public var errorToThrow: Error = NSError(domain: "MockError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
     
     public func execute(medicineId: String, adjustment: Int, reason: String) async throws {
+        lastAdjustment = (medicineId, adjustment, reason)
+        adjustmentCalls.append((medicineId, adjustment, reason))
         if shouldThrowError {
             throw errorToThrow
         }
-        lastAdjustment = (medicineId, adjustment, reason)
+    }
+}
+
+// MARK: - Mock App Coordinator
+
+@MainActor
+public class MockAppCoordinator: AppCoordinator {
+    public var navigationCallCount = 0
+    public var lastDestination: NavigationDestination?
+    
+    public override func navigateFromDashboard(_ destination: NavigationDestination) {
+        navigationCallCount += 1
+        lastDestination = destination
+        super.navigateFromDashboard(destination)
     }
 }

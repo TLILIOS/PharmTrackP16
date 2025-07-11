@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class RealGetRecentHistoryUseCaseTests: XCTestCase {
     
     var mockHistoryRepository: MockHistoryRepository!
@@ -19,6 +19,7 @@ final class RealGetRecentHistoryUseCaseTests: XCTestCase {
     }
     
     func testExecuteWithLimit() async throws {
+        let baseDate = Date()
         let fullHistory = (1...10).map { index in
             HistoryEntry(
                 id: "\(index)",
@@ -26,7 +27,7 @@ final class RealGetRecentHistoryUseCaseTests: XCTestCase {
                 userId: "user\(index)",
                 action: "ADDED",
                 details: "Details \(index)",
-                timestamp: Date()
+                timestamp: Calendar.current.date(byAdding: .minute, value: index, to: baseDate) ?? baseDate
             )
         }
         mockHistoryRepository.historyEntries = fullHistory
@@ -34,8 +35,9 @@ final class RealGetRecentHistoryUseCaseTests: XCTestCase {
         let result = try await getRecentHistoryUseCase.execute(limit: 5)
         
         XCTAssertEqual(result.count, 5)
-        XCTAssertEqual(result[0].id, "1")
-        XCTAssertEqual(result[4].id, "5")
+        // Repository returns sorted by timestamp descending (newest first)
+        XCTAssertEqual(result[0].id, "10")  // Most recent
+        XCTAssertEqual(result[4].id, "6")   // 5th most recent
     }
     
     func testExecuteWithZeroLimit() async throws {
@@ -93,16 +95,17 @@ final class RealGetRecentHistoryUseCaseTests: XCTestCase {
     }
     
     func testExecuteWithOne() async throws {
+        let baseDate = Date()
         let history = [
-            HistoryEntry(id: "1", medicineId: "med1", userId: "user1", action: "ADDED", details: "Details", timestamp: Date()),
-            HistoryEntry(id: "2", medicineId: "med2", userId: "user2", action: "REMOVED", details: "Details", timestamp: Date())
+            HistoryEntry(id: "1", medicineId: "med1", userId: "user1", action: "ADDED", details: "Details", timestamp: baseDate),
+            HistoryEntry(id: "2", medicineId: "med2", userId: "user2", action: "REMOVED", details: "Details", timestamp: Calendar.current.date(byAdding: .minute, value: 1, to: baseDate) ?? baseDate)
         ]
         mockHistoryRepository.historyEntries = history
         
         let result = try await getRecentHistoryUseCase.execute(limit: 1)
         
         XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result[0].id, "1")
+        XCTAssertEqual(result[0].id, "2")  // Most recent entry
     }
     
     func testInitialization() {

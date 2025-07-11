@@ -1,6 +1,7 @@
 import XCTest
+import SwiftUI
 @testable import MediStock
-
+@MainActor
 final class AisleTests: XCTestCase {
     
     // MARK: - Initialization Tests
@@ -10,53 +11,48 @@ final class AisleTests: XCTestCase {
         let id = "aisle-123"
         let name = "Test Aisle"
         let description = "Test Description"
-        let location = "Floor 1, Section A"
-        let capacity = 500
-        let createdAt = Date()
-        let updatedAt = Date()
+        let colorHex = "#FF0000"
+        let icon = "pills"
         
         // When
         let aisle = Aisle(
             id: id,
             name: name,
             description: description,
-            location: location,
-            capacity: capacity,
-            createdAt: createdAt,
-            updatedAt: updatedAt
+            colorHex: colorHex,
+            icon: icon
         )
         
         // Then
         XCTAssertEqual(aisle.id, id)
         XCTAssertEqual(aisle.name, name)
         XCTAssertEqual(aisle.description, description)
-        XCTAssertEqual(aisle.location, location)
-        XCTAssertEqual(aisle.capacity, capacity)
-        XCTAssertEqual(aisle.createdAt, createdAt)
-        XCTAssertEqual(aisle.updatedAt, updatedAt)
+        XCTAssertEqual(aisle.colorHex, colorHex)
+        XCTAssertEqual(aisle.icon, icon)
     }
     
     func testAisleInitialization_MinimalFields() {
         // When
         let aisle = TestDataFactory.createTestAisle(
             id: "min-aisle",
-            name: "Minimal Aisle"
+            name: "Minimal Aisle",
+            colorHex: "#007AFF"
         )
         
         // Then
         XCTAssertEqual(aisle.id, "min-aisle")
         XCTAssertEqual(aisle.name, "Minimal Aisle")
         XCTAssertNotNil(aisle.description)
-        XCTAssertNotNil(aisle.location)
-        XCTAssertGreaterThan(aisle.capacity, 0)
+        XCTAssertFalse(aisle.colorHex.isEmpty)
+        XCTAssertFalse(aisle.icon.isEmpty)
     }
     
     // MARK: - Equatable Tests
     
     func testAisleEquality_SameValues() {
         // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A")
-        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A")
+        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A", description: nil, colorHex: "#007AFF", icon: "pills")
+        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A", description: nil, colorHex: "#007AFF", icon: "pills")
         
         // Then
         XCTAssertEqual(aisle1, aisle2)
@@ -64,94 +60,86 @@ final class AisleTests: XCTestCase {
     
     func testAisleEquality_DifferentIds() {
         // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A")
-        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-2", name: "Aisle A")
+        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A", colorHex: "#007AFF")
+        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-2", name: "Aisle A", colorHex: "#007AFF")
         
         // Then
         XCTAssertNotEqual(aisle1, aisle2)
     }
     
     func testAisleEquality_DifferentNames() {
-        // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A")
-        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle B")
+        // Given - Same ID, different names
+        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle A", colorHex: "#007AFF")
+        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Aisle B", colorHex: "#007AFF")
         
-        // Then
-        XCTAssertNotEqual(aisle1, aisle2)
+        // Then - Aisles with same ID are equal (based on Aisle's == implementation)
+        XCTAssertEqual(aisle1, aisle2)
     }
     
-    func testAisleEquality_DifferentCapacities() {
+    func testAisleEquality_DifferentIcons() {
         // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", capacity: 100)
-        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", capacity: 200)
+        let aisle1 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Test Aisle", description: nil, colorHex: "#007AFF", icon: "pills")
+        let aisle2 = TestDataFactory.createTestAisle(id: "aisle-1", name: "Test Aisle", description: nil, colorHex: "#007AFF", icon: "cross.fill")
         
         // Then
-        XCTAssertNotEqual(aisle1, aisle2)
+        XCTAssertEqual(aisle1, aisle2) // Same id, so equal according to Aisle's == implementation
     }
     
     // MARK: - Identifiable Tests
     
     func testAisleIdentifiable() {
         // Given
-        let aisle = TestDataFactory.createTestAisle(id: "test-id")
+        let aisle = TestDataFactory.createTestAisle(id: "test-id", colorHex: "#007AFF")
         
         // Then
         XCTAssertEqual(aisle.id, "test-id")
     }
     
-    // MARK: - Codable Tests
+    // MARK: - Color Tests
     
-    func testAisleEncoding() throws {
+    func testAisleColorProperty() {
         // Given
         let aisle = TestDataFactory.createTestAisle(
             id: "aisle-123",
             name: "Test Aisle",
-            description: "Test Description",
-            location: "Floor 1",
-            capacity: 300
+            colorHex: "#007AFF"
         )
         
-        // When
-        let encoded = try JSONEncoder().encode(aisle)
-        
         // Then
-        XCTAssertNotNil(encoded)
-        XCTAssertGreaterThan(encoded.count, 0)
+        XCTAssertNotNil(aisle.color)
+        XCTAssertFalse(aisle.colorHex.isEmpty)
     }
     
-    func testAisleDecoding() throws {
+    func testAisleColorFromHex() {
         // Given
-        let originalAisle = TestDataFactory.createTestAisle(
-            id: "aisle-123",
-            name: "Test Aisle",
-            description: "Test Description"
+        let redHex = "#FF0000"
+        let aisle = Aisle(
+            id: "test-aisle",
+            name: "Red Aisle",
+            description: "A red aisle",
+            colorHex: redHex,
+            icon: "pills"
         )
-        let encoded = try JSONEncoder().encode(originalAisle)
-        
-        // When
-        let decoded = try JSONDecoder().decode(Aisle.self, from: encoded)
         
         // Then
-        XCTAssertEqual(decoded.id, originalAisle.id)
-        XCTAssertEqual(decoded.name, originalAisle.name)
-        XCTAssertEqual(decoded.description, originalAisle.description)
-        XCTAssertEqual(decoded.location, originalAisle.location)
-        XCTAssertEqual(decoded.capacity, originalAisle.capacity)
+        XCTAssertEqual(aisle.colorHex, redHex)
+        XCTAssertNotNil(aisle.color)
     }
     
-    func testAisleRoundTripCoding() throws {
+    func testAisleColorInitializer() {
         // Given
-        let originalAisle = TestDataFactory.createTestAisle(
-            name: "Original Aisle",
-            capacity: 750
+        let color = Color.red
+        let aisle = Aisle(
+            id: "test-aisle",
+            name: "Colored Aisle",
+            description: "An aisle with color",
+            color: color,
+            icon: "pills"
         )
         
-        // When
-        let encoded = try JSONEncoder().encode(originalAisle)
-        let decoded = try JSONDecoder().decode(Aisle.self, from: encoded)
-        
         // Then
-        XCTAssertEqual(decoded, originalAisle)
+        XCTAssertFalse(aisle.colorHex.isEmpty)
+        XCTAssertNotNil(aisle.color)
     }
     
     // MARK: - Edge Cases Tests
@@ -162,34 +150,31 @@ final class AisleTests: XCTestCase {
             id: "",
             name: "",
             description: "",
-            location: "",
-            capacity: 0,
-            createdAt: Date(),
-            updatedAt: Date()
+            colorHex: "#000000",
+            icon: ""
         )
         
         // Then
         XCTAssertEqual(aisle.id, "")
         XCTAssertEqual(aisle.name, "")
         XCTAssertEqual(aisle.description, "")
-        XCTAssertEqual(aisle.location, "")
-        XCTAssertEqual(aisle.capacity, 0)
+        XCTAssertEqual(aisle.colorHex, "#000000")
+        XCTAssertEqual(aisle.icon, "")
     }
     
-    func testAisleWithNegativeCapacity() {
+    func testAisleWithDifferentIcons() {
+        // Given
+        let icons = ["pills", "cross.fill", "heart", "bandage", "syringe"]
+        
         // When
-        let aisle = TestDataFactory.createTestAisle(capacity: -100)
+        let aisles = icons.map { icon in
+            TestDataFactory.createTestAisle(id: "test-aisle-\(icon)", name: "Test Aisle", description: nil, colorHex: "#007AFF", icon: icon)
+        }
         
         // Then
-        XCTAssertEqual(aisle.capacity, -100)
-    }
-    
-    func testAisleWithVeryLargeCapacity() {
-        // When
-        let aisle = TestDataFactory.createTestAisle(capacity: Int.max)
-        
-        // Then
-        XCTAssertEqual(aisle.capacity, Int.max)
+        for (index, aisle) in aisles.enumerated() {
+            XCTAssertEqual(aisle.icon, icons[index])
+        }
     }
     
     func testAisleWithLongStrings() {
@@ -200,47 +185,26 @@ final class AisleTests: XCTestCase {
         let aisle = TestDataFactory.createTestAisle(
             name: longString,
             description: longString,
-            location: longString
+            colorHex: "#007AFF"
         )
         
         // Then
         XCTAssertEqual(aisle.name.count, 5000)
-        XCTAssertEqual(aisle.description.count, 5000)
-        XCTAssertEqual(aisle.location.count, 5000)
+        XCTAssertEqual(aisle.description?.count, 5000)
     }
     
-    // MARK: - Date Handling Tests
+    // MARK: - Icon Validation Tests
     
-    func testAisleTimestamps() {
+    func testAisleIconTypes() {
         // Given
-        let createdAt = Date()
-        let updatedAt = Date(timeInterval: 3600, since: createdAt) // 1 hour later
+        let standardIcons = ["pills", "cross.fill", "heart", "bandage", "syringe", "folder"]
         
-        // When
-        let aisle = TestDataFactory.createTestAisle(
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
-        
-        // Then
-        XCTAssertEqual(aisle.createdAt, createdAt)
-        XCTAssertEqual(aisle.updatedAt, updatedAt)
-    }
-    
-    func testAisleTimestampOrder() {
-        // Given
-        let now = Date()
-        let past = Date(timeInterval: -3600, since: now) // 1 hour ago
-        let future = Date(timeInterval: 3600, since: now) // 1 hour from now
-        
-        // When
-        let aisle = TestDataFactory.createTestAisle(
-            createdAt: past,
-            updatedAt: future
-        )
-        
-        // Then
-        XCTAssertLessThan(aisle.createdAt, aisle.updatedAt)
+        // When & Then
+        for icon in standardIcons {
+            let aisle = TestDataFactory.createTestAisle(id: "test-aisle-\(icon)", name: "Test Aisle", description: nil, colorHex: "#007AFF", icon: icon)
+            XCTAssertEqual(aisle.icon, icon)
+            XCTAssertFalse(aisle.icon.isEmpty)
+        }
     }
     
     // MARK: - Special Characters Tests
@@ -248,15 +212,14 @@ final class AisleTests: XCTestCase {
     func testAisleWithSpecialCharacters() {
         // When
         let aisle = TestDataFactory.createTestAisle(
-            name: "Aisle-A+B (500 capacity)",
+            name: "Aisle-A+B (special)",
             description: "Special chars: @#$%^&*()",
-            location: "Floor-1/Section-A"
+            colorHex: "#007AFF"
         )
         
         // Then
-        XCTAssertEqual(aisle.name, "Aisle-A+B (500 capacity)")
+        XCTAssertEqual(aisle.name, "Aisle-A+B (special)")
         XCTAssertEqual(aisle.description, "Special chars: @#$%^&*()")
-        XCTAssertEqual(aisle.location, "Floor-1/Section-A")
     }
     
     func testAisleWithUnicodeCharacters() {
@@ -264,27 +227,27 @@ final class AisleTests: XCTestCase {
         let aisle = TestDataFactory.createTestAisle(
             name: "Couloir français 🇫🇷",
             description: "Descripción en español 🇪🇸",
-            location: "位置 日本語"
+            colorHex: "#007AFF"
         )
         
         // Then
         XCTAssertEqual(aisle.name, "Couloir français 🇫🇷")
         XCTAssertEqual(aisle.description, "Descripción en español 🇪🇸")
-        XCTAssertEqual(aisle.location, "位置 日本語")
     }
     
-    // MARK: - Memory Management Tests
+    // MARK: - Value Type Tests
     
-    func testAisleMemoryManagement() {
+    func testAisleValueTypeSemantics() {
         // Given
-        var aisle: Aisle? = TestDataFactory.createTestAisle()
-        weak var weakAisle = aisle
+        var aisle1 = TestDataFactory.createTestAisle(name: "Original Name", colorHex: "#007AFF")
+        var aisle2 = aisle1
         
         // When
-        aisle = nil
+        aisle2.name = "Modified Name"
         
-        // Then
-        XCTAssertNil(weakAisle)
+        // Then - Value types should not affect each other
+        XCTAssertEqual(aisle1.name, "Original Name")
+        XCTAssertEqual(aisle2.name, "Modified Name")
     }
     
     // MARK: - Array and Collection Tests
@@ -292,9 +255,9 @@ final class AisleTests: XCTestCase {
     func testAisleInArray() {
         // Given
         let aisles = [
-            TestDataFactory.createTestAisle(id: "1", name: "Aisle A"),
-            TestDataFactory.createTestAisle(id: "2", name: "Aisle B"),
-            TestDataFactory.createTestAisle(id: "3", name: "Aisle C")
+            TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF"),
+            TestDataFactory.createTestAisle(id: "2", name: "Aisle B", colorHex: "#007AFF"),
+            TestDataFactory.createTestAisle(id: "3", name: "Aisle C", colorHex: "#007AFF")
         ]
         
         // When
@@ -310,9 +273,9 @@ final class AisleTests: XCTestCase {
     
     func testAisleInSet() {
         // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A")
-        let aisle2 = TestDataFactory.createTestAisle(id: "2", name: "Aisle B")
-        let aisle3 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A") // Same as aisle1
+        let aisle1 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF")
+        let aisle2 = TestDataFactory.createTestAisle(id: "2", name: "Aisle B", colorHex: "#007AFF")
+        let aisle3 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF") // Same as aisle1
         
         // When
         let aisleSet: Set<Aisle> = [aisle1, aisle2, aisle3]
@@ -327,43 +290,49 @@ final class AisleTests: XCTestCase {
     
     func testAisleHashable() {
         // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A")
-        let aisle2 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A")
-        let aisle3 = TestDataFactory.createTestAisle(id: "2", name: "Aisle B")
+        let aisle1 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF")
+        let aisle2 = TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF")
+        let aisle3 = TestDataFactory.createTestAisle(id: "2", name: "Aisle B", colorHex: "#007AFF")
         
         // Then
-        XCTAssertEqual(aisle1.hashValue, aisle2.hashValue)
-        XCTAssertNotEqual(aisle1.hashValue, aisle3.hashValue)
+        var hasher1 = Hasher()
+        aisle1.hash(into: &hasher1)
+        var hasher2 = Hasher()
+        aisle2.hash(into: &hasher2)
+        var hasher3 = Hasher()
+        aisle3.hash(into: &hasher3)
+        
+        XCTAssertEqual(hasher1.finalize(), hasher2.finalize())
+        XCTAssertNotEqual(hasher1.finalize(), hasher3.finalize())
     }
     
     // MARK: - Property Validation Tests
     
     func testAisleFieldTypes() {
         // Given
-        let aisle = TestDataFactory.createTestAisle()
+        let aisle = TestDataFactory.createTestAisle(colorHex: "#007AFF")
         
         // Then - Verify field types
         XCTAssertTrue(aisle.id is String)
         XCTAssertTrue(aisle.name is String)
-        XCTAssertTrue(aisle.description is String)
-        XCTAssertTrue(aisle.location is String)
-        XCTAssertTrue(aisle.capacity is Int)
-        XCTAssertTrue(aisle.createdAt is Date)
-        XCTAssertTrue(aisle.updatedAt is Date)
+        XCTAssertTrue(aisle.description is String?)
+        XCTAssertTrue(aisle.colorHex is String)
+        XCTAssertTrue(aisle.icon is String)
+        XCTAssertNotNil(aisle.color)
     }
     
-    func testAisleCapacityRange() {
+    func testAisleColorRange() {
         // Given
-        let smallAisle = TestDataFactory.createTestAisle(capacity: 1)
-        let mediumAisle = TestDataFactory.createTestAisle(capacity: 500)
-        let largeAisle = TestDataFactory.createTestAisle(capacity: 10000)
+        let colors = [SwiftUI.Color.red, SwiftUI.Color.blue, SwiftUI.Color.green]
+        let aisles = colors.map { color in
+            Aisle(id: UUID().uuidString, name: "Test", color: color, icon: "pills")
+        }
         
         // Then
-        XCTAssertEqual(smallAisle.capacity, 1)
-        XCTAssertEqual(mediumAisle.capacity, 500)
-        XCTAssertEqual(largeAisle.capacity, 10000)
-        XCTAssertLessThan(smallAisle.capacity, mediumAisle.capacity)
-        XCTAssertLessThan(mediumAisle.capacity, largeAisle.capacity)
+        for aisle in aisles {
+            XCTAssertFalse(aisle.colorHex.isEmpty)
+            XCTAssertNotNil(aisle.color)
+        }
     }
     
     // MARK: - Comparison Tests
@@ -371,9 +340,9 @@ final class AisleTests: XCTestCase {
     func testAisleSorting() {
         // Given
         let aisles = [
-            TestDataFactory.createTestAisle(id: "3", name: "Aisle C"),
-            TestDataFactory.createTestAisle(id: "1", name: "Aisle A"),
-            TestDataFactory.createTestAisle(id: "2", name: "Aisle B")
+            TestDataFactory.createTestAisle(id: "3", name: "Aisle C", colorHex: "#007AFF"),
+            TestDataFactory.createTestAisle(id: "1", name: "Aisle A", colorHex: "#007AFF"),
+            TestDataFactory.createTestAisle(id: "2", name: "Aisle B", colorHex: "#007AFF")
         ]
         
         // When
@@ -387,40 +356,28 @@ final class AisleTests: XCTestCase {
     
     // MARK: - JSON Structure Tests
     
-    func testAisleJSONStructure() throws {
+    func testAisleStringRepresentation() {
         // Given
         let aisle = TestDataFactory.createTestAisle(
             id: "aisle-123",
             name: "Test Aisle",
             description: "Test Description",
-            location: "Floor 1",
-            capacity: 300
+            colorHex: "#007AFF"
         )
         
-        // When
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        let jsonData = try encoder.encode(aisle)
-        let jsonString = String(data: jsonData, encoding: .utf8)!
-        
         // Then
-        XCTAssertTrue(jsonString.contains("\"id\""))
-        XCTAssertTrue(jsonString.contains("\"name\""))
-        XCTAssertTrue(jsonString.contains("\"description\""))
-        XCTAssertTrue(jsonString.contains("\"location\""))
-        XCTAssertTrue(jsonString.contains("\"capacity\""))
-        XCTAssertTrue(jsonString.contains("\"createdAt\""))
-        XCTAssertTrue(jsonString.contains("\"updatedAt\""))
-        XCTAssertTrue(jsonString.contains("aisle-123"))
-        XCTAssertTrue(jsonString.contains("Test Aisle"))
-        XCTAssertTrue(jsonString.contains("300"))
+        XCTAssertEqual(aisle.id, "aisle-123")
+        XCTAssertEqual(aisle.name, "Test Aisle")
+        XCTAssertEqual(aisle.description, "Test Description")
+        XCTAssertFalse(aisle.colorHex.isEmpty)
+        XCTAssertFalse(aisle.icon.isEmpty)
     }
     
     // MARK: - Mutation Tests
     
     func testAisleImmutability() {
         // Given
-        let aisle = TestDataFactory.createTestAisle(name: "Original Name")
+        let aisle = TestDataFactory.createTestAisle(name: "Original Name", colorHex: "#007AFF")
         
         // When - Aisle is a struct, so it should be value type
         var mutableAisle = aisle

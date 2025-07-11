@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class UpdateMedicineStockUseCaseTests: XCTestCase {
     
     var mockMedicineRepository: MockMedicineRepository!

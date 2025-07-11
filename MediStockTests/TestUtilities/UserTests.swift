@@ -1,6 +1,6 @@
 import XCTest
 @testable import MediStock
-
+@MainActor
 final class UserTests: XCTestCase {
     
     // MARK: - Initialization Tests
@@ -167,8 +167,8 @@ final class UserTests: XCTestCase {
         
         // Then
         XCTAssertEqual(user.id.count, 1000)
-        XCTAssertEqual(user.email.count, 1012) // 1000 + "@example.com".count
-        XCTAssertEqual(user.displayName.count, 1000)
+        XCTAssertEqual(user.email?.count, 1012) // 1000 + "@example.com".count
+        XCTAssertEqual(user.displayName?.count, 1000)
     }
     
     // MARK: - Email Validation Tests
@@ -187,7 +187,7 @@ final class UserTests: XCTestCase {
         for email in validEmails {
             let user = User(id: "test", email: email, displayName: "Test")
             XCTAssertEqual(user.email, email)
-            XCTAssertFalse(user.email.isEmpty)
+            XCTAssertFalse(user.email?.isEmpty ?? true)
         }
     }
     
@@ -236,18 +236,19 @@ final class UserTests: XCTestCase {
         XCTAssertEqual(user.displayName, "Utilisateur français 🇫🇷")
     }
     
-    // MARK: - Memory Management Tests
+    // MARK: - Value Type Tests
     
-    func testUserMemoryManagement() {
+    func testUserValueTypeSemantics() {
         // Given
-        var user: User? = User(id: "test", email: "test@example.com", displayName: "Test")
-        weak var weakUser = user
+        var user1 = User(id: "test", email: "test@example.com", displayName: "Original Name")
+        var user2 = user1
         
         // When
-        user = nil
+        user2 = User(id: user2.id, email: user2.email, displayName: "Modified Name")
         
-        // Then
-        XCTAssertNil(weakUser)
+        // Then - Value types should not affect each other
+        XCTAssertEqual(user1.displayName, "Original Name")
+        XCTAssertEqual(user2.displayName, "Modified Name")
     }
     
     // MARK: - Array and Collection Tests
@@ -298,8 +299,20 @@ final class UserTests: XCTestCase {
         let user3 = User(id: "2", email: "other@example.com", displayName: "Other User")
         
         // Then
-        XCTAssertEqual(user1.hashValue, user2.hashValue)
-        XCTAssertNotEqual(user1.hashValue, user3.hashValue)
+        var hasher1 = Hasher()
+        user1.hash(into: &hasher1)
+        let hash1 = hasher1.finalize()
+        
+        var hasher2 = Hasher()
+        user2.hash(into: &hasher2)
+        let hash2 = hasher2.finalize()
+        
+        var hasher3 = Hasher()
+        user3.hash(into: &hasher3)
+        let hash3 = hasher3.finalize()
+        
+        XCTAssertEqual(hash1, hash2)
+        XCTAssertNotEqual(hash1, hash3)
     }
     
     // MARK: - Property Validation Tests
@@ -325,9 +338,9 @@ final class UserTests: XCTestCase {
         ]
         
         // When
-        let sortedByName = users.sorted { $0.displayName < $1.displayName }
+        let sortedByName = users.sorted { ($0.displayName ?? "") < ($1.displayName ?? "") }
         let sortedById = users.sorted { $0.id < $1.id }
-        let sortedByEmail = users.sorted { $0.email < $1.email }
+        let sortedByEmail = users.sorted { ($0.email ?? "") < ($1.email ?? "") }
         
         // Then
         XCTAssertEqual(sortedByName.map { $0.displayName }, ["Alice", "Bob", "Charlie"])
@@ -394,7 +407,7 @@ final class UserTests: XCTestCase {
         for displayName in variations {
             let user = User(id: "test", email: "test@example.com", displayName: displayName)
             XCTAssertEqual(user.displayName, displayName)
-            XCTAssertFalse(user.displayName.isEmpty)
+            XCTAssertFalse(user.displayName?.isEmpty ?? true)
         }
     }
     
@@ -410,14 +423,14 @@ final class UserTests: XCTestCase {
         ]
         
         // When
-        let companyUsers = users.filter { $0.email.contains("@company.com") }
-        let adminUsers = users.filter { $0.displayName.contains("Admin") }
+        let companyUsers = users.filter { $0.email?.contains("@company.com") ?? false }
+        let adminUsers = users.filter { $0.displayName?.contains("Admin") ?? false }
         
         // Then
         XCTAssertEqual(companyUsers.count, 3)
         XCTAssertEqual(adminUsers.count, 2)
-        XCTAssertTrue(companyUsers.allSatisfy { $0.email.contains("@company.com") })
-        XCTAssertTrue(adminUsers.allSatisfy { $0.displayName.contains("Admin") })
+        XCTAssertTrue(companyUsers.allSatisfy { $0.email?.contains("@company.com") ?? false })
+        XCTAssertTrue(adminUsers.allSatisfy { $0.displayName?.contains("Admin") ?? false })
     }
     
     // MARK: - Mutation Tests (Struct Nature)

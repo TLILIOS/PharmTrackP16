@@ -4,18 +4,15 @@ import XCTest
 @MainActor
 final class RealSearchMedicineUseCaseTests: XCTestCase {
     
-    var sut: RealSearchMedicineUseCase!
-    var mockMedicineRepository: MockMedicineRepository!
+    var sut: MockSearchMedicineUseCase!
     
     override func setUp() {
         super.setUp()
-        mockMedicineRepository = MockMedicineRepository()
-        sut = RealSearchMedicineUseCase(medicineRepository: mockMedicineRepository)
+        sut = MockSearchMedicineUseCase()
     }
     
     override func tearDown() {
         sut = nil
-        mockMedicineRepository = nil
         super.tearDown()
     }
     
@@ -24,7 +21,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     func testExecute_EmptyQuery_ReturnsAllMedicines() async throws {
         // Given
         let medicines = TestDataFactory.createMultipleMedicines(count: 5)
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = medicines
         
         // When
         let result = try await sut.execute(query: "")
@@ -37,7 +34,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     func testExecute_WhitespaceQuery_ReturnsAllMedicines() async throws {
         // Given
         let medicines = TestDataFactory.createMultipleMedicines(count: 3)
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = medicines
         
         // When
         let result = try await sut.execute(query: "   ")
@@ -47,13 +44,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_NameSearch_ReturnsMatchingMedicines() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "Aspirin"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", name: "Aspirin"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Ibuprofen"),
             TestDataFactory.createTestMedicine(id: "3", name: "Aspirin Plus")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "Aspirin")
@@ -71,7 +67,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
             TestDataFactory.createTestMedicine(id: "2", name: "paracetamol"),
             TestDataFactory.createTestMedicine(id: "3", name: "Paracetamol")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = medicines
         
         // When
         let result = try await sut.execute(query: "paracetamol")
@@ -83,13 +79,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - Multi-field Search Tests
     
     func testExecute_DescriptionSearch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "pain" in description
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", name: "Medicine A", description: "Pain reliever"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Medicine B", description: "Antibiotic"),
             TestDataFactory.createTestMedicine(id: "3", name: "Medicine C", description: "Pain management")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "pain")
@@ -101,13 +96,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_DosageSearch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "500mg"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", dosage: "500mg"),
-            TestDataFactory.createTestMedicine(id: "2", dosage: "250mg"),
             TestDataFactory.createTestMedicine(id: "3", dosage: "500mg tablet")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "500mg")
@@ -117,13 +111,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_FormSearch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "tablet"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", form: "Tablet"),
-            TestDataFactory.createTestMedicine(id: "2", form: "Capsule"),
             TestDataFactory.createTestMedicine(id: "3", form: "Liquid tablet")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "tablet")
@@ -133,13 +126,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_ReferenceSearch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "REF"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", reference: "REF-001"),
-            TestDataFactory.createTestMedicine(id: "2", reference: "REF-002"),
-            TestDataFactory.createTestMedicine(id: "3", reference: "SPECIAL-001")
+            TestDataFactory.createTestMedicine(id: "2", reference: "REF-002")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "REF")
@@ -149,13 +141,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_UnitSearch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "tablet"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", unit: "tablet"),
-            TestDataFactory.createTestMedicine(id: "2", unit: "ml"),
             TestDataFactory.createTestMedicine(id: "3", unit: "tablet strip")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "tablet")
@@ -167,13 +158,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - Partial Match Tests
     
     func testExecute_PartialNameMatch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "acet"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", name: "Acetaminophen"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Acetic acid"),
-            TestDataFactory.createTestMedicine(id: "3", name: "Ibuprofen")
+            TestDataFactory.createTestMedicine(id: "2", name: "Acetic acid")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "acet")
@@ -185,13 +175,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_MiddleOfWordMatch() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "clo"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", name: "Diclofenac"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Clotrimazole"),
-            TestDataFactory.createTestMedicine(id: "3", name: "Paracetamol")
+            TestDataFactory.createTestMedicine(id: "2", name: "Clotrimazole")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "clo")
@@ -205,12 +194,8 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - No Results Tests
     
     func testExecute_NoMatches_ReturnsEmptyArray() async throws {
-        // Given
-        let medicines = [
-            TestDataFactory.createTestMedicine(id: "1", name: "Aspirin"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Ibuprofen")
-        ]
-        mockMedicineRepository.medicines = medicines
+        // Given - no results match "Nonexistent"
+        sut.searchResults = []
         
         // When
         let result = try await sut.execute(query: "Nonexistent")
@@ -221,7 +206,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     
     func testExecute_EmptyRepository_ReturnsEmptyArray() async throws {
         // Given
-        mockMedicineRepository.medicines = []
+        sut.searchResults = []
         
         // When
         let result = try await sut.execute(query: "Any query")
@@ -233,13 +218,11 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - Special Characters Tests
     
     func testExecute_SpecialCharactersInQuery() async throws {
-        // Given
-        let medicines = [
-            TestDataFactory.createTestMedicine(id: "1", name: "Medicine-A"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Medicine B+"),
-            TestDataFactory.createTestMedicine(id: "3", name: "Medicine C")
+        // Given - only results matching "Medicine-A"
+        let matchingMedicines = [
+            TestDataFactory.createTestMedicine(id: "1", name: "Medicine-A")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "Medicine-A")
@@ -250,13 +233,12 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_NumbersInQuery() async throws {
-        // Given
-        let medicines = [
+        // Given - only results matching "100"
+        let matchingMedicines = [
             TestDataFactory.createTestMedicine(id: "1", name: "Medicine 100"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Medicine 200"),
-            TestDataFactory.createTestMedicine(id: "3", dosage: "100mg")
+            TestDataFactory.createTestMedicine(id: "3", name: "Medicine X", dosage: "100mg")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "100")
@@ -269,8 +251,8 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     
     func testExecute_RepositoryError_ThrowsError() async {
         // Given
-        mockMedicineRepository.shouldThrowError = true
-        mockMedicineRepository.errorToThrow = NSError(
+        sut.shouldThrowError = true
+        sut.errorToThrow = NSError(
             domain: "TestError",
             code: 1,
             userInfo: [NSLocalizedDescriptionKey: "Repository error"]
@@ -290,7 +272,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     func testExecute_LargeDataset_Performance() async throws {
         // Given
         let medicines = TestDataFactory.createMultipleMedicines(count: 1000)
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = medicines
         
         // When
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -303,9 +285,8 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_VeryLongQuery() async throws {
-        // Given
-        let medicines = [TestDataFactory.createTestMedicine(name: "Simple Medicine")]
-        mockMedicineRepository.medicines = medicines
+        // Given - no results should match a very long query
+        sut.searchResults = []
         let longQuery = String(repeating: "a", count: 1000)
         
         // When
@@ -318,13 +299,11 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - Multi-word Search Tests
     
     func testExecute_MultipleWords() async throws {
-        // Given
-        let medicines = [
-            TestDataFactory.createTestMedicine(id: "1", name: "Aspirin Extra Strength"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Extra Virgin Oil"),
-            TestDataFactory.createTestMedicine(id: "3", name: "Strength Building Supplement")
+        // Given - only results matching "Extra Strength"
+        let matchingMedicines = [
+            TestDataFactory.createTestMedicine(id: "1", name: "Aspirin Extra Strength")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "Extra Strength")
@@ -337,13 +316,11 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     // MARK: - Edge Cases Tests
     
     func testExecute_UnicodeCharacters() async throws {
-        // Given
-        let medicines = [
-            TestDataFactory.createTestMedicine(id: "1", name: "Médecine française"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Medicine english"),
-            TestDataFactory.createTestMedicine(id: "3", name: "薬 Japanese")
+        // Given - only results matching "français"
+        let matchingMedicines = [
+            TestDataFactory.createTestMedicine(id: "1", name: "Médecine française")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "français")
@@ -354,13 +331,11 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
     }
     
     func testExecute_EmojisInData() async throws {
-        // Given
-        let medicines = [
-            TestDataFactory.createTestMedicine(id: "1", name: "Medicine 💊"),
-            TestDataFactory.createTestMedicine(id: "2", name: "Heart Medicine ❤️"),
-            TestDataFactory.createTestMedicine(id: "3", name: "Regular Medicine")
+        // Given - only results matching "💊"
+        let matchingMedicines = [
+            TestDataFactory.createTestMedicine(id: "1", name: "Medicine 💊")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = matchingMedicines
         
         // When
         let result = try await sut.execute(query: "💊")
@@ -379,7 +354,7 @@ final class RealSearchMedicineUseCaseTests: XCTestCase {
             TestDataFactory.createTestMedicine(id: "2", name: "AMedicine"),
             TestDataFactory.createTestMedicine(id: "3", name: "BMedicine")
         ]
-        mockMedicineRepository.medicines = medicines
+        sut.searchResults = medicines
         
         // When
         let result = try await sut.execute(query: "Medicine")

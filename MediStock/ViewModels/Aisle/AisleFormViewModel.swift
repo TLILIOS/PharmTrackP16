@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 @MainActor
-class AisleFormViewModel: ObservableObject {
+class AisleFormViewModel: ObservableObject { 
     @Published var name: String = ""
     @Published var description: String = ""
     @Published var isLoading: Bool = false
