@@ -55,7 +55,12 @@ class FirebaseAuthRepository: AuthRepositoryProtocol {
         }
     }
     
-    private func mapFirebaseError(_ error: Error) -> AuthError {
+        // Testing helper method
+    func mapFirebaseErrorForTesting(_ error: Error) -> AuthError {
+        return mapFirebaseError(error)
+    }
+
+private func mapFirebaseError(_ error: Error) -> AuthError {
         let nsError = error as NSError
         let authErrorCode = AuthErrorCode(_bridgedNSError: nsError)
         

@@ -53,14 +53,13 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
             // Créer un nouveau rayon avec un ID généré
             let documentRef = db.collection(collection).document()
             let newAisle = Aisle(
-                id: documentRef.documentID,
-                name: aisle.name,
-                description: aisle.description,
-                colorHex: aisle.colorHex,
-                icon: aisle.icon,
-                createdAt: Date(),
-                updatedAt: Date()
-            )
+                 id: documentRef.documentID,
+                 name: aisle.name,
+                 description: aisle.description,
+                 colorHex: aisle.colorHex,
+                 icon: aisle.icon
+             )
+
             
             let newAisleDTO = AisleDTO.fromDomain(newAisle)
             try await documentRef.setData(from: newAisleDTO)
@@ -68,14 +67,13 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
         } else {
             // Mettre à jour un rayon existant
             let updatedAisle = Aisle(
-                id: aisle.id,
-                name: aisle.name,
-                description: aisle.description,
-                colorHex: aisle.colorHex,
-                icon: aisle.icon,
-                createdAt: aisle.createdAt,
-                updatedAt: Date()
-            )
+                  id: aisle.id,
+                  name: aisle.name,
+                  description: aisle.description,
+                  colorHex: aisle.colorHex,
+                  icon: aisle.icon
+              )
+
             
             let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)
             try await db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)

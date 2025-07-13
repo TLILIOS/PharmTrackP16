@@ -20,7 +20,8 @@
       "Bash(mv:*)",
       "Bash(timeout:*)",
       "Bash(gtimeout:*)",
-      "Bash(code --version)"
+      "Bash(code --version)",
+      "Bash(xcrun xctrace:*)"
     ],
     "deny": []
   }

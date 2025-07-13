@@ -122,6 +122,12 @@
 		D0C3DC6F2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC6E2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community */; };
 		D0F74D5D2E20E1AA004D34D5 /* AisleFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D5C2E20E1AA004D34D5 /* AisleFormViewModel.swift */; };
 		D0F74D5F2E20E1DA004D34D5 /* AdjustStockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */; };
+		D0F74D632E20F7E3004D34D5 /* MockRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */; };
+		D0F74D642E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */; };
+		D0F74D652E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */; };
+		D0F74D672E210008004D34D5 /* FirebaseAuthRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */; };
+		D0F74D6A2E2105F8004D34D5 /* FirebaseAisleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D682E2105F8004D34D5 /* FirebaseAisleRepository.swift */; };
+		D0F74D6B2E2105F8004D34D5 /* FirebaseMedicineRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D692E2105F8004D34D5 /* FirebaseMedicineRepository.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -247,6 +253,12 @@
 		D0C3DC232E1A8BF8008D94A7 /* MedicineListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineListView.swift; sourceTree = "<group>"; };
 		D0F74D5C2E20E1AA004D34D5 /* AisleFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleFormViewModel.swift; sourceTree = "<group>"; };
 		D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustStockViewModel.swift; sourceTree = "<group>"; };
+		D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepositoryTests.swift; sourceTree = "<group>"; };
+		D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepositoryTests.swift; sourceTree = "<group>"; };
+		D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositories.swift; sourceTree = "<group>"; };
+		D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepositoryTests.swift; sourceTree = "<group>"; };
+		D0F74D682E2105F8004D34D5 /* FirebaseAisleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepository.swift; sourceTree = "<group>"; };
+		D0F74D692E2105F8004D34D5 /* FirebaseMedicineRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -381,6 +393,10 @@
 		D0C2FBEF2E1DDC330020A35E /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */,
+				D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */,
+				D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */,
+				D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */,
 				D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */,
 				D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */,
 				D0C2FBED2E1DDC330020A35E /* MockRepositories.swift */,
@@ -558,6 +574,8 @@
 		D0C3DBF12E1A8BF8008D94A7 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
+				D0F74D682E2105F8004D34D5 /* FirebaseAisleRepository.swift */,
+				D0F74D692E2105F8004D34D5 /* FirebaseMedicineRepository.swift */,
 				D0C3DBEC2E1A8BF8008D94A7 /* Implementations */,
 			);
 			path = Repositories;
@@ -945,6 +963,8 @@
 				D0C3DC482E1A8BF8008D94A7 /* CacheServiceProtocol.swift in Sources */,
 				D0C3DC492E1A8BF8008D94A7 /* HistoryEntryDTO.swift in Sources */,
 				D0C3DC4A2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift in Sources */,
+				D0F74D6A2E2105F8004D34D5 /* FirebaseAisleRepository.swift in Sources */,
+				D0F74D6B2E2105F8004D34D5 /* FirebaseMedicineRepository.swift in Sources */,
 				D0C3DC4B2E1A8BF8008D94A7 /* MedicineFormViewModel.swift in Sources */,
 				D0C3DC4C2E1A8BF8008D94A7 /* AppSyncService.swift in Sources */,
 				D0C3DC4D2E1A8BF8008D94A7 /* MainTabView.swift in Sources */,
@@ -992,12 +1012,16 @@
 				D0C2FC242E1DDC330020A35E /* ColorExtensionsTests.swift in Sources */,
 				D0C2FC252E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift in Sources */,
 				D0C2FC262E1DDC330020A35E /* TestUtilitiesTests.swift in Sources */,
+				D0F74D672E210008004D34D5 /* FirebaseAuthRepositoryTests.swift in Sources */,
 				D0C2FC272E1DDC330020A35E /* AuthErrorTests.swift in Sources */,
 				D0C2FC282E1DDC330020A35E /* GetUserUseCaseTests.swift in Sources */,
 				D0C2FC292E1DDC330020A35E /* MockUseCases.swift in Sources */,
 				D0C2FC2A2E1DDC330020A35E /* AislesViewModelTests.swift in Sources */,
 				D0C2FC2C2E1DDC330020A35E /* HistoryEntryDTOTests.swift in Sources */,
 				D0C2FC2D2E1DDC330020A35E /* SignOutUseCaseTests.swift in Sources */,
+				D0F74D632E20F7E3004D34D5 /* MockRepositories.swift in Sources */,
+				D0F74D642E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift in Sources */,
+				D0F74D652E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift in Sources */,
 				D0C2FC2E2E1DDC330020A35E /* SignInUseCaseTests.swift in Sources */,
 				D0C2FC2F2E1DDC330020A35E /* StringExtensionsTests.swift in Sources */,
 				D0C2FC302E1DDC330020A35E /* MedicineDetailViewModelTests.swift in Sources */,

@@ -840,162 +840,162 @@ struct AisleMedicineCard: View {
 // MARK: - Real Implementations
 
 // MARK: - Firebase Repository Implementations
-class FirebaseMedicineRepository: MedicineRepositoryProtocol {
-    private let db = Firestore.firestore()
-    private let collection = "medicines"
-    
-    func getMedicines() async throws -> [Medicine] {
-        let snapshot = try await db.collection(collection).getDocuments()
-        return snapshot.documents.compactMap { document in
-            try? document.data(as: MedicineDTO.self).toDomain()
-        }
-    }
-    
-    func getMedicine(id: String) async throws -> Medicine? {
-        let document = try await db.collection(collection).document(id).getDocument()
-        guard document.exists, let medicineDTO = try? document.data(as: MedicineDTO.self) else { return nil }
-        return medicineDTO.toDomain()
-    }
-    
-    func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
-        let medicineDTO = MedicineDTO.fromDomain(medicine)
-        if medicine.id.isEmpty {
-            let documentRef = db.collection(collection).document()
-            let newMedicine = Medicine(
-                id: documentRef.documentID, name: medicine.name, description: medicine.description,
-                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
-                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
-                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
-                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
-                createdAt: Date(), updatedAt: Date()
-            )
-            let newMedicineDTO = MedicineDTO.fromDomain(newMedicine)
-            try await documentRef.setData(from: newMedicineDTO)
-            return newMedicine
-        } else {
-            let updatedMedicine = Medicine(
-                id: medicine.id, name: medicine.name, description: medicine.description,
-                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
-                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
-                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
-                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
-                createdAt: medicine.createdAt, updatedAt: Date()
-            )
-            let updatedMedicineDTO = MedicineDTO.fromDomain(updatedMedicine)
-            try await db.collection(collection).document(medicine.id).setData(from: updatedMedicineDTO)
-            return updatedMedicine
-        }
-    }
-    
-    func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
-        try await db.collection(collection).document(id).updateData([
-            "currentQuantity": newStock, "updatedAt": FieldValue.serverTimestamp()
-        ])
-        guard let updatedMedicine = try await getMedicine(id: id) else {
-            throw NSError(domain: "MedicineRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
-        }
-        return updatedMedicine
-    }
-    
-    func deleteMedicine(id: String) async throws {
-        try await db.collection(collection).document(id).delete()
-    }
-    
-    func observeMedicines() -> AnyPublisher<[Medicine], Error> {
-        return Future { promise in
-            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
-                if let error = error { promise(.failure(error)); return }
-                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "MedicineRepository", code: 500))); return }
-                let medicines = snapshot.documents.compactMap { try? $0.data(as: MedicineDTO.self).toDomain() }
-                promise(.success(medicines))
-            }
-        }.eraseToAnyPublisher()
-    }
-    
-    func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
-        return Future { promise in
-            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
-                if let error = error { promise(.failure(error)); return }
-                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
-                do {
-                    let medicine = try snapshot.data(as: MedicineDTO.self).toDomain()
-                    promise(.success(medicine))
-                } catch { promise(.failure(error)) }
-            }
-        }.eraseToAnyPublisher()
-    }
-}
+//class FirebaseMedicineRepository: MedicineRepositoryProtocol {
+//    private let db = Firestore.firestore()
+//    private let collection = "medicines"
+//    
+//    func getMedicines() async throws -> [Medicine] {
+//        let snapshot = try await db.collection(collection).getDocuments()
+//        return snapshot.documents.compactMap { document in
+//            try? document.data(as: MedicineDTO.self).toDomain()
+//        }
+//    }
+//    
+//    func getMedicine(id: String) async throws -> Medicine? {
+//        let document = try await db.collection(collection).document(id).getDocument()
+//        guard document.exists, let medicineDTO = try? document.data(as: MedicineDTO.self) else { return nil }
+//        return medicineDTO.toDomain()
+//    }
+//    
+//    func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
+//        let medicineDTO = MedicineDTO.fromDomain(medicine)
+//        if medicine.id.isEmpty {
+//            let documentRef = db.collection(collection).document()
+//            let newMedicine = Medicine(
+//                id: documentRef.documentID, name: medicine.name, description: medicine.description,
+//                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
+//                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
+//                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
+//                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
+//                createdAt: Date(), updatedAt: Date()
+//            )
+//            let newMedicineDTO = MedicineDTO.fromDomain(newMedicine)
+//            try await documentRef.setData(from: newMedicineDTO)
+//            return newMedicine
+//        } else {
+//            let updatedMedicine = Medicine(
+//                id: medicine.id, name: medicine.name, description: medicine.description,
+//                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
+//                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
+//                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
+//                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
+//                createdAt: medicine.createdAt, updatedAt: Date()
+//            )
+//            let updatedMedicineDTO = MedicineDTO.fromDomain(updatedMedicine)
+//            try await db.collection(collection).document(medicine.id).setData(from: updatedMedicineDTO)
+//            return updatedMedicine
+//        }
+//    }
+//    
+//    func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
+//        try await db.collection(collection).document(id).updateData([
+//            "currentQuantity": newStock, "updatedAt": FieldValue.serverTimestamp()
+//        ])
+//        guard let updatedMedicine = try await getMedicine(id: id) else {
+//            throw NSError(domain: "MedicineRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
+//        }
+//        return updatedMedicine
+//    }
+//    
+//    func deleteMedicine(id: String) async throws {
+//        try await db.collection(collection).document(id).delete()
+//    }
+//    
+//    func observeMedicines() -> AnyPublisher<[Medicine], Error> {
+//        return Future { promise in
+//            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
+//                if let error = error { promise(.failure(error)); return }
+//                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "MedicineRepository", code: 500))); return }
+//                let medicines = snapshot.documents.compactMap { try? $0.data(as: MedicineDTO.self).toDomain() }
+//                promise(.success(medicines))
+//            }
+//        }.eraseToAnyPublisher()
+//    }
+//    
+//    func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
+//        return Future { promise in
+//            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
+//                if let error = error { promise(.failure(error)); return }
+//                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
+//                do {
+//                    let medicine = try snapshot.data(as: MedicineDTO.self).toDomain()
+//                    promise(.success(medicine))
+//                } catch { promise(.failure(error)) }
+//            }
+//        }.eraseToAnyPublisher()
+//    }
+//}
 
-class FirebaseAisleRepository: AisleRepositoryProtocol {
-    private let db = Firestore.firestore()
-    private let collection = "aisles"
-    private let medicinesCollection = "medicines"
-    
-    func getAisles() async throws -> [Aisle] {
-        let snapshot = try await db.collection(collection).getDocuments()
-        return snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
-    }
-    
-    func getAisle(id: String) async throws -> Aisle? {
-        let document = try await db.collection(collection).document(id).getDocument()
-        guard document.exists, let aisleDTO = try? document.data(as: AisleDTO.self) else { return nil }
-        return aisleDTO.toDomain()
-    }
-    
-    func saveAisle(_ aisle: Aisle) async throws -> Aisle {
-        if aisle.id.isEmpty {
-            let documentRef = db.collection(collection).document()
-            let newAisle = Aisle(id: documentRef.documentID, name: aisle.name, description: aisle.description,
-                                colorHex: aisle.colorHex, icon: aisle.icon)
-            let newAisleDTO = AisleDTO.fromDomain(newAisle)
-            try await documentRef.setData(from: newAisleDTO)
-            return newAisle
-        } else {
-            let updatedAisle = Aisle(id: aisle.id, name: aisle.name, description: aisle.description,
-                                   colorHex: aisle.colorHex, icon: aisle.icon)
-            let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)
-            try await db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)
-            return updatedAisle
-        }
-    }
-    
-    func deleteAisle(id: String) async throws {
-        let medicinesInAisle = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: id).getDocuments()
-        if !medicinesInAisle.documents.isEmpty {
-            throw NSError(domain: "AisleRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot delete aisle: it contains medicines"])
-        }
-        try await db.collection(collection).document(id).delete()
-    }
-    
-    func getMedicineCountByAisle(aisleId: String) async throws -> Int {
-        let snapshot = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: aisleId).getDocuments()
-        return snapshot.documents.count
-    }
-    
-    func observeAisles() -> AnyPublisher<[Aisle], Error> {
-        return Future { promise in
-            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
-                if let error = error { promise(.failure(error)); return }
-                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "AisleRepository", code: 500))); return }
-                let aisles = snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
-                promise(.success(aisles))
-            }
-        }.eraseToAnyPublisher()
-    }
-    
-    func observeAisle(id: String) -> AnyPublisher<Aisle?, Error> {
-        return Future { promise in
-            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
-                if let error = error { promise(.failure(error)); return }
-                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
-                do {
-                    let aisle = try snapshot.data(as: AisleDTO.self).toDomain()
-                    promise(.success(aisle))
-                } catch { promise(.failure(error)) }
-            }
-        }.eraseToAnyPublisher()
-    }
-}
+//class FirebaseAisleRepository: AisleRepositoryProtocol {
+//    private let db = Firestore.firestore()
+//    private let collection = "aisles"
+//    private let medicinesCollection = "medicines"
+//    
+//    func getAisles() async throws -> [Aisle] {
+//        let snapshot = try await db.collection(collection).getDocuments()
+//        return snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
+//    }
+//    
+//    func getAisle(id: String) async throws -> Aisle? {
+//        let document = try await db.collection(collection).document(id).getDocument()
+//        guard document.exists, let aisleDTO = try? document.data(as: AisleDTO.self) else { return nil }
+//        return aisleDTO.toDomain()
+//    }
+//    
+//    func saveAisle(_ aisle: Aisle) async throws -> Aisle {
+//        if aisle.id.isEmpty {
+//            let documentRef = db.collection(collection).document()
+//            let newAisle = Aisle(id: documentRef.documentID, name: aisle.name, description: aisle.description,
+//                                colorHex: aisle.colorHex, icon: aisle.icon)
+//            let newAisleDTO = AisleDTO.fromDomain(newAisle)
+//            try await documentRef.setData(from: newAisleDTO)
+//            return newAisle
+//        } else {
+//            let updatedAisle = Aisle(id: aisle.id, name: aisle.name, description: aisle.description,
+//                                   colorHex: aisle.colorHex, icon: aisle.icon)
+//            let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)
+//            try await db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)
+//            return updatedAisle
+//        }
+//    }
+//    
+//    func deleteAisle(id: String) async throws {
+//        let medicinesInAisle = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: id).getDocuments()
+//        if !medicinesInAisle.documents.isEmpty {
+//            throw NSError(domain: "AisleRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot delete aisle: it contains medicines"])
+//        }
+//        try await db.collection(collection).document(id).delete()
+//    }
+//    
+//    func getMedicineCountByAisle(aisleId: String) async throws -> Int {
+//        let snapshot = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: aisleId).getDocuments()
+//        return snapshot.documents.count
+//    }
+//    
+//    func observeAisles() -> AnyPublisher<[Aisle], Error> {
+//        return Future { promise in
+//            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
+//                if let error = error { promise(.failure(error)); return }
+//                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "AisleRepository", code: 500))); return }
+//                let aisles = snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
+//                promise(.success(aisles))
+//            }
+//        }.eraseToAnyPublisher()
+//    }
+//    
+//    func observeAisle(id: String) -> AnyPublisher<Aisle?, Error> {
+//        return Future { promise in
+//            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
+//                if let error = error { promise(.failure(error)); return }
+//                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
+//                do {
+//                    let aisle = try snapshot.data(as: AisleDTO.self).toDomain()
+//                    promise(.success(aisle))
+//                } catch { promise(.failure(error)) }
+//            }
+//        }.eraseToAnyPublisher()
+//    }
+//}
 
 // MARK: - Real Use Cases
 class RealGetMedicinesUseCase: GetMedicinesUseCaseProtocol {
