@@ -27,7 +27,8 @@
       "Bash(pkill:*)",
       "Bash(./test_pure_units.sh:*)",
       "Bash(defaults write:*)",
-      "Bash(./optimize_tests.sh:*)"
+      "Bash(./optimize_tests.sh:*)",
+      "Bash(sudo pkill:*)"
     ],
     "deny": []
   }
