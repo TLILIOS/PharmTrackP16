@@ -1739,6 +1739,21 @@ struct ProfileView: View {
             }
             
             Section(header: Text("Actions")) {
+                // TEMPORARY: Bouton désactivé pour la production
+                // Pour réactiver: décommenter le bouton et commenter cette section
+                Button(action: {
+                    // Action désactivée temporairement
+                }) {
+                    HStack {
+                        Image(systemName: "pills.fill")
+                            .foregroundColor(.gray)
+                        Text("Générer médicaments de test")
+                            .foregroundColor(.gray)
+                    }
+                }
+                .disabled(true)
+                
+                /* BOUTON ORIGINAL - Pour réactiver, décommenter cette section:
                 Button(action: {
                     Task {
                         await viewModel.generateTestMedicines()
@@ -1757,6 +1772,7 @@ struct ProfileView: View {
                     }
                 }
                 .disabled(viewModel.isGeneratingTestData)
+                */
                 
                 Button(action: {
                     Task {
