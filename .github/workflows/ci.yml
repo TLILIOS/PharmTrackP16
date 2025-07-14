@@ -20,14 +20,12 @@ jobs:
         scheme: MediStock
         destination: 'platform=iOS Simulator,name=iPhone 16'
         action: test
+        enable-code-coverage: true
         result-bundle-path: 'TestResults/TestResults.xcresult'
 
-    - name: Process Test Results
-      run: |
-        if [ -d "TestResults/TestResults.xcresult" ]; then
-          echo "✅ Tests completed successfully"
-          xcrun xccov view --report TestResults/TestResults.xcresult
-        else
-          echo "❌ No test results found"
-        fi
-      if: success() || failure()
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: TestResults/TestResults.xcresult
+      if: always()
