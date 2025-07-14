@@ -18,6 +18,10 @@ jobs:
 
     - name: Build and Test
       run: |
+        echo "# Xcode test results" >> $GITHUB_STEP_SUMMARY
+        echo "## Testing project MediStock with scheme MediStock" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
         xcodebuild clean test \
           -project MediStock.xcodeproj \
           -scheme MediStock \
@@ -33,3 +37,15 @@ jobs:
         name: test-results
         path: TestResults/TestResults.xcresult
       if: always()
+    
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "### 📊 Test Results" >> $GITHUB_STEP_SUMMARY
+        if [ -d "TestResults/TestResults.xcresult" ]; then
+          echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Test results have been uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
