@@ -1,8 +1,8 @@
 import XCTest
 import SwiftUI
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class AisleTests: XCTestCase {
+final class AisleTests: XCTestCase, Sendable {
     
     // MARK: - Initialization Tests
     
@@ -239,7 +239,7 @@ final class AisleTests: XCTestCase {
     
     func testAisleValueTypeSemantics() {
         // Given
-        var aisle1 = TestDataFactory.createTestAisle(name: "Original Name", colorHex: "#007AFF")
+        let aisle1 = TestDataFactory.createTestAisle(name: "Original Name", colorHex: "#007AFF")
         var aisle2 = aisle1
         
         // When
@@ -380,7 +380,7 @@ final class AisleTests: XCTestCase {
         let aisle = TestDataFactory.createTestAisle(name: "Original Name", colorHex: "#007AFF")
         
         // When - Aisle is a struct, so it should be value type
-        var mutableAisle = aisle
+        let mutableAisle = aisle
         // Note: Cannot directly test mutation since Aisle properties are let constants
         // This test verifies the struct nature
         

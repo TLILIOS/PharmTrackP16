@@ -135,7 +135,7 @@ final class MedicineDTOTests: XCTestCase {
     }
     
     func testMedicineDTOToDomainWithNilId() {
-        var medicineDTO = MedicineDTO(
+        let medicineDTO = MedicineDTO(
             id: nil,
             name: "Aspirin",
             description: "Pain reliever",

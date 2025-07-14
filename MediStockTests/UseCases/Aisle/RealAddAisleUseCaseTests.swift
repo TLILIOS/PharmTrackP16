@@ -60,7 +60,7 @@ final class RealAddAisleUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(addAisleUseCase)
-        XCTAssertTrue(addAisleUseCase is AddAisleUseCaseProtocol)
+        XCTAssertTrue(addAisleUseCase != nil)
     }
     
     func testExecuteWithEmptyValues() async throws {

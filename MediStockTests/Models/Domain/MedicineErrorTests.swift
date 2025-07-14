@@ -1,7 +1,7 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class MedicineErrorTests: XCTestCase {
+final class MedicineErrorTests: XCTestCase, Sendable {
     
     func testMedicineErrorDescriptions() {
         let notFoundError = MedicineError.notFound

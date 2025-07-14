@@ -21,7 +21,11 @@
       "Bash(timeout:*)",
       "Bash(gtimeout:*)",
       "Bash(code --version)",
-      "Bash(xcrun xctrace:*)"
+      "Bash(xcrun xctrace:*)",
+      "Bash(chmod:*)",
+      "Bash(./run_tests_safe.sh:*)",
+      "Bash(pkill:*)",
+      "Bash(./test_pure_units.sh:*)"
     ],
     "deny": []
   }

@@ -680,7 +680,7 @@ struct AisleMedicinesView: View {
                     // Pre-select this aisle in the medicine list filter
                     Task {
                         await appCoordinator.medicineListViewModel.fetchMedicines()
-                        try await appCoordinator.medicineListViewModel.fetchAisles()
+                        await appCoordinator.medicineListViewModel.fetchAisles()
                     }
                 }
             } else {
@@ -777,7 +777,7 @@ struct AisleMedicineCard: View {
                 .frame(width: 12, height: 12)
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(medicine.name ?? "Nom non spécifié")
+                Text(medicine.name)
                     .font(.headline)
                     .foregroundColor(.primary)
                 
@@ -1037,7 +1037,7 @@ class RealAddMedicineUseCase: AddMedicineUseCaseProtocol {
             timestamp: Date()
         )
         
-        try await historyRepository.addHistoryEntry(historyEntry)
+        _ = try await historyRepository.addHistoryEntry(historyEntry)
     }
 }
 
@@ -1063,7 +1063,7 @@ class RealUpdateMedicineUseCase: UpdateMedicineUseCaseProtocol {
             timestamp: Date()
         )
         
-        try await historyRepository.addHistoryEntry(historyEntry)
+        _ = try await historyRepository.addHistoryEntry(historyEntry)
     }
 }
 
@@ -1093,7 +1093,7 @@ class RealDeleteMedicineUseCase: DeleteMedicineUseCaseProtocol {
                 timestamp: Date()
             )
             
-            try await historyRepository.addHistoryEntry(historyEntry)
+            _ = try await historyRepository.addHistoryEntry(historyEntry)
         }
     }
 }
@@ -1352,7 +1352,7 @@ class RealUpdateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol {
             timestamp: Date()
         )
         
-        try await historyRepository.addHistoryEntry(historyEntry)
+        _ = try await historyRepository.addHistoryEntry(historyEntry)
         
         return updatedMedicine
     }
@@ -1558,7 +1558,7 @@ struct CriticalStockMedicineRowWrapper: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(medicine.name ?? "Nom non spécifié")
+                    Text(medicine.name)
                         .font(.headline)
                         .foregroundColor(.primary)
                     

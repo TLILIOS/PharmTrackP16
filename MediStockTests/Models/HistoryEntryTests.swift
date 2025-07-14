@@ -1,7 +1,7 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class HistoryEntryTests: XCTestCase {
+final class HistoryEntryTests: XCTestCase, Sendable {
     
     // MARK: - Initialization Tests
     
@@ -286,7 +286,7 @@ final class HistoryEntryTests: XCTestCase {
     
     func testHistoryEntryValueTypeSemantics() {
         // Given
-        var entry1 = TestDataFactory.createTestHistoryEntry(action: "Original Action")
+        let entry1 = TestDataFactory.createTestHistoryEntry(action: "Original Action")
         var entry2 = entry1
         
         // When

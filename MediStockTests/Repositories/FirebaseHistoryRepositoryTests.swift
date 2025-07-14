@@ -1,9 +1,10 @@
 import XCTest
 import Firebase
 import FirebaseFirestore
-@testable import MediStock
+@testable @preconcurrency import MediStock
+
 @MainActor
-final class FirebaseHistoryRepositoryTests: XCTestCase {
+final class FirebaseHistoryRepositoryTests: XCTestCase, Sendable {
     
     var sut: FirebaseHistoryRepository!
     var mockFirestore: Firestore!

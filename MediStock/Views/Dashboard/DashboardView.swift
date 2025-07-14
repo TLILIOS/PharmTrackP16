@@ -385,7 +385,7 @@ struct CriticalStockCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(medicine.name ?? "Nom non spécifié")
+            Text(medicine.name)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .lineLimit(1)
@@ -395,7 +395,7 @@ struct CriticalStockCard: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text(medicine.unit ?? "")
+                Text(medicine.unit)
                     .font(.caption2)
                     .foregroundColor(.gray)
             }

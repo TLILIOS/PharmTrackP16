@@ -1,7 +1,8 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
+
 @MainActor
-final class LocalCacheServiceTests: XCTestCase {
+final class LocalCacheServiceTests: XCTestCase, Sendable {
     
     var cacheService: LocalCacheService!
     let testKey = "test_key"
@@ -188,11 +189,12 @@ final class LocalCacheServiceTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Concurrent access")
         expectation.expectedFulfillmentCount = 10
         
+        let cacheService = self.cacheService!
         for i in 0..<10 {
             DispatchQueue.global().async {
                 do {
                     let data = TestCacheData(id: "\(i)", name: "Test \(i)", value: i)
-                    try self.cacheService.save(data, forKey: "concurrent_key_\(i)")
+                    try cacheService.save(data, forKey: "concurrent_key_\(i)")
                     expectation.fulfill()
                 } catch {
                     XCTFail("Concurrent save failed: \(error)")

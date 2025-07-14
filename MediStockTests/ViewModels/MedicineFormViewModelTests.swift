@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class MedicineFormViewModelTests: XCTestCase {
+final class MedicineFormViewModelTests: XCTestCase, Sendable {
     
     var sut: MedicineFormViewModel!
     var mockGetMedicineUseCase: MockGetMedicineUseCase!
@@ -595,8 +595,8 @@ final class MedicineFormViewModelTests: XCTestCase {
         mockGetMedicineUseCase.medicine = testMedicine
         
         // When - Start operations concurrently
-        async let fetchTask = sut.fetchAisles()
-        async let refreshTask = sut.refreshMedicine(id: "test-id")
+        async let fetchTask: () = sut.fetchAisles()
+        async let refreshTask: () = sut.refreshMedicine(id: "test-id")
         
         // Wait for both to complete
         await fetchTask

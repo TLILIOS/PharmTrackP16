@@ -42,7 +42,7 @@ final class TestUtilitiesTests: XCTestCase {
     
     func testWaitForCondition_Timeout() {
         // Given
-        var conditionMet = false
+        let conditionMet = false
         
         // When
         let startTime = Date()
@@ -61,13 +61,18 @@ final class TestUtilitiesTests: XCTestCase {
     func testAssertEventuallyTrue_Success() {
         // Given
         var condition = false
+        let expectation = XCTestExpectation(description: "Condition should become true")
         
         // When
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             condition = true
+            expectation.fulfill()
         }
         
-        // Then
+        // Wait for the async operation to complete
+        wait(for: [expectation], timeout: 1.0)
+        
+        // Then - Test assertEventuallyTrue with an already true condition
         do {
             try assertEventuallyTrue(timeout: 2.0) {
                 condition

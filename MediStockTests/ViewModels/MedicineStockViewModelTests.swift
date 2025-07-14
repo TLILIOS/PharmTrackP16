@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class MedicineStockViewModelTests: XCTestCase {
+final class MedicineStockViewModelTests: XCTestCase, Sendable {
     
     var sut: MedicineStockViewModel!
     var mockMedicineRepository: MockMedicineRepository!
@@ -563,6 +563,17 @@ final class MedicineStockViewModelTests: XCTestCase {
             TestDataFactory.createTestMedicine(id: "med2", name: "Medicine 2")
         ]
         
+        // Configure mock data before recreating ViewModel
+        mockMedicineRepository.medicines = testMedicines
+        mockMedicineRepository.returnMedicines = testMedicines
+        
+        // Recreate ViewModel after setting up mock data to ensure listeners pick up the data
+        sut = MedicineStockViewModel(
+            medicineRepository: mockMedicineRepository,
+            aisleRepository: mockAisleRepository,
+            historyRepository: mockHistoryRepository
+        )
+        
         sut.$medicines
             .dropFirst()
             .sink { medicines in
@@ -572,8 +583,7 @@ final class MedicineStockViewModelTests: XCTestCase {
             }
             .store(in: &cancellables)
         
-        // Simulate repository update by triggering fetch
-        mockMedicineRepository.returnMedicines = testMedicines
+        // Trigger fetch to ensure data is loaded
         await sut.fetchMedicines()
         
         await fulfillment(of: [expectation], timeout: 1.0)
@@ -642,7 +652,9 @@ final class MedicineStockViewModelTests: XCTestCase {
             TestDataFactory.createTestAisle(id: "aisle1", name: "Pharmacy", colorHex: "#007AFF")
         ]
         
+        mockMedicineRepository.medicines = testMedicines
         mockMedicineRepository.returnMedicines = testMedicines
+        mockAisleRepository.aisles = testAisles
         mockAisleRepository.returnAisles = testAisles
         mockMedicineRepository.returnUpdatedMedicine = TestDataFactory.createTestMedicine(
             id: "med1",
@@ -650,11 +662,26 @@ final class MedicineStockViewModelTests: XCTestCase {
             currentQuantity: 11
         )
         
+        // Recreate ViewModel after setting up mock data to ensure listeners pick up the data
+        sut = MedicineStockViewModel(
+            medicineRepository: mockMedicineRepository,
+            aisleRepository: mockAisleRepository,
+            historyRepository: mockHistoryRepository
+        )
+        
         // When - Fetch data
         await sut.fetchMedicines()
         await sut.fetchAisles()
         
+        // Allow time for listeners to update
+        await Task.yield()
+        
         // Then - Verify data loaded
+        print("DEBUG: medicines.count = \(sut.medicines.count), aisles.count = \(sut.aisles.count)")
+        print("DEBUG: aisleObjects.count = \(sut.aisleObjects.count)")
+        print("DEBUG: mock aisles = \(mockAisleRepository.aisles)")
+        print("DEBUG: mock returnAisles = \(mockAisleRepository.returnAisles)")
+        
         XCTAssertEqual(sut.medicines.count, 1)
         XCTAssertEqual(sut.aisles.count, 1)
         XCTAssertTrue(sut.aisles.contains("Pharmacy"))

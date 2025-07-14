@@ -174,14 +174,13 @@ final class FirebaseAuthRepositoryTestsExtended: XCTestCase, Sendable {
         let cancellable = sut.authStateDidChange
             .sink { user in
                 // Should receive auth state (nil or User)
-                // In test environment, accept any valid User or nil
                 if let user = user {
                     XCTAssertFalse(user.id.isEmpty)
                 }
                 expectation.fulfill()
             }
         
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 1.0)
         cancellable.cancel()
     }
     
@@ -206,29 +205,23 @@ final class FirebaseAuthRepositoryTestsExtended: XCTestCase, Sendable {
     
     // MARK: - Concurrent Access Tests
     
-    func testConcurrentAccess() {
+    func testConcurrentAccess() async {
         let expectation = XCTestExpectation(description: "Concurrent access")
         expectation.expectedFulfillmentCount = 10
         
-        // Capturer sut dans une variable locale avant d'entrer dans la queue
-        let repository = sut!
-        let queue = DispatchQueue.global(qos: .background)
-        
-        for _ in 0..<10 {
-            queue.async {
-                autoreleasepool {
-                    // Utiliser la variable locale au lieu de self.sut
-                    let _ = repository.currentUser
-                    let _ = repository.authStateDidChange
-                    
-                    DispatchQueue.main.async {
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<10 {
+                group.addTask {
+                    await MainActor.run {
+                        let _ = self.sut.currentUser
+                        let _ = self.sut.authStateDidChange
                         expectation.fulfill()
                     }
                 }
             }
         }
         
-        wait(for: [expectation], timeout: 15.0)
+        await fulfillment(of: [expectation], timeout: 2.0)
     }
 
 

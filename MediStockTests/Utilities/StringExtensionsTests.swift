@@ -1,6 +1,6 @@
 import XCTest
 import Foundation
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 // MARK: - String Extensions for Testing
 extension String {
@@ -138,7 +138,7 @@ extension String {
 }
 
 @MainActor
-final class StringExtensionsTests: XCTestCase {
+final class StringExtensionsTests: XCTestCase, Sendable {
     
     // MARK: - Validation Tests
     

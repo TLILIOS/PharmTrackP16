@@ -16,9 +16,9 @@ class FirebaseHistoryRepository: HistoryRepositoryProtocol {
             
             if let id = dto.id, !id.isEmpty {
                 docRef = db.collection(historyCollection).document(id)
-                try await docRef.setData(from: dto)
+                try docRef.setData(from: dto)
             } else {
-                docRef = try await db.collection(historyCollection).addDocument(from: dto)
+                docRef = try db.collection(historyCollection).addDocument(from: dto)
             }
             
             // Récupérer l'entrée mise à jour pour obtenir l'ID attribué

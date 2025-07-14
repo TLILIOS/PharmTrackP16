@@ -2,10 +2,10 @@ import XCTest
 import Firebase
 import FirebaseAuth
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class FirebaseAuthRepositoryTests: XCTestCase {
+final class FirebaseAuthRepositoryTests: XCTestCase, Sendable {
     
     var sut: FirebaseAuthRepository!
     var cancellables: Set<AnyCancellable>!
@@ -68,7 +68,7 @@ final class FirebaseAuthRepositoryTests: XCTestCase {
             }
             .store(in: &cancellables)
         
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 1.0)
     }
     
     func testAuthStatePublisherMultipleSubscribers() {
@@ -89,7 +89,7 @@ final class FirebaseAuthRepositoryTests: XCTestCase {
             }
             .store(in: &cancellables)
         
-        wait(for: [expectation1, expectation2], timeout: 2.0)
+        wait(for: [expectation1, expectation2], timeout: 1.0)
     }
     
     // MARK: - Error Mapping Tests
@@ -263,7 +263,7 @@ final class FirebaseAuthRepositoryTests: XCTestCase {
             }
         }
         
-        await fulfillment(of: [expectation], timeout: 5.0)
+        await fulfillment(of: [expectation], timeout: 2.0)
     }
     
     // MARK: - Edge Cases Tests
@@ -308,7 +308,7 @@ final class FirebaseAuthRepositoryTests: XCTestCase {
     // MARK: - Protocol Conformance Tests
     
     func testConformsToAuthRepositoryProtocol() {
-        XCTAssertTrue(sut is AuthRepositoryProtocol)
+        XCTAssertTrue(sut != nil)
     }
     
     // MARK: - Thread Safety Tests

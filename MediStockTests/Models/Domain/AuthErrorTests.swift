@@ -1,7 +1,7 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class AuthErrorTests: XCTestCase {
+final class AuthErrorTests: XCTestCase, Sendable {
     
     func testAuthErrorDescriptions() {
         let invalidEmailError = AuthError.invalidEmail

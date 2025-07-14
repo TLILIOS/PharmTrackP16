@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class AdjustStockViewModelTests: XCTestCase {
+final class AdjustStockViewModelTests: XCTestCase, Sendable {
     
     var sut: AdjustStockViewModel!
     var mockGetMedicineUseCase: MockGetMedicineUseCase!

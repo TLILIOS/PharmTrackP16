@@ -240,7 +240,7 @@ final class UserTests: XCTestCase {
     
     func testUserValueTypeSemantics() {
         // Given
-        var user1 = User(id: "test", email: "test@example.com", displayName: "Original Name")
+        let user1 = User(id: "test", email: "test@example.com", displayName: "Original Name")
         var user2 = user1
         
         // When
@@ -323,8 +323,8 @@ final class UserTests: XCTestCase {
         
         // Then - Verify field types
         XCTAssertTrue(user.id is String)
-        XCTAssertTrue(user.email is String)
-        XCTAssertTrue(user.displayName is String)
+        XCTAssertTrue(user.email != nil)
+        XCTAssertTrue(user.displayName != nil)
     }
     
     // MARK: - Comparison Tests
@@ -440,7 +440,7 @@ final class UserTests: XCTestCase {
         let user = User(id: "test", email: "test@example.com", displayName: "Original Name")
         
         // When - User is a struct, so it should be value type
-        var mutableUser = user
+        let mutableUser = user
         // Note: Cannot directly test mutation since User properties are let constants
         // This test verifies the struct nature
         

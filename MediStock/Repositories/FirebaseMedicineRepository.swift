@@ -44,7 +44,7 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
     }
     
     func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
-        let medicineDTO = MedicineDTO.fromDomain(medicine)
+        let _ = MedicineDTO.fromDomain(medicine)
         
         if medicine.id.isEmpty {
             // Créer un nouveau médicament avec un ID généré
@@ -69,7 +69,7 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
 
             
             let newMedicineDTO = MedicineDTO.fromDomain(newMedicine)
-            try await documentRef.setData(from: newMedicineDTO)
+            try documentRef.setData(from: newMedicineDTO)
             return newMedicine
         } else {
             // Mettre à jour un médicament existant
@@ -93,7 +93,7 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
 
             
             let updatedMedicineDTO = MedicineDTO.fromDomain(updatedMedicine)
-            try await db.collection(collection).document(medicine.id).setData(from: updatedMedicineDTO)
+            try db.collection(collection).document(medicine.id).setData(from: updatedMedicineDTO)
             return updatedMedicine
         }
     }
@@ -128,7 +128,7 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
     
     func observeMedicines() -> AnyPublisher<[Medicine], Error> {
         return Future { promise in
-            let listener = self.db.collection(self.collection)
+            let _ = self.db.collection(self.collection)
                 .addSnapshotListener { snapshot, error in
                     if let error = error {
                         promise(.failure(error))
@@ -154,7 +154,7 @@ class FirebaseMedicineRepository: MedicineRepositoryProtocol {
     
     func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
         return Future { promise in
-            let listener = self.db.collection(self.collection).document(id)
+            _ = self.db.collection(self.collection).document(id)
                 .addSnapshotListener { snapshot, error in
                     if let error = error {
                         promise(.failure(error))

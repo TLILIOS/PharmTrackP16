@@ -1,9 +1,10 @@
 import XCTest
 import Combine
 import FirebaseAuth
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
-final class SessionStoreTests: XCTestCase {
+@MainActor
+final class SessionStoreTests: XCTestCase, Sendable {
     
     var sut: SessionStore!
     var mockAuthRepository: MockAuthRepository!

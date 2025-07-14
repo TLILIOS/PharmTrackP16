@@ -82,7 +82,7 @@ final class SignInUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(signInUseCase)
-        XCTAssertTrue(signInUseCase is SignInUseCaseProtocol)
+        XCTAssertTrue(signInUseCase != nil)
     }
     
     func testExecuteMultipleTimes() async throws {

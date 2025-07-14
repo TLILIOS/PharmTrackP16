@@ -1,11 +1,10 @@
 import XCTest
 import Combine
 import SwiftUI
-@testable import MediStock
-
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class AislesViewModelTests: XCTestCase {
+final class AislesViewModelTests: XCTestCase, Sendable {
     
     var sut: AislesViewModel!
     var mockGetAislesUseCase: MockGetAislesUseCase!
@@ -626,9 +625,12 @@ final class AislesViewModelTests: XCTestCase {
     
     func testConcurrentOperations() async {
         // Given
-        let testAisles = [TestDataFactory.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")]
-        mockGetAislesUseCase.returnAisles = testAisles
+        let aisle1 = TestDataFactory.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")
+        
+        // Configure mocks to handle concurrent operations
+        mockGetAislesUseCase.returnAisles = [aisle1] // Start with 1 aisle
         mockGetMedicineCountByAisleUseCase.countsPerAisle = ["aisle1": 1]
+        mockAddAisleUseCase.shouldThrowError = false
         
         // When - Start operations concurrently
         async let fetchTask: () = sut.fetchAisles()
@@ -637,6 +639,9 @@ final class AislesViewModelTests: XCTestCase {
         // Wait for both to complete
         await fetchTask
         await addTask
+        
+        // Allow time for state updates
+        await Task.yield()
         
         // Then - Both should succeed without conflicts
         XCTAssertEqual(sut.state, .success)

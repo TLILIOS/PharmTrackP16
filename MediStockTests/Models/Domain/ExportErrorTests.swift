@@ -1,7 +1,7 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class ExportErrorTests: XCTestCase {
+final class ExportErrorTests: XCTestCase, Sendable {
     
     func testExportErrorDescriptions() {
         let unsupportedFormatError = ExportError.unsupportedFormat

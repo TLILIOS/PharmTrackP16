@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class HistoryViewModelTests: XCTestCase {
+final class HistoryViewModelTests: XCTestCase, Sendable {
     
     var sut: HistoryViewModel!
     var mockGetHistoryUseCase: MockGetHistoryUseCase!

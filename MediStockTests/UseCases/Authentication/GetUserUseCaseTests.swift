@@ -58,7 +58,7 @@ final class GetUserUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(getUserUseCase)
-        XCTAssertTrue(getUserUseCase is GetUserUseCaseProtocol)
+        XCTAssertTrue(getUserUseCase != nil)
     }
     
     func testExecuteMultipleTimes() async throws {

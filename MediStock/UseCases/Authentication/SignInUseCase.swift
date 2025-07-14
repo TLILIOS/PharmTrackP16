@@ -8,6 +8,6 @@ class SignInUseCase: SignInUseCaseProtocol {
     }
     
     func execute(email: String, password: String) async throws {
-        try await authRepository.signIn(email: email, password: password)
+        _ = try await authRepository.signIn(email: email, password: password)
     }
 }

@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class DashboardViewModelTests: XCTestCase {
+final class DashboardViewModelTests: XCTestCase, Sendable {
     
     var sut: DashboardViewModel!
     var mockGetUserUseCase: MockGetUserUseCase!

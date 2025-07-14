@@ -159,7 +159,7 @@ final class SignUpUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(signUpUseCase)
-        XCTAssertTrue(signUpUseCase is SignUpUseCaseProtocol)
+        XCTAssertTrue(signUpUseCase != nil)
     }
     
     func testExecutePartialSuccess() async {

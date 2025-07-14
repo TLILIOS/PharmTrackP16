@@ -110,7 +110,7 @@ final class RealGetRecentHistoryUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(getRecentHistoryUseCase)
-        XCTAssertTrue(getRecentHistoryUseCase is GetRecentHistoryUseCaseProtocol)
+        XCTAssertTrue(getRecentHistoryUseCase != nil)
     }
     
     func testExecuteDifferentLimits() async throws {

@@ -295,7 +295,7 @@ struct AisleFormView: View {
     }
 }
 
-#Preview {
+#Preview("Ajouter un rayon") {
     let mockViewModel = AislesViewModel(
         getAislesUseCase: MockGetAislesUseCase(),
         addAisleUseCase: MockAddAisleUseCase(),
@@ -304,20 +304,26 @@ struct AisleFormView: View {
         getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase()
     )
     
-    return Group {
-        AisleFormView(viewModel: mockViewModel)
-            .previewDisplayName("Ajouter un rayon")
-        
-        AisleFormView(
-            viewModel: mockViewModel,
-            editingAisle: Aisle(
-                id: "test",
-                name: "Médicaments généraux",
-                description: "Antidouleurs et médicaments courants",
-                color: .blue,
-                icon: "pills"
-            )
+    return AisleFormView(viewModel: mockViewModel)
+}
+
+#Preview("Modifier un rayon") {
+    let mockViewModel = AislesViewModel(
+        getAislesUseCase: MockGetAislesUseCase(),
+        addAisleUseCase: MockAddAisleUseCase(),
+        updateAisleUseCase: MockUpdateAisleUseCase(),
+        deleteAisleUseCase: MockDeleteAisleUseCase(),
+        getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase()
+    )
+    
+    return AisleFormView(
+        viewModel: mockViewModel,
+        editingAisle: Aisle(
+            id: "test",
+            name: "Médicaments généraux",
+            description: "Antidouleurs et médicaments courants",
+            color: .blue,
+            icon: "pills"
         )
-        .previewDisplayName("Modifier un rayon")
-    }
+    )
 }

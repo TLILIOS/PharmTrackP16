@@ -82,9 +82,9 @@ class HistoryViewModel: ObservableObject {
         state = .exporting
         
         do {
-            let exportData = createExportData(entries: entries)
+            let _ = createExportData(entries: entries)
             
-            let fileName = "Historique_MediStock_\(formatDate(Date()))"
+            let _ = "Historique_MediStock_\(formatDate(Date()))"
             
             switch format {
             case .pdf:

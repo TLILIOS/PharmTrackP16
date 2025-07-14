@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class AisleFormViewModelTests: XCTestCase {
+final class AisleFormViewModelTests: XCTestCase, Sendable {
     
     var sut: AisleFormViewModel!
     var mockAddAisleUseCase: MockAddAisleUseCase!

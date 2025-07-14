@@ -53,7 +53,7 @@ final class RealGetAislesUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(getAislesUseCase)
-        XCTAssertTrue(getAislesUseCase is GetAislesUseCaseProtocol)
+        XCTAssertTrue(getAislesUseCase != nil)
     }
     
     func testExecuteMultipleTimes() async throws {

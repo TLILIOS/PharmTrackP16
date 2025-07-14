@@ -104,8 +104,8 @@ struct SignUpView: View {
             .onAppear {
                 startAnimations()
             }
-            .onChange(of: authViewModel.isAuthenticated) { isAuthenticated in
-                if isAuthenticated {
+            .onChange(of: authViewModel.isAuthenticated) {
+                if authViewModel.isAuthenticated {
                     dismiss()
                 }
             }

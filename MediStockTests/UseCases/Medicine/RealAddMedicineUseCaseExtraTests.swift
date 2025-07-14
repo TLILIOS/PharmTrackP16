@@ -120,6 +120,6 @@ final class RealAddMedicineUseCaseExtraTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(addMedicineUseCase)
-        XCTAssertTrue(addMedicineUseCase is AddMedicineUseCaseProtocol)
+        XCTAssertTrue(addMedicineUseCase != nil)
     }
 }

@@ -17,8 +17,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         let db = Firestore.firestore()
         let settings = FirestoreSettings()
-        settings.isPersistenceEnabled = true
-        settings.cacheSizeBytes = FirestoreCacheSizeUnlimited
+        settings.cacheSettings = PersistentCacheSettings(sizeBytes: FirestoreCacheSizeUnlimited as NSNumber)
         db.settings = settings
         
         return true

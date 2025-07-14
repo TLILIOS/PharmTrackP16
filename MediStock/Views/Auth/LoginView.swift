@@ -166,8 +166,8 @@ struct LoginView: View {
                 formOffset = 0
             }
         }
-        .onChange(of: isShowingSignUp) { newValue in
-            print("🔍 isShowingSignUp changed to: \(newValue)")
+        .onChange(of: isShowingSignUp) {
+            print("🔍 isShowingSignUp changed to: \(isShowingSignUp)")
         }
     }
 }

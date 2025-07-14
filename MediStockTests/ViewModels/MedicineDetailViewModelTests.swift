@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class MedicineDetailViewModelTests: XCTestCase {
+final class MedicineDetailViewModelTests: XCTestCase, Sendable {
     
     var sut: MedicineDetailViewModel!
     var testMedicine: Medicine!
@@ -556,8 +556,8 @@ final class MedicineDetailViewModelTests: XCTestCase {
         mockGetHistoryForMedicineUseCase.historyEntries = []
         
         // When - Start operations concurrently
-        async let refreshTask = sut.refreshMedicine()
-        async let historyTask = sut.fetchHistory()
+        async let refreshTask: () = sut.refreshMedicine()
+        async let historyTask: () = sut.fetchHistory()
         
         // Wait for both to complete
         await refreshTask

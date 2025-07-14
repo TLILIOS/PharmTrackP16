@@ -195,7 +195,7 @@ class MedicineStockViewModel: ObservableObject {
         )
         
         do {
-            try await historyRepository.addHistoryEntry(historyEntry)
+            _ = try await historyRepository.addHistoryEntry(historyEntry)
         } catch {
             errorMessage = error.localizedDescription
         }

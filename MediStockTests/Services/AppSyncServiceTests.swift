@@ -1,9 +1,10 @@
 import XCTest
 import Combine
 import Network
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
-final class AppSyncServiceTests: XCTestCase {
+@MainActor
+final class AppSyncServiceTests: XCTestCase, Sendable {
     
     var sut: AppSyncService!
     var mockCacheService: MockCacheService!

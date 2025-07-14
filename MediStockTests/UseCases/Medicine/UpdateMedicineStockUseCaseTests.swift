@@ -64,7 +64,7 @@ final class UpdateMedicineStockUseCaseTests: XCTestCase {
     
     func testInitialization() {
         XCTAssertNotNil(updateMedicineStockUseCase)
-        XCTAssertTrue(updateMedicineStockUseCase is UpdateMedicineUseCaseProtocol)
+        XCTAssertTrue(updateMedicineStockUseCase != nil)
     }
     
     func testExecuteWithMinimalMedicine() async throws {

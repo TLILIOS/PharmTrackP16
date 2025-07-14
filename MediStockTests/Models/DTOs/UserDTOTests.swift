@@ -42,7 +42,7 @@ final class UserDTOTests: XCTestCase {
     }
     
     func testUserDTOToDomainWithNilId() {
-        var userDTO = UserDTO(
+        let userDTO = UserDTO(
             id: nil,
             email: "test@example.com",
             displayName: "Test User"

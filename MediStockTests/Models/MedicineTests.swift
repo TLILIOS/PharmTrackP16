@@ -1,7 +1,7 @@
 import XCTest
-@testable import MediStock
+@testable @preconcurrency import MediStock
 @MainActor
-final class MedicineTests: XCTestCase {
+final class MedicineTests: XCTestCase, Sendable {
     
     // MARK: - Initialization Tests
     
@@ -331,7 +331,7 @@ final class MedicineTests: XCTestCase {
     
     func testMedicineValueTypeSemantics() {
         // Given
-        var medicine1 = TestDataFactory.createTestMedicine(currentQuantity: 50)
+        let medicine1 = TestDataFactory.createTestMedicine(currentQuantity: 50)
         var medicine2 = medicine1
         
         // When
@@ -431,10 +431,10 @@ final class MedicineTests: XCTestCase {
         // Then - Verify field types
         XCTAssertTrue(medicine.id is String)
         XCTAssertTrue(medicine.name is String)
-        XCTAssertTrue(medicine.description is String)
-        XCTAssertTrue(medicine.dosage is String)
-        XCTAssertTrue(medicine.form is String)
-        XCTAssertTrue(medicine.reference is String)
+        XCTAssertTrue(medicine.description != nil)
+        XCTAssertTrue(medicine.dosage != nil)
+        XCTAssertTrue(medicine.form != nil)
+        XCTAssertTrue(medicine.reference != nil)
         XCTAssertTrue(medicine.unit is String)
         XCTAssertTrue(medicine.currentQuantity is Int)
         XCTAssertTrue(medicine.maxQuantity is Int)

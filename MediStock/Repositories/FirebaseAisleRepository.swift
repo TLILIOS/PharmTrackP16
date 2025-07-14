@@ -47,7 +47,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
     }
     
     func saveAisle(_ aisle: Aisle) async throws -> Aisle {
-        let aisleDTO = AisleDTO.fromDomain(aisle)
+        let _ = AisleDTO.fromDomain(aisle)
         
         if aisle.id.isEmpty {
             // Créer un nouveau rayon avec un ID généré
@@ -62,7 +62,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
 
             
             let newAisleDTO = AisleDTO.fromDomain(newAisle)
-            try await documentRef.setData(from: newAisleDTO)
+            try documentRef.setData(from: newAisleDTO)
             return newAisle
         } else {
             // Mettre à jour un rayon existant
@@ -76,7 +76,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
 
             
             let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)
-            try await db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)
+            try db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)
             return updatedAisle
         }
     }
@@ -132,7 +132,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
     
     func observeAisles() -> AnyPublisher<[Aisle], Error> {
         return Future { promise in
-            let listener = self.db.collection(self.collection)
+            let _ = self.db.collection(self.collection)
                 .addSnapshotListener { snapshot, error in
                     if let error = error {
                         promise(.failure(error))
@@ -163,7 +163,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
         }
         
         return Future { promise in
-            let listener = self.db.collection(self.collection).document(id)
+            let _ = self.db.collection(self.collection).document(id)
                 .addSnapshotListener { snapshot, error in
                     if let error = error {
                         promise(.failure(error))

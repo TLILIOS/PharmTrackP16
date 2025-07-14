@@ -54,7 +54,7 @@ final class AisleDTOTests: XCTestCase {
     }
     
     func testAisleDTOToDomainWithNilId() {
-        var aisleDTO = AisleDTO(
+        let aisleDTO = AisleDTO(
             id: nil,
             name: "Test Aisle",
             description: "Test Description",

@@ -150,25 +150,31 @@ public class MockMedicineRepository: MedicineRepositoryProtocol {
         medicines.removeAll { $0.id == id }
     }
     
-    public func observeMedicines() -> AnyPublisher<[Medicine], Error> {
-        if shouldThrowError {
-            return Fail(error: errorToThrow)
-                .eraseToAnyPublisher()
+    nonisolated public func observeMedicines() -> AnyPublisher<[Medicine], Error> {
+        return Future { promise in
+            Task { @MainActor in
+                if self.shouldThrowError {
+                    promise(.failure(self.errorToThrow))
+                } else {
+                    promise(.success(self.medicines))
+                }
+            }
         }
-        return Just(medicines)
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        .eraseToAnyPublisher()
     }
     
-    public func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
-        if shouldThrowError {
-            return Fail(error: errorToThrow)
-                .eraseToAnyPublisher()
+    nonisolated public func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
+        return Future { promise in
+            Task { @MainActor in
+                if self.shouldThrowError {
+                    promise(.failure(self.errorToThrow))
+                } else {
+                    let medicine = self.medicines.first { $0.id == id }
+                    promise(.success(medicine))
+                }
+            }
         }
-        let medicine = medicines.first { $0.id == id }
-        return Just(medicine)
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        .eraseToAnyPublisher()
     }
     
     // Observer simulation methods

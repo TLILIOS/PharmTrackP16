@@ -44,7 +44,7 @@ final class HistoryEntryDTOTests: XCTestCase {
     }
     
     func testHistoryEntryDTOToDomainWithNilId() {
-        var historyEntryDTO = HistoryEntryDTO(
+        let historyEntryDTO = HistoryEntryDTO(
             id: nil,
             medicineId: "medicine-456",
             userId: "user-789",

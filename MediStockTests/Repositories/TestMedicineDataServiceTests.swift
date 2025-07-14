@@ -198,7 +198,7 @@ final class TestMedicineDataServiceTests: XCTestCase {
         XCTAssertFalse(medicines.isEmpty)
         
         let now = Date()
-        let threeMonthsFromNow = Calendar.current.date(byAdding: .month, value: 3, to: now)!
+        _ = Calendar.current.date(byAdding: .month, value: 3, to: now)!
         let twoYearsFromNow = Calendar.current.date(byAdding: .year, value: 2, to: now)!
         
         // Verify expiry dates are in reasonable future ranges (29 days to 2 years)

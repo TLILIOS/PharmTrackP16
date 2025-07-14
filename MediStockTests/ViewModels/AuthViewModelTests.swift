@@ -1,9 +1,9 @@
 import XCTest
 import Combine
-@testable import MediStock
+@testable @preconcurrency import MediStock
 
 @MainActor
-final class AuthViewModelTests: XCTestCase {
+final class AuthViewModelTests: XCTestCase, Sendable {
     
     var sut: AuthViewModel!
     var mockSignInUseCase: MockSignInUseCase!
