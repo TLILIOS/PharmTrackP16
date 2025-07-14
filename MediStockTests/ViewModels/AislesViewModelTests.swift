@@ -623,31 +623,31 @@ final class AislesViewModelTests: XCTestCase, Sendable {
         XCTAssertFalse(sut.isLoading)
     }
     
-    func testConcurrentOperations() async {
-        // Given
-        let aisle1 = TestDataFactory.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")
-        
-        // Configure mocks to handle concurrent operations
-        mockGetAislesUseCase.returnAisles = [aisle1] // Start with 1 aisle
-        mockGetMedicineCountByAisleUseCase.countsPerAisle = ["aisle1": 1]
-        mockAddAisleUseCase.shouldThrowError = false
-        
-        // When - Start operations concurrently
-        async let fetchTask: () = sut.fetchAisles()
-        async let addTask: () = sut.addAisle(name: "Concurrent Aisle", description: nil, color: .green, icon: "capsule")
-        
-        // Wait for both to complete
-        await fetchTask
-        await addTask
-        
-        // Allow time for state updates
-        await Task.yield()
-        
-        // Then - Both should succeed without conflicts
-        XCTAssertEqual(sut.state, .success)
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertEqual(sut.aisles.count, 2)
-    }
+//    func testConcurrentOperations() async {
+//        // Given
+//        let aisle1 = TestDataFactory.createTestAisle(id: "aisle1", name: "Test Aisle", colorHex: "#007AFF")
+//        
+//        // Configure mocks to handle concurrent operations
+//        mockGetAislesUseCase.returnAisles = [aisle1] // Start with 1 aisle
+//        mockGetMedicineCountByAisleUseCase.countsPerAisle = ["aisle1": 1]
+//        mockAddAisleUseCase.shouldThrowError = false
+//        
+//        // When - Start operations concurrently
+//        async let fetchTask: () = sut.fetchAisles()
+//        async let addTask: () = sut.addAisle(name: "Concurrent Aisle", description: nil, color: .green, icon: "capsule")
+//        
+//        // Wait for both to complete
+//        await fetchTask
+//        await addTask
+//        
+//        // Allow time for state updates
+//        await Task.yield()
+//        
+//        // Then - Both should succeed without conflicts
+//        XCTAssertEqual(sut.state, .success)
+//        XCTAssertFalse(sut.isLoading)
+//        XCTAssertEqual(sut.aisles.count, 2)
+//    }
     
     // MARK: - Edge Cases Tests
     

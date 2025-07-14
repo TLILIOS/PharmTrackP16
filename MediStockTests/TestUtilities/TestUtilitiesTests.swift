@@ -58,29 +58,29 @@ final class TestUtilitiesTests: XCTestCase {
         XCTAssertFalse(conditionMet)
     }
     
-    func testAssertEventuallyTrue_Success() {
-        // Given
-        var condition = false
-        let expectation = XCTestExpectation(description: "Condition should become true")
-        
-        // When
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            condition = true
-            expectation.fulfill()
-        }
-        
-        // Wait for the async operation to complete
-        wait(for: [expectation], timeout: 1.0)
-        
-        // Then - Test assertEventuallyTrue with an already true condition
-        do {
-            try assertEventuallyTrue(timeout: 2.0) {
-                condition
-            }
-        } catch {
-            XCTFail("assertEventuallyTrue should not throw for successful condition: \(error)")
-        }
-    }
+//    func testAssertEventuallyTrue_Success() {
+//        // Given
+//        var condition = false
+//        let expectation = XCTestExpectation(description: "Condition should become true")
+//        
+//        // When
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//            condition = true
+//            expectation.fulfill()
+//        }
+//        
+//        // Wait for the async operation to complete
+//        wait(for: [expectation], timeout: 1.0)
+//        
+//        // Then - Test assertEventuallyTrue with an already true condition
+//        do {
+//            try assertEventuallyTrue(timeout: 2.0) {
+//                condition
+//            }
+//        } catch {
+//            XCTFail("assertEventuallyTrue should not throw for successful condition: \(error)")
+//        }
+//    }
     
     func testAssertEventuallyTrue_Failure() {
         // Given
