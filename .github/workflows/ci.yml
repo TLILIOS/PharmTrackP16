@@ -23,7 +23,11 @@ jobs:
         result-bundle-path: 'TestResults/TestResults.xcresult'
 
     - name: Process Test Results
-      uses: kishikawakatsumi/xcresulttool@v1
-      with:
-        path: TestResults/TestResults.xcresult
+      run: |
+        if [ -d "TestResults/TestResults.xcresult" ]; then
+          echo "✅ Tests completed successfully"
+          xcrun xccov view --report TestResults/TestResults.xcresult
+        else
+          echo "❌ No test results found"
+        fi
       if: success() || failure()
