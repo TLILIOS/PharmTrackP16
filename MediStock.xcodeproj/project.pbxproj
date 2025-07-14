@@ -20,7 +20,7 @@
 		D044AEC62E2013E800D6F02A /* AdjustStockViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEBD2E2013E800D6F02A /* AdjustStockViewModelTests.swift */; };
 		D044AEC72E2013E800D6F02A /* MedicineStockViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEC22E2013E800D6F02A /* MedicineStockViewModelTests.swift */; };
 		D044AEC82E2013E800D6F02A /* AisleFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEBE2E2013E800D6F02A /* AisleFormViewModelTests.swift */; };
-		D06021912E24AD870007BAB7 /* MockRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */; };
+		D06021932E2545200007BAB7 /* MockRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06021922E2545200007BAB7 /* MockRepositories.swift */; };
 		D0C2FC102E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC032E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift */; };
 		D0C2FC112E1DDC330020A35E /* ExportErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBDF2E1DDC330020A35E /* ExportErrorTests.swift */; };
 		D0C2FC122E1DDC330020A35E /* SignUpUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFD2E1DDC330020A35E /* SignUpUseCaseTests.swift */; };
@@ -40,7 +40,6 @@
 		D0C2FC202E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC062E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift */; };
 		D0C2FC212E1DDC330020A35E /* MedicineDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE42E1DDC330020A35E /* MedicineDTOTests.swift */; };
 		D0C2FC222E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */; };
-		D0C2FC232E1DDC330020A35E /* MockRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBED2E1DDC330020A35E /* MockRepositories.swift */; };
 		D0C2FC252E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC002E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift */; };
 		D0C2FC262E1DDC330020A35E /* TestUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF42E1DDC330020A35E /* TestUtilitiesTests.swift */; };
 		D0C2FC272E1DDC330020A35E /* AuthErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBDE2E1DDC330020A35E /* AuthErrorTests.swift */; };
@@ -161,6 +160,7 @@
 		D044AEC02E2013E800D6F02A /* DashboardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModelTests.swift; sourceTree = "<group>"; };
 		D044AEC12E2013E800D6F02A /* HistoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModelTests.swift; sourceTree = "<group>"; };
 		D044AEC22E2013E800D6F02A /* MedicineStockViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineStockViewModelTests.swift; sourceTree = "<group>"; };
+		D06021922E2545200007BAB7 /* MockRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositories.swift; sourceTree = "<group>"; };
 		D0C2FBDE2E1DDC330020A35E /* AuthErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorTests.swift; sourceTree = "<group>"; };
 		D0C2FBDF2E1DDC330020A35E /* ExportErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportErrorTests.swift; sourceTree = "<group>"; };
 		D0C2FBE02E1DDC330020A35E /* MedicineErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineErrorTests.swift; sourceTree = "<group>"; };
@@ -173,7 +173,6 @@
 		D0C2FBE92E1DDC330020A35E /* MedicineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineTests.swift; sourceTree = "<group>"; };
 		D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepositoryTestsExtended.swift; sourceTree = "<group>"; };
 		D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseHistoryRepositoryTests.swift; sourceTree = "<group>"; };
-		D0C2FBED2E1DDC330020A35E /* MockRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositories.swift; sourceTree = "<group>"; };
 		D0C2FBEE2E1DDC330020A35E /* TestMedicineDataServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMedicineDataServiceTests.swift; sourceTree = "<group>"; };
 		D0C2FBF02E1DDC330020A35E /* LocalCacheServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCacheServiceTests.swift; sourceTree = "<group>"; };
 		D0C2FBF32E1DDC330020A35E /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
@@ -249,7 +248,6 @@
 		D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustStockViewModel.swift; sourceTree = "<group>"; };
 		D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepositoryTests.swift; sourceTree = "<group>"; };
 		D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepositoryTests.swift; sourceTree = "<group>"; };
-		D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositories.swift; sourceTree = "<group>"; };
 		D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepositoryTests.swift; sourceTree = "<group>"; };
 		D0F74D682E2105F8004D34D5 /* FirebaseAisleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepository.swift; sourceTree = "<group>"; };
 		D0F74D692E2105F8004D34D5 /* FirebaseMedicineRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepository.swift; sourceTree = "<group>"; };
@@ -377,12 +375,11 @@
 			isa = PBXGroup;
 			children = (
 				D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */,
+				D06021922E2545200007BAB7 /* MockRepositories.swift */,
 				D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */,
 				D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */,
-				D0F74D622E20F7E3004D34D5 /* MockRepositories.swift */,
 				D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */,
 				D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */,
-				D0C2FBED2E1DDC330020A35E /* MockRepositories.swift */,
 				D0C2FBEE2E1DDC330020A35E /* TestMedicineDataServiceTests.swift */,
 			);
 			path = Repositories;
@@ -989,8 +986,8 @@
 				D0C2FC1F2E1DDC330020A35E /* TestMedicineDataServiceTests.swift in Sources */,
 				D0C2FC202E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift in Sources */,
 				D0C2FC212E1DDC330020A35E /* MedicineDTOTests.swift in Sources */,
+				D06021932E2545200007BAB7 /* MockRepositories.swift in Sources */,
 				D0C2FC222E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift in Sources */,
-				D0C2FC232E1DDC330020A35E /* MockRepositories.swift in Sources */,
 				D0C2FC252E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift in Sources */,
 				D0C2FC262E1DDC330020A35E /* TestUtilitiesTests.swift in Sources */,
 				D0F74D672E210008004D34D5 /* FirebaseAuthRepositoryTests.swift in Sources */,
@@ -1009,7 +1006,6 @@
 				D044AEC32E2013E800D6F02A /* DashboardViewModelTests.swift in Sources */,
 				D044AEC42E2013E800D6F02A /* HistoryViewModelTests.swift in Sources */,
 				D044AEC52E2013E800D6F02A /* AuthViewModelTests.swift in Sources */,
-				D06021912E24AD870007BAB7 /* MockRepositories.swift in Sources */,
 				D044AEC62E2013E800D6F02A /* AdjustStockViewModelTests.swift in Sources */,
 				D044AEC72E2013E800D6F02A /* MedicineStockViewModelTests.swift in Sources */,
 				D044AEC82E2013E800D6F02A /* AisleFormViewModelTests.swift in Sources */,

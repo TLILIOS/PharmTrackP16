@@ -25,7 +25,9 @@
       "Bash(chmod:*)",
       "Bash(./run_tests_safe.sh:*)",
       "Bash(pkill:*)",
-      "Bash(./test_pure_units.sh:*)"
+      "Bash(./test_pure_units.sh:*)",
+      "Bash(defaults write:*)",
+      "Bash(./optimize_tests.sh:*)"
     ],
     "deny": []
   }

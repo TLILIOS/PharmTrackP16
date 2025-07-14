@@ -1,3 +1,10 @@
+//
+//  MockRepositories.swift
+//  MediStockTests
+//
+//  Created by TLiLi Hamdi on 14/06/2025.
+//
+
 import Foundation
 import Combine
 @testable import MediStock
@@ -407,8 +414,8 @@ public class MockHistoryRepository: HistoryRepositoryProtocol {
             throw errorToThrow
         }
         
-        let entries = medicineId != nil ? 
-            historyEntries.filter { $0.medicineId == medicineId } : 
+        let entries = medicineId != nil ?
+            historyEntries.filter { $0.medicineId == medicineId } :
             historyEntries
         
         switch format {
