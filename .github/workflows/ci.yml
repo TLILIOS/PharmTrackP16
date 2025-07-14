@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Build and Test
       uses: sersoft-gmbh/xcodebuild-action@v3.2.0
@@ -24,7 +24,7 @@ jobs:
         result-bundle-path: 'TestResults/TestResults.xcresult'
 
     - name: Upload Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: TestResults/TestResults.xcresult
