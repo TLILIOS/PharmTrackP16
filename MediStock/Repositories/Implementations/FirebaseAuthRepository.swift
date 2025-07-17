@@ -109,6 +109,25 @@ private func mapFirebaseError(_ error: Error) -> AuthError {
         }
     }
     
+    func signUpWithName(email: String, password: String, displayName: String) async throws -> User {
+        do {
+            let authResult = try await auth.createUser(withEmail: email, password: password)
+            
+            // Mettre à jour le profil avec le nom
+            let changeRequest = authResult.user.createProfileChangeRequest()
+            changeRequest.displayName = displayName
+            try await changeRequest.commitChanges()
+            
+            return User(
+                id: authResult.user.uid,
+                email: authResult.user.email,
+                displayName: displayName
+            )
+        } catch {
+            throw mapFirebaseError(error)
+        }
+    }
+    
     func signOut() async throws {
         do {
             try auth.signOut()
@@ -142,5 +161,9 @@ private func mapFirebaseError(_ error: Error) -> AuthError {
         } catch {
             throw mapFirebaseError(error)
         }
+    }
+    
+    func getCurrentUser() async throws -> User? {
+        return currentUser
     }
 }

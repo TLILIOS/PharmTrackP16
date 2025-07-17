@@ -1,13 +1,15 @@
 import Foundation
 import Combine
+import Observation
 
 @MainActor
-class AisleFormViewModel: ObservableObject { 
-    @Published var name: String = ""
-    @Published var description: String = ""
-    @Published var isLoading: Bool = false
-    @Published var errorMessage: String?
-    @Published var showingSuccessMessage: Bool = false
+@Observable
+class AisleFormViewModel { 
+    var name: String = ""
+    var description: String = ""
+    var isLoading: Bool = false
+    var errorMessage: String?
+    var showingSuccessMessage: Bool = false
     
     private let addAisleUseCase: AddAisleUseCaseProtocol
     private let updateAisleUseCase: UpdateAisleUseCaseProtocol

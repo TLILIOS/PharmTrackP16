@@ -27,7 +27,15 @@
       "Bash(pkill:*)",
       "Bash(./test_pure_units.sh:*)",
       "Bash(defaults write:*)",
-      "Bash(./optimize_tests.sh:*)"
+      "Bash(./optimize_tests.sh:*)",
+      "Bash(xcrun swiftc:*)",
+      "Bash(diff:*)",
+      "Bash(echo:*)",
+      "Bash(tree:*)",
+      "Bash(git reset:*)",
+      "Bash(mkdir:*)",
+      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/fix_interpolation.sh)",
+      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/fix_all_interpolation.sh)"
     ],
     "deny": []
   }

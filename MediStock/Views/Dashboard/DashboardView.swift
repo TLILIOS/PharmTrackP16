@@ -1,10 +1,13 @@
 import SwiftUI
 
+// Import du fichier NavigationDestinations pour accéder aux types de destinations
+// Note: Assurez-vous que ce fichier est dans le même target
+
 struct DashboardView: View {
     @StateObject private var viewModel: DashboardViewModel
+    @Environment(\.viewModelCreator) private var viewModelCreator
     @State private var refreshTimestamp = Date()
     @State private var showingSearchSheet = false
-    @EnvironmentObject var appCoordinator: AppCoordinator
     
     // Animation properties
     @State private var headerScale = 0.95
@@ -61,16 +64,33 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingSearchSheet) {
             NavigationStack {
-                SearchView(viewModel: SearchViewModel(
-                    searchMedicineUseCase: appCoordinator.searchMedicineUseCase,
-                    searchAisleUseCase: appCoordinator.searchAisleUseCase
-                ))
+                Text("Recherche (à implémenter)")
             }
             .presentationDragIndicator(.visible)
         }
         .task {
             await viewModel.fetchData()
             startAnimations()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await viewModel.fetchData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))) { _ in
+            Task {
+                await viewModel.fetchData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))) { _ in
+            Task {
+                await viewModel.fetchData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await viewModel.fetchData()
+            }
         }
     }
     
@@ -112,7 +132,7 @@ struct DashboardView: View {
                 opacity: cardsOpacity[0, default: 0]
             )
             .onTapGesture {
-                viewModel.navigateToMedicineList()
+                NotificationCenter.default.post(name: Notification.Name("switchToTab"), object: 1)
             }
             
             // Carte Total des rayons
@@ -125,7 +145,7 @@ struct DashboardView: View {
                 opacity: cardsOpacity[1, default: 0]
             )
             .onTapGesture {
-                viewModel.navigateToAisles()
+                NotificationCenter.default.post(name: Notification.Name("switchToTab"), object: 2)
             }
             
             // Carte Stock critique
@@ -137,9 +157,6 @@ struct DashboardView: View {
                 offset: cardsOffset[2, default: 50],
                 opacity: cardsOpacity[2, default: 0]
             )
-            .onTapGesture {
-                viewModel.navigateToCriticalStock()
-            }
             
             // Carte Expirations proches
             DashboardCard(
@@ -150,9 +167,6 @@ struct DashboardView: View {
                 offset: cardsOffset[3, default: 50],
                 opacity: cardsOpacity[3, default: 0]
             )
-            .onTapGesture {
-                viewModel.navigateToExpiringMedicines()
-            }
         }
     }
     
@@ -165,24 +179,12 @@ struct DashboardView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 15) {
                     ForEach(viewModel.criticalStockMedicines.prefix(5)) { medicine in
-                        CriticalStockCard(medicine: medicine) {
-                            appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
-                        }
+                        DashboardCriticalStockCard(medicine: medicine) { }
                     }
                 }
                 .padding(.bottom, 5)
             }
             
-            if viewModel.criticalStockMedicines.count > 5 {
-                Button(action: {
-                    viewModel.navigateToCriticalStock()
-                }) {
-                    Text("Voir tous les stocks critiques")
-                        .font(.caption)
-                        .foregroundColor(.accentApp)
-                        .padding(.top, 5)
-                }
-            }
         }
         .padding(.vertical, 10)
     }
@@ -195,39 +197,49 @@ struct DashboardView: View {
             
             VStack(spacing: 12) {
                 // Ajouter un médicament
-                QuickActionButton(
-                    title: "Ajouter un médicament",
-                    icon: "plus.circle",
-                    color: .accentApp
-                ) {
-                    appCoordinator.navigateFromDashboard(.medicineForm(nil))
+                NavigationLink(destination: MedicineFormView(
+                    medicineId: nil,
+                    viewModel: viewModelCreator.createMedicineFormViewModel(medicineId: nil)
+                )) {
+                    QuickActionButtonContent(
+                        title: "Ajouter un médicament",
+                        icon: "plus.circle",
+                        color: .accentApp
+                    )
                 }
+                .buttonStyle(PlainButtonStyle())
                 
                 // Ajuster un stock
-                QuickActionButton(
-                    title: "Ajuster un stock",
-                    icon: "arrow.up.arrow.down",
-                    color: .orange
-                ) {
-                    appCoordinator.navigateFromDashboard(.criticalStock)
+                Button(action: {
+                    NotificationCenter.default.post(name: Notification.Name("switchToTab"), object: 1)
+                }) {
+                    QuickActionButtonContent(
+                        title: "Ajuster un stock",
+                        icon: "arrow.up.arrow.down",
+                        color: .orange
+                    )
                 }
                 
                 // Consulter l'historique
-                QuickActionButton(
-                    title: "Consulter l'historique",
-                    icon: "clock.arrow.circlepath",
-                    color: .purple
-                ) {
-                    viewModel.navigateToHistory()
+                Button(action: {
+                    NotificationCenter.default.post(name: Notification.Name("switchToTab"), object: 3)
+                }) {
+                    QuickActionButtonContent(
+                        title: "Consulter l'historique",
+                        icon: "clock.arrow.circlepath",
+                        color: .purple
+                    )
                 }
                 
                 // Gérer les rayons
-                QuickActionButton(
-                    title: "Gérer les rayons",
-                    icon: "tray.2",
-                    color: .blue
-                ) {
-                    viewModel.navigateToAisles()
+                Button(action: {
+                    NotificationCenter.default.post(name: Notification.Name("switchToTab"), object: 2)
+                }) {
+                    QuickActionButtonContent(
+                        title: "Gérer les rayons",
+                        icon: "tray.2",
+                        color: .blue
+                    )
                 }
             }
             .offset(y: actionsOffset)
@@ -374,7 +386,7 @@ struct DashboardCard: View {
     }
 }
 
-struct CriticalStockCard: View {
+struct DashboardCriticalStockCard: View {
     let medicine: Medicine
     let onAdjustStock: () -> Void
     
@@ -417,19 +429,6 @@ struct CriticalStockCard: View {
                 }
                 
                 Spacer()
-                
-                Button(action: {
-                    onAdjustStock()
-                }) {
-                    Text("Ajuster")
-                        .font(.caption2)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.accentApp)
-                        .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding()
@@ -440,35 +439,32 @@ struct CriticalStockCard: View {
     }
 }
 
-struct QuickActionButton: View {
+struct QuickActionButtonContent: View {
     let title: String
     let icon: String
     let color: Color
-    let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(color)
-                    .frame(width: 40)
-                
-                Text(title)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(color)
+                .frame(width: 40)
+            
+            Text(title)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.gray)
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }
 

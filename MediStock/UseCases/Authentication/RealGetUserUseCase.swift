@@ -8,6 +8,9 @@ class RealGetUserUseCase: GetUserUseCaseProtocol {
     }
     
     func execute() async throws -> User {
-        return try await authRepository.getCurrentUser()
+        guard let user = try await authRepository.getCurrentUser() else {
+            throw AuthError.userNotFound
+        }
+        return user
     }
 }

@@ -19,10 +19,6 @@ struct ContentView: View {
         )
     }()
     
-    @StateObject private var appCoordinator: AppCoordinator = {
-        return AppCoordinator.createWithRealFirebase(authRepository: ContentView.sharedAuthRepository)
-    }()
-    
     init() {
         self._session = StateObject(wrappedValue: SessionStore(authRepository: ContentView.sharedAuthRepository))
     }
@@ -30,7 +26,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             if session.session != nil {
-                MainTabView(appCoordinator: appCoordinator)
+                MainTabView()
             } else {
                 LoginView(authViewModel: authViewModel)
             }
@@ -65,9 +61,17 @@ class MockAuthRepository: AuthRepositoryProtocol {
         return User(id: "mock-user", email: email, displayName: "Mock User")
     }
     
+    func signUpWithName(email: String, password: String, displayName: String) async throws -> User {
+        return User(id: "mock-user", email: email, displayName: displayName)
+    }
+    
     func signOut() async throws {}
     func resetPassword(email: String) async throws {}
     func updateUserProfile(user: User) async throws {}
+    
+    func getCurrentUser() async throws -> User? {
+        return currentUser
+    }
 }
 
 struct ContentView_Previews: PreviewProvider {

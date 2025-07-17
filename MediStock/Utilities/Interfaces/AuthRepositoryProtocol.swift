@@ -24,6 +24,15 @@ public protocol AuthRepositoryProtocol {
     /// - Throws: AuthError en cas d'échec
     func signUp(email: String, password: String) async throws -> User
     
+    /// Crée un nouveau compte utilisateur avec nom d'affichage
+    /// - Parameters:
+    ///   - email: L'email de l'utilisateur
+    ///   - password: Le mot de passe de l'utilisateur
+    ///   - displayName: Le nom d'affichage de l'utilisateur
+    /// - Returns: L'utilisateur créé
+    /// - Throws: AuthError en cas d'échec
+    func signUpWithName(email: String, password: String, displayName: String) async throws -> User
+    
     /// Déconnecte l'utilisateur actuel
     /// - Throws: AuthError en cas d'échec
     func signOut() async throws
@@ -37,4 +46,9 @@ public protocol AuthRepositoryProtocol {
     /// - Parameter user: L'utilisateur avec les informations mises à jour
     /// - Throws: AuthError en cas d'échec
     func updateUserProfile(user: User) async throws
+    
+    /// Récupère l'utilisateur actuel
+    /// - Returns: L'utilisateur actuel ou nil s'il n'y en a pas
+    /// - Throws: AuthError en cas d'échec
+    func getCurrentUser() async throws -> User?
 }

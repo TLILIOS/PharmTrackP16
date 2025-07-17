@@ -27,6 +27,7 @@ class MedicineStockViewModel: ObservableObject {
         self.aisleRepository = aisleRepository
         self.historyRepository = historyRepository
         startListening()
+        setupNotificationListeners()
     }
     
     deinit {
@@ -199,6 +200,46 @@ class MedicineStockViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+    
+    // MARK: - Notification Listeners
+    
+    private func setupNotificationListeners() {
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchMedicines()
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchMedicines()
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchMedicines()
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchMedicines()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func fetchHistory(for medicine: Medicine) async {

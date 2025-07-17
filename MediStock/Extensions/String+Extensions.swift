@@ -133,3 +133,23 @@ extension String {
         return String(unicodeScalars.filter { !$0.properties.isEmoji })
     }
 }
+
+// MARK: - Notification Extensions
+extension Notification.Name {
+    static let medicineAdded = Notification.Name("MedicineAdded")
+    static let medicineUpdated = Notification.Name("MedicineUpdated")
+    static let medicineDeleted = Notification.Name("MedicineDeleted")
+    static let stockAdjusted = Notification.Name("StockAdjusted")
+    static let aisleAdded = Notification.Name("AisleAdded")
+    static let aisleUpdated = Notification.Name("AisleUpdated")
+    static let aisleDeleted = Notification.Name("AisleDeleted")
+    
+    // Tab switching notifications
+    static let switchToHistoryTab = Notification.Name("SwitchToHistoryTab")
+    static let switchToAislesTab = Notification.Name("SwitchToAislesTab")
+    static let switchToMedicinesTab = Notification.Name("SwitchToMedicinesTab")
+    
+    // Dashboard internal navigation
+    static let navigateToCriticalStock = Notification.Name("NavigateToCriticalStock")
+    static let navigateToExpiringMedicines = Notification.Name("NavigateToExpiringMedicines")
+}

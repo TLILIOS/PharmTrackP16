@@ -1,9 +1,11 @@
+
 import Foundation
 import SwiftUI
 
-enum MedicineFormViewState: Equatable {
+enum ViewState: Equatable {
     case idle
     case loading
+    case loaded
     case success
     case error(String)
 }
@@ -19,7 +21,24 @@ class MedicineFormViewModel: ObservableObject {
     
     @Published private(set) var medicine: Medicine?
     @Published private(set) var aisles: [Aisle] = []
-    @Published private(set) var state: MedicineFormViewState = .idle
+    @Published private(set) var state: ViewState = .idle
+    
+    // MARK: - Computed Properties
+    
+    var isLoading: Bool {
+        if case .loading = state {
+            return true
+        }
+        return false
+    }
+
+    
+    var errorMessage: String? {
+        if case .error(let message) = state {
+            return message
+        }
+        return nil
+    }
     
     // MARK: - Initialization
     
@@ -43,13 +62,19 @@ class MedicineFormViewModel: ObservableObject {
         state = .idle
     }
     
+    func resetError() {
+        if case .error = state {
+            state = .idle
+        }
+    }
+    
     @MainActor
     func fetchAisles() async {
         state = .loading
         
         do {
             aisles = try await getAislesUseCase.execute()
-            state = .idle
+            state = .loaded
         } catch {
             state = .error("Erreur lors du chargement des rayons: \(error.localizedDescription)")
         }
@@ -62,6 +87,10 @@ class MedicineFormViewModel: ObservableObject {
         do {
             try await addMedicineUseCase.execute(medicine: medicine)
             self.medicine = medicine
+            
+            // Notifier l'ajout du nouveau médicament
+            NotificationCenter.default.post(name: Notification.Name("MedicineAdded"), object: medicine)
+            
             state = .success
         } catch {
             state = .error("Erreur lors de l'ajout du médicament: \(error.localizedDescription)")
@@ -75,6 +104,10 @@ class MedicineFormViewModel: ObservableObject {
         do {
             try await updateMedicineUseCase.execute(medicine: medicine)
             self.medicine = medicine
+            
+            // Notifier la mise à jour du médicament
+            NotificationCenter.default.post(name: Notification.Name("MedicineUpdated"), object: medicine)
+            
             state = .success
         } catch {
             state = .error("Erreur lors de la mise à jour du médicament: \(error.localizedDescription)")
@@ -88,10 +121,9 @@ class MedicineFormViewModel: ObservableObject {
         do {
             let refreshedMedicine = try await getMedicineUseCase.execute(id: id)
             self.medicine = refreshedMedicine
-            state = .idle
+            state = .loaded
         } catch {
             state = .error("Erreur lors du chargement: \(error.localizedDescription)")
         }
     }
 }
-

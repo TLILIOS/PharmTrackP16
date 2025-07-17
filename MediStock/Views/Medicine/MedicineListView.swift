@@ -1,5 +1,8 @@
 import SwiftUI
 
+// Import du fichier NavigationDestinations pour accéder aux types de destinations
+// Note: Assurez-vous que ce fichier est dans le même target
+
 struct MedicineListView: View {
     @StateObject private var viewModel: MedicineStockViewModel
     @State private var searchText = ""
@@ -45,19 +48,73 @@ struct MedicineListView: View {
                 await loadInitialData()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))) { _ in
+            Task {
+                await viewModel.fetchMedicines()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await viewModel.fetchMedicines()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))) { _ in
+            Task {
+                await viewModel.fetchMedicines()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await viewModel.fetchMedicines()
+            }
+        }
     }
 }
 
 // MARK: - Computed Properties
 extension MedicineListView {
     var filteredMedicines: [Medicine] {
-        MedicineListFilter.apply(
-            to: viewModel.medicines,
-            searchText: searchText,
-            selectedAisle: selectedAisle,
-            stockFilter: selectedStockFilter,
-            sortOption: sortOption
-        )
+        var results = viewModel.medicines
+        
+        // Filter by aisle
+        if let selectedAisle = selectedAisle {
+            results = results.filter { $0.aisleId == selectedAisle.id }
+        }
+        
+        // Filter by search text
+        if !searchText.isEmpty {
+            results = results.filter { medicine in
+                medicine.name.lowercased().contains(searchText.lowercased()) ||
+                (medicine.description ?? "").lowercased().contains(searchText.lowercased())
+            }
+        }
+        
+        // Filter by stock status
+        results = selectedStockFilter.filter(results)
+        
+        // Sort results
+        switch sortOption {
+        case .nameAscending:
+            return results.sorted { $0.name < $1.name }
+        case .nameDescending:
+            return results.sorted { $0.name > $1.name }
+        case .stockAscending:
+            return results.sorted { $0.currentQuantity < $1.currentQuantity }
+        case .stockDescending:
+            return results.sorted { $0.currentQuantity > $1.currentQuantity }
+        case .expiryDateAscending:
+            return results.sorted { (lhs, rhs) in
+                guard let lhsDate = lhs.expiryDate else { return false }
+                guard let rhsDate = rhs.expiryDate else { return true }
+                return lhsDate < rhsDate
+            }
+        case .expiryDateDescending:
+            return results.sorted { (lhs, rhs) in
+                guard let lhsDate = lhs.expiryDate else { return true }
+                guard let rhsDate = rhs.expiryDate else { return false }
+                return lhsDate > rhsDate
+            }
+        }
     }
     
     var aisleObjects: [Aisle] {
@@ -96,6 +153,22 @@ extension MedicineListView {
         case criticalStock = "Stock critique"
         
         var id: String { self.rawValue }
+        
+        // Méthode pour filtrer les médicaments
+        func filter(_ medicines: [Medicine]) -> [Medicine] {
+            switch self {
+            case .all:
+                return medicines
+            case .inStock:
+                return medicines.filter { $0.currentQuantity > $0.warningThreshold }
+            case .lowStock:
+                return medicines.filter { 
+                    $0.currentQuantity <= $0.warningThreshold && $0.currentQuantity > $0.criticalThreshold 
+                }
+            case .criticalStock:
+                return medicines.filter { $0.currentQuantity <= $0.criticalThreshold }
+            }
+        }
     }
 }
 
@@ -317,12 +390,13 @@ struct MedicineSortMenu: View {
 
 // MARK: - Toolbar Button
 struct MedicineToolbarButton: View {
-    @EnvironmentObject var appCoordinator: AppCoordinator
+    @Environment(\.viewModelCreator) private var viewModelCreator
     
     var body: some View {
-        Button(action: {
-            appCoordinator.navigateTo(.medicineForm(nil))
-        }) {
+        NavigationLink(destination: MedicineFormView(
+            medicineId: nil,
+            viewModel: viewModelCreator.createMedicineFormViewModel(medicineId: nil)
+        )) {
             Image(systemName: "plus")
         }
     }
@@ -337,20 +411,41 @@ struct MedicineContentView: View {
     let onRefresh: () async -> Void
     
     var body: some View {
-        Group {
-            if medicines.isEmpty {
-                MedicineEmptyView(
-                    hasFilters: hasActiveFilters,
-                    searchText: searchText,
-                    selectedAisle: selectedAisle
-                )
-            } else {
-                MedicineGridView(
-                    medicines: medicines,
-                    onRefresh: onRefresh
-                )
+        if medicines.isEmpty {
+            MedicineEmptyView(
+                hasFilters: hasActiveFilters,
+                searchText: searchText,
+                selectedAisle: selectedAisle
+            )
+        } else {
+            ScrollView {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 15) {
+                        ForEach(medicines) { medicine in
+                            NavigationLink(destination: MedicineDetailView(
+                                medicineId: medicine.id,
+                                viewModel: MedicineDetailViewModel(
+                                    medicine: medicine,
+                                    getMedicineUseCase: RealGetMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                                    updateMedicineStockUseCase: RealUpdateMedicineStockUseCase(medicineRepository: FirebaseMedicineRepository(), historyRepository: FirebaseHistoryRepository()),
+                                    deleteMedicineUseCase: RealDeleteMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                                    getHistoryUseCase: MockGetHistoryForMedicineUseCase()
+                                )
+                            )) {
+                                SimpleMedicineCard(medicine: medicine)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                }
+                .refreshable {
+                    await onRefresh()
+                }
             }
-        }
     }
     
     private var hasActiveFilters: Bool {
@@ -384,36 +479,13 @@ struct MedicineEmptyView: View {
     }
 }
 
-// MARK: - Grid View
-struct MedicineGridView: View {
-    let medicines: [Medicine]
-    let onRefresh: () async -> Void
-    
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-    
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 15) {
-                ForEach(medicines) { medicine in
-                    MedicineCard(medicine: medicine)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
-        }
-        .refreshable {
-            await onRefresh()
-        }
-    }
-}
 
-// MARK: - Medicine Card
-struct MedicineCard: View {
+
+
+
+// MARK: - Simple Medicine Card for MedicineListView
+struct SimpleMedicineCard: View {
     let medicine: Medicine
-    @EnvironmentObject var appCoordinator: AppCoordinator
     
     private var stockColor: Color {
         if medicine.currentQuantity <= medicine.criticalThreshold {
@@ -502,9 +574,6 @@ struct MedicineCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-        .onTapGesture {
-            appCoordinator.navigateTo(.medicineDetail(medicine.id))
-        }
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -519,71 +588,13 @@ struct MedicineCard: View {
     }
 }
 
-// MARK: - Filter Logic
-struct MedicineListFilter {
-    static func apply(
-        to medicines: [Medicine],
-        searchText: String,
-        selectedAisle: Aisle?,
-        stockFilter: MedicineListView.StockFilter,
-        sortOption: MedicineListView.SortOption
-    ) -> [Medicine] {
-        var results = medicines
-        
-        // Filter by aisle
-        if let selectedAisle = selectedAisle {
-            results = results.filter { $0.aisleId == selectedAisle.id }
-        }
-        
-        // Filter by search text
-        if !searchText.isEmpty {
-            results = results.filter { medicine in
-                medicine.name.lowercased().contains(searchText.lowercased()) ||
-                (medicine.description ?? "").lowercased().contains(searchText.lowercased())
-            }
-        }
-        
-        // Filter by stock status
-        switch stockFilter {
-        case .all:
-            break
-        case .inStock:
-            results = results.filter { $0.currentQuantity > $0.warningThreshold }
-        case .lowStock:
-            results = results.filter { 
-                $0.currentQuantity <= $0.warningThreshold && $0.currentQuantity > $0.criticalThreshold 
-            }
-        case .criticalStock:
-            results = results.filter { $0.currentQuantity <= $0.criticalThreshold }
-        }
-        
-        // Sort results
-        switch sortOption {
-        case .nameAscending:
-            return results.sorted { $0.name < $1.name }
-        case .nameDescending:
-            return results.sorted { $0.name > $1.name }
-        case .stockAscending:
-            return results.sorted { $0.currentQuantity < $1.currentQuantity }
-        case .stockDescending:
-            return results.sorted { $0.currentQuantity > $1.currentQuantity }
-        case .expiryDateAscending:
-            return results.sorted { (lhs, rhs) in
-                guard let lhsDate = lhs.expiryDate else { return false }
-                guard let rhsDate = rhs.expiryDate else { return true }
-                return lhsDate < rhsDate
-            }
-        case .expiryDateDescending:
-            return results.sorted { (lhs, rhs) in
-                guard let lhsDate = lhs.expiryDate else { return true }
-                guard let rhsDate = rhs.expiryDate else { return false }
-                return lhsDate > rhsDate
-            }
-        }
-    }
-}
-
-
 #Preview {
-    MedicineListView(medicineStockViewModel: AppCoordinator.preview.medicineListViewModel)
+    NavigationView {
+        MedicineListView(medicineStockViewModel: MedicineStockViewModel(
+            medicineRepository: FirebaseMedicineRepository(),
+            aisleRepository: FirebaseAisleRepository(),
+            historyRepository: FirebaseHistoryRepository()
+        ))
+    }
+    .withRepositories()
 }

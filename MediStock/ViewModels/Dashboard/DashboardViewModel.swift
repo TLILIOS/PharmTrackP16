@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import Combine
 
 enum DashboardViewState: Equatable {
     case idle
@@ -30,17 +31,9 @@ class DashboardViewModel: ObservableObject {
     
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 300
+    private var cancellables = Set<AnyCancellable>()
     
-    // Navigation handlers - Ces propriétés seraient définies par l'AppCoordinator
-    var navigateToMedicineDetailHandler: ((Medicine) -> Void)?
-    var navigateToMedicineListHandler: (() -> Void)?
-    var navigateToAislesHandler: (() -> Void)?
-    var navigateToHistoryHandler: (() -> Void)?
-    var navigateToCriticalStockHandler: (() -> Void)?
-    var navigateToExpiringMedicinesHandler: (() -> Void)?
-    var navigateToAdjustStockHandler: (() -> Void)?
-    
-    // NOUVEAU: AppCoordinator injection (transition progressive)
+    // AppCoordinator injection pour navigation unifiée
     private weak var appCoordinator: AppCoordinator?
     
     // MARK: - Initialization
@@ -57,6 +50,9 @@ class DashboardViewModel: ObservableObject {
         self.getAislesUseCase = getAislesUseCase
         self.getRecentHistoryUseCase = getRecentHistoryUseCase
         self.appCoordinator = appCoordinator
+        
+        // Écouter les notifications de mise à jour
+        setupNotificationListeners()
     }
     
     // MARK: - Public Methods
@@ -121,56 +117,43 @@ class DashboardViewModel: ObservableObject {
     // MARK: - Navigation Methods
     
     func navigateToMedicineDetail(_ medicine: Medicine) {
-        navigateToMedicineDetailHandler?(medicine)
+        // Navigation gérée par la vue
+        print("Navigation vers détail médicament: \(medicine.name)")
     }
     
     func navigateToMedicineList() {
-        // Nouveau système avec AppCoordinator
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.medicineList)
-        } else {
-            // Fallback système handlers existant
-            navigateToMedicineListHandler?()
         }
     }
     
     func navigateToAisles() {
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.aisles)
-        } else {
-            navigateToAislesHandler?()
         }
     }
     
     func navigateToHistory() {
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.history)
-        } else {
-            navigateToHistoryHandler?()
         }
     }
     
     func navigateToCriticalStock() {
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.criticalStock)
-        } else {
-            navigateToCriticalStockHandler?()
         }
     }
     
     func navigateToExpiringMedicines() {
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.expiringMedicines)
-        } else {
-            navigateToExpiringMedicinesHandler?()
         }
     }
     
     func navigateToAdjustStock() {
         if let coordinator = appCoordinator {
             coordinator.navigateFromDashboard(.adjustStock(""))
-        } else {
-            navigateToAdjustStockHandler?()
         }
     }
     
@@ -178,6 +161,118 @@ class DashboardViewModel: ObservableObject {
     
     func getMedicineName(for id: String) -> String {
         medicines.first(where: { $0.id == id })?.name ?? "Médicament inconnu"
+    }
+    
+    // MARK: - Notification Listeners
+    
+    private func setupNotificationListeners() {
+        // Écouter les notifications système pour les changements
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let medicine = notification.object as? Medicine {
+                    self?.handleMedicineUpdate(medicine)
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let medicine = notification.object as? Medicine {
+                    self?.handleMedicineAdded(medicine)
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let medicineId = notification.object as? String {
+                    self?.handleMedicineDeleted(medicineId)
+                }
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let userInfo = notification.userInfo,
+                   let medicineId = userInfo["medicineId"] as? String,
+                   let newQuantity = userInfo["newQuantity"] as? Int {
+                    self?.handleStockAdjusted(medicineId, newQuantity: newQuantity)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleMedicineAdded(_ medicine: Medicine) {
+        medicines.append(medicine)
+        totalMedicines = medicines.count
+        updateCriticalStockMedicines()
+        updateExpiringMedicines()
+    }
+    
+    private func handleMedicineUpdate(_ medicine: Medicine) {
+        if let index = medicines.firstIndex(where: { $0.id == medicine.id }) {
+            medicines[index] = medicine
+            updateCriticalStockMedicines()
+            updateExpiringMedicines()
+        }
+    }
+    
+    private func handleMedicineDeleted(_ id: String) {
+        medicines.removeAll { $0.id == id }
+        totalMedicines = medicines.count
+        updateCriticalStockMedicines()
+        updateExpiringMedicines()
+    }
+    
+    private func handleStockAdjusted(_ medicineId: String, newQuantity: Int) {
+        if let index = medicines.firstIndex(where: { $0.id == medicineId }) {
+            let medicine = medicines[index]
+            let updatedMedicine = Medicine(
+                id: medicine.id,
+                name: medicine.name,
+                description: medicine.description,
+                dosage: medicine.dosage,
+                form: medicine.form,
+                reference: medicine.reference,
+                unit: medicine.unit,
+                currentQuantity: newQuantity,
+                maxQuantity: medicine.maxQuantity,
+                warningThreshold: medicine.warningThreshold,
+                criticalThreshold: medicine.criticalThreshold,
+                expiryDate: medicine.expiryDate,
+                aisleId: medicine.aisleId,
+                createdAt: medicine.createdAt,
+                updatedAt: Date()
+            )
+            medicines[index] = updatedMedicine
+            updateCriticalStockMedicines()
+        }
+    }
+    
+    private func updateCriticalStockMedicines() {
+        criticalStockMedicines = medicines.filter { medicine in
+            guard medicine.criticalThreshold > 0 else { return false }
+            return medicine.currentQuantity <= medicine.criticalThreshold
+        }.sorted { $0.currentQuantity < $1.currentQuantity }
+    }
+    
+    private func updateExpiringMedicines() {
+        let calendar = Calendar.current
+        let thirtyDaysFromNow = calendar.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+        
+        expiringMedicines = medicines.filter { medicine in
+            guard let expiryDate = medicine.expiryDate else { return false }
+            return expiryDate <= thirtyDaysFromNow && expiryDate > Date()
+        }.sorted { (med1, med2) -> Bool in
+            guard let date1 = med1.expiryDate, let date2 = med2.expiryDate else {
+                return false
+            }
+            return date1 < date2
+        }
     }
 }
 

@@ -16,15 +16,14 @@ protocol HistoryRepositoryProtocol {
     /// - Returns: Liste complète des entrées d'historique
     func getAllHistory() async throws -> [HistoryEntry]
     
+    /// Récupère l'historique récent
+    /// - Parameter limit: Nombre maximum d'entrées à récupérer
+    /// - Returns: Liste des entrées d'historique récentes
+    func getRecentHistory(limit: Int) async throws -> [HistoryEntry]
+    
     /// Observe l'historique pour un médicament spécifique
     /// - Parameter medicineId: Identifiant du médicament
     /// - Returns: Un publisher qui émet la liste mise à jour des entrées d'historique
     func observeHistoryForMedicine(medicineId: String) -> AnyPublisher<[HistoryEntry], Error>
     
-    /// Exporte l'historique dans un format spécifié
-    /// - Parameters:
-    ///   - format: Format d'export (par exemple "csv", "json")
-    ///   - medicineId: Identifiant du médicament (optionnel, nil pour tout l'historique)
-    /// - Returns: Les données exportées
-    func exportHistory(format: String, medicineId: String?) async throws -> Data
 }

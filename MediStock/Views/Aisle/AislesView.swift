@@ -1,8 +1,9 @@
 import SwiftUI
 
+// Utilisation des enums de navigation définis dans NavigationDestinations.swift
+
 struct AislesView: View {
     @StateObject private var viewModel: AislesViewModel
-    @EnvironmentObject var appCoordinator: AppCoordinator
     @State private var showingAddAisle = false
     @State private var searchText = ""
     @State private var editMode: EditMode = .inactive
@@ -53,23 +54,21 @@ struct AislesView: View {
             }
             .navigationTitle("Rayons")
             .searchable(text: $searchText, prompt: "Rechercher un rayon")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingAddAisle = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                    }
-                    .disabled(editMode.isEditing)
+            // Utilisation de modificateurs distincts pour éviter l'ambiguïté
+            .navigationBarItems(
+                trailing: HStack(spacing: 15) {
                     
-                    Button(editMode.isEditing ? "Terminé" : "Modifier") {
-                        withAnimation {
-                            editMode = editMode.isEditing ? .inactive : .active
+                        Button(action: {
+                            showingAddAisle = true
+                        }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
                         }
+                        .disabled(editMode.isEditing)
+                        
+                        EditButton()
                     }
-                }
-            }
+                )
             .environment(\.editMode, $editMode)
             
             // Message d'erreur
@@ -98,6 +97,55 @@ struct AislesView: View {
                 await viewModel.fetchAisles()
             }
         }
+        .navigationDestination(for: AisleDestination.self) { destination in
+            switch destination {
+            case .medicinesByAisle(let aisleId):
+                MedicinesByAisleView(aisleId: aisleId)
+            case .aisleDetail(let aisleId):
+                Text("Détail du rayon \(aisleId)") // À implémenter si nécessaire
+            case .aisleForm(let aisleId):
+                if let id = aisleId {
+                    // Utiliser l'aisle directement ou une variable temporaire pour éviter getAisle(by:)
+                    AisleFormView(viewModel: viewModel)
+                } else {
+                    AisleFormView(viewModel: viewModel)
+                }
+            case .medicineDetail(let medicineId):
+                // Utilisation d'un médicament fictif temporaire qui sera remplacé
+                // par le vrai médicament lors du chargement dans la vue
+                let tempMedicine = Medicine(
+                    id: medicineId,
+                    name: "",
+                    description: "",
+                    dosage: "",
+                    form: "",
+                    reference: "",
+                    unit: "",
+                    currentQuantity: 0,
+                    maxQuantity: 0,
+                    warningThreshold: 0,
+                    criticalThreshold: 0,
+                    expiryDate: nil,
+                    aisleId: "",
+                    createdAt: Date(),
+                    updatedAt: Date()
+                )
+                
+                MedicineDetailView(
+                    medicineId: medicineId,
+                    viewModel: MedicineDetailViewModel(
+                        medicine: tempMedicine,
+                        getMedicineUseCase: RealGetMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                        updateMedicineStockUseCase: RealUpdateMedicineStockUseCase(
+                            medicineRepository: FirebaseMedicineRepository(),
+                            historyRepository: FirebaseHistoryRepository()
+                        ),
+                        deleteMedicineUseCase: RealDeleteMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                        getHistoryUseCase: RealGetHistoryForMedicineUseCase(historyRepository: FirebaseHistoryRepository())
+                    )
+                )
+            }
+        }
     }
     
     // MARK: - View Components
@@ -105,41 +153,47 @@ struct AislesView: View {
     private var aislesList: some View {
         List {
             ForEach(filteredAisles) { aisle in
-                AisleRowView(aisle: aisle, medicineCount: viewModel.getMedicineCountFor(aisleId: aisle.id))
-                    .contentShape(Rectangle())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            Task {
-                                await viewModel.deleteAisle(id: aisle.id)
+                Group {
+                    if editMode.isEditing {
+                        AisleRowView(aisle: aisle, medicineCount: viewModel.getMedicineCountFor(aisleId: aisle.id))
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedAisleForEdit = aisle
                             }
-                        } label: {
-                            Label("Supprimer", systemImage: "trash")
+                    } else {
+                        NavigationLink(value: AisleDestination.medicinesByAisle(aisle.id)) {
+                            AisleRowView(aisle: aisle, medicineCount: viewModel.getMedicineCountFor(aisleId: aisle.id))
                         }
-                        
-                        Button {
-                            selectedAisleForEdit = aisle
-                        } label: {
-                            Label("Modifier", systemImage: "pencil")
-                        }
-                        .tint(.accentApp)
+                        .contentShape(Rectangle())
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .opacity(listItemsOpacity[aisle.id, default: 0])
-                    .offset(x: listItemsOffset[aisle.id, default: 20], y: 0)
-                    .onAppear {
-                        withAnimation(.easeOut(duration: 0.3).delay(Double(getIndex(of: aisle)) * 0.05)) {
-                            listItemsOpacity[aisle.id] = 1
-                            listItemsOffset[aisle.id] = 0
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        Task {
+                            await viewModel.deleteAisle(id: aisle.id)
                         }
+                    } label: {
+                        Label("Supprimer", systemImage: "trash")
                     }
-                    .onTapGesture {
-                        if editMode.isEditing {
-                            selectedAisleForEdit = aisle
-                        } else {
-                            appCoordinator.navigateTo(.medicinesByAisle(aisle.id))
-                        }
+                    
+                    Button {
+                        selectedAisleForEdit = aisle
+                    } label: {
+                        Label("Modifier", systemImage: "pencil")
                     }
+                    .tint(.accentApp)
+                }
+                .opacity(listItemsOpacity[aisle.id, default: 0])
+                .offset(x: listItemsOffset[aisle.id, default: 20], y: 0)
+                .onAppear {
+                    withAnimation(.easeOut(duration: 0.3).delay(Double(getIndex(of: aisle)) * 0.05)) {
+                        listItemsOpacity[aisle.id] = 1
+                        listItemsOffset[aisle.id] = 0
+                    }
+                }
             }
             .onDelete { indexSet in
                 Task {
@@ -176,12 +230,14 @@ struct AislesView: View {
     }
 }
 
+
 struct AisleRowView: View {
     let aisle: Aisle
     let medicineCount: Int
     
     var body: some View {
         HStack(spacing: 15) {
+            // Icône avec taille fixe
             Circle()
                 .fill(aisle.color)
                 .frame(width: 50, height: 50)
@@ -193,21 +249,32 @@ struct AisleRowView: View {
                     }
                 }
             
-            VStack(alignment: .leading, spacing: 5) {
+            // Contenu principal avec hauteur fixe
+            VStack(alignment: .leading, spacing: 4) {
+                // Nom du rayon
                 Text(aisle.name)
                     .font(.headline)
                     .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                if let description = aisle.description, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
+                // Description avec hauteur réservée
+                Group {
+                    if let description = aisle.description, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    } else {
+                        Text(" ") // Texte invisible pour maintenir l'espace
+                            .font(.subheadline)
+                    }
                 }
+                .frame(height: 18, alignment: .top) // Hauteur fixe pour la description
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
-            Spacer()
-            
+            // Compteur avec taille fixe
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(medicineCount)")
                     .font(.system(size: 18, weight: .bold))
@@ -216,14 +283,11 @@ struct AisleRowView: View {
                 Text("médicaments")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 2)
             }
+            .frame(width: 90, alignment: .trailing) // Largeur fixe pour le compteur
         }
-        .padding()
+        .frame(height: 70) // Hauteur fixe pour toute la row
+        .padding(.horizontal)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
@@ -231,7 +295,6 @@ struct AisleRowView: View {
         .padding(.vertical, 4)
     }
 }
-
 #Preview {
     let mockViewModel = AislesViewModel(
         getAislesUseCase: MockGetAislesUseCase(),
@@ -243,6 +306,5 @@ struct AisleRowView: View {
     
     NavigationStack {
         AislesView(aislesViewModel: mockViewModel)
-            .environmentObject(AppCoordinator())
     }
 }

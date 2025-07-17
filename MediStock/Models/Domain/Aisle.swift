@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct Aisle: Identifiable, Equatable, Hashable {
+struct Aisle: Identifiable, Equatable, Hashable, Codable {
     let id: String
     var name: String
     var description: String?

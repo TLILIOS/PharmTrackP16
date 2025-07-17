@@ -80,6 +80,14 @@ class MedicineDetailViewModel: ObservableObject {
             self.medicine = updatedMedicine
             state = .success
             
+            // Notifier les autres ViewModels du changement
+            NotificationCenter.default.post(
+                name: Notification.Name("StockAdjusted"),
+                object: nil,
+                userInfo: ["medicineId": medicine.id, "newQuantity": newQuantity]
+            )
+            NotificationCenter.default.post(name: Notification.Name("MedicineUpdated"), object: updatedMedicine)
+            
             // Rafraîchir l'historique
             await fetchHistory()
         } catch {
@@ -93,6 +101,10 @@ class MedicineDetailViewModel: ObservableObject {
         
         do {
             try await deleteMedicineUseCase.execute(id: medicine.id)
+            
+            // Notifier la suppression
+            NotificationCenter.default.post(name: Notification.Name("MedicineDeleted"), object: medicine.id)
+            
             state = .success
         } catch {
             state = .error("Erreur lors de la suppression: \(error.localizedDescription)")

@@ -2,85 +2,61 @@ import SwiftUI
 
 struct MedicineDetailView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.viewModelCreator) private var viewModelCreator
     @StateObject private var viewModel: MedicineDetailViewModel
     @State private var showingDeleteConfirmation = false
     @State private var isHistoryExpanded = false
+    @State private var showingAdjustStock = false
+    @State private var showingEditForm = false
+    @State private var showingFullHistory = false
+    @State private var showingExportOptions = false
+    @State private var showingDeleteAlert = false
     
     // Animation properties
     @State private var headerScale = 0.95
     @State private var contentOffset = 50.0
     @State private var contentOpacity = 0.0
     
-    init(viewModel: MedicineDetailViewModel) {
+    let medicineId: String
+    
+    init(medicineId: String, viewModel: MedicineDetailViewModel) {
+        self.medicineId = medicineId
         self._viewModel = StateObject(wrappedValue: viewModel)
     }
     
     var body: some View {
-        ZStack {
-            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header avec informations principales
-                    headerView
-                        .scaleEffect(headerScale)
-                    
-                    // Contenu détaillé
-                    VStack(spacing: 20) {
-                        stockSection
-                        
-                        if !(viewModel.medicine.description?.isEmpty ?? true) {
-                            descriptionSection
-                        }
-                        
-                        detailsSection
-                        
-                        historySection
-                        
-                        
-                        // Bouton de suppression
-                        Button(action: {
-                            showingDeleteConfirmation = true
-                        }) {
-                            HStack {
-                                Image(systemName: "trash")
-                                Text("Supprimer")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(10)
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(15)
-                    .shadow(color: Color.black.opacity(0.05), radius: 5)
-                    .padding(.horizontal)
-                    .offset(y: contentOffset)
-                    .opacity(contentOpacity)
-                }
-                .padding(.bottom, 30)
-            }
-            
-            // Overlay du message d'erreur
-            if case .error(let message) = viewModel.state {
-                VStack {
-                    Spacer()
-                    
-                    MessageView(message: message, type: .error) {
-                        viewModel.resetState()
-                    }
-                    .padding()
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                .animation(.easeInOut, value: viewModel.state)
-                .zIndex(1)
+        mainContentView
+            .navigationTitle("Détails")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+        .sheet(isPresented: $showingAdjustStock) {
+            NavigationStack {
+                AdjustStockView(
+                    medicineId: medicineId,
+                    viewModel: viewModelCreator.createAdjustStockViewModel(
+                        medicineId: medicineId,
+                        medicine: viewModel.medicine
+                    )
+                )
             }
         }
-        .navigationTitle("Détails du médicament")
-        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingEditForm) {
+            NavigationStack {
+                MedicineFormView(
+                    medicineId: viewModel.medicine.id,
+                    viewModel: MedicineFormViewModel(
+                        getMedicineUseCase: RealGetMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                        getAislesUseCase: RealGetAislesUseCase(aisleRepository: FirebaseAisleRepository()),
+                        addMedicineUseCase: RealAddMedicineUseCase(
+                            medicineRepository: FirebaseMedicineRepository(),
+                            historyRepository: FirebaseHistoryRepository()
+                        ),
+                        updateMedicineUseCase: RealUpdateMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                        medicine: viewModel.medicine
+                    )
+                )
+            }
+        }
         .alert("Supprimer ce médicament ?", isPresented: $showingDeleteConfirmation) {
             Button("Annuler", role: .cancel) {}
             Button("Supprimer", role: .destructive) {
@@ -96,6 +72,7 @@ struct MedicineDetailView: View {
         }
         .onAppear {
             Task {
+                await viewModel.refreshMedicine()
                 await viewModel.fetchHistory()
                 
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
@@ -108,23 +85,219 @@ struct MedicineDetailView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await viewModel.refreshMedicine()
+                await viewModel.fetchHistory()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await viewModel.refreshMedicine()
+                await viewModel.fetchHistory()
+            }
+        }
     }
     
     // MARK: - View Components
     
-    private var headerView: some View {
+    private var mainContentView: some View {
+        ZStack {
+            backgroundView
+            
+            if case .loading = viewModel.state {
+                loadingView
+            } else {
+                scrollableContent
+            }
+            
+            errorOverlay
+        }
+        .sheet(isPresented: $showingEditForm) {
+            editFormSheet
+        }
+        .sheet(isPresented: $showingFullHistory) {
+            fullHistorySheet
+        }
+        .sheet(isPresented: $showingExportOptions) {
+            exportOptionsSheet
+        }
+        .alert("Supprimer ce médicament?", isPresented: $showingDeleteAlert) {
+            deleteAlert
+        } message: {
+            Text("Cette action est irréversible. L'historique associé sera également supprimé.")
+        }
+        .onAppear {
+            performOnAppear()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await viewModel.refreshMedicine()
+                await viewModel.fetchHistory()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await viewModel.refreshMedicine()
+                await viewModel.fetchHistory()
+            }
+        }
+    }
+    
+    private var backgroundView: some View {
+        Color.backgroundApp.opacity(0.1).ignoresSafeArea()
+    }
+    
+    private var loadingView: some View {
+        ProgressView("Chargement...")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var scrollableContent: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                headerView(medicine: viewModel.medicine)
+                    .scaleEffect(headerScale)
+                
+                contentStack
+            }
+            .padding(.bottom, 30)
+        }
+        .refreshable {
+            await viewModel.refreshMedicine()
+        }
+    }
+    
+    private var contentStack: some View {
+        VStack(spacing: 20) {
+            stockSection(medicine: viewModel.medicine)
+            
+            if !(viewModel.medicine.description?.isEmpty ?? true) {
+                descriptionSection(medicine: viewModel.medicine)
+            }
+            
+            detailsSection(medicine: viewModel.medicine)
+            historySection
+            actionButtonsSection(medicine: viewModel.medicine)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(15)
+        .shadow(color: Color.black.opacity(0.05), radius: 5)
+        .padding(.horizontal)
+        .offset(y: contentOffset)
+        .opacity(contentOpacity)
+    }
+    
+    private var errorOverlay: some View {
+        Group {
+            if case .error(let message) = viewModel.state {
+                VStack {
+                    Spacer()
+                    
+                    MessageView(message: message, type: .error) {
+                        viewModel.resetState()
+                    }
+                    .padding()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .animation(.easeInOut, value: viewModel.state)
+                .zIndex(1)
+            }
+        }
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Modifier") {
+                showingEditForm = true
+            }
+        }
+    }
+    
+    // MARK: - Sheets
+    
+    
+    private var editFormSheet: some View {
+        NavigationStack {
+            MedicineFormView(
+                medicineId: viewModel.medicine.id,
+                viewModel: MedicineFormViewModel(
+                    getMedicineUseCase: RealGetMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                    getAislesUseCase: RealGetAislesUseCase(aisleRepository: FirebaseAisleRepository()),
+                    addMedicineUseCase: RealAddMedicineUseCase(
+                        medicineRepository: FirebaseMedicineRepository(),
+                        historyRepository: FirebaseHistoryRepository()
+                    ),
+                    updateMedicineUseCase: RealUpdateMedicineUseCase(medicineRepository: FirebaseMedicineRepository()),
+                    medicine: viewModel.medicine
+                )
+            )
+        }
+    }
+    
+    private var fullHistorySheet: some View {
+        NavigationStack {
+            MedicineHistoryView(medicineId: viewModel.medicine.id)
+        }
+    }
+    
+    private var exportOptionsSheet: some View {
+        NavigationStack {
+            VStack {
+                Text("Options d'exportation")
+                    .font(.headline)
+                    .padding()
+                
+                Text("Fonctionnalité à implémenter")
+                    .foregroundColor(.secondary)
+            }
+            .navigationTitle("Exporter les données")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    @ViewBuilder
+    private var deleteAlert: some View {
+        Button("Annuler", role: .cancel) { }
+        Button("Supprimer", role: .destructive) {
+            Task {
+                await viewModel.deleteMedicine()
+            }
+        }
+    }
+    
+    private func performOnAppear() {
+        Task {
+            await viewModel.fetchHistory()
+            
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                headerScale = 1.0
+            }
+            
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                contentOffset = 0
+                contentOpacity = 1.0
+            }
+        }
+    }
+
+    // MARK: - View Components
+    
+    private func headerView(medicine: Medicine) -> some View {
         VStack(spacing: 15) {
             ZStack {
                 Circle()
                     .fill(Color.accentApp.opacity(0.2))
                     .frame(width: 100, height: 100)
                 
-                Text(String(viewModel.medicine.name.prefix(1)))
+                Text(String(medicine.name.prefix(1)))
                     .font(.system(size: 40, weight: .bold))
                     .foregroundColor(.accentApp)
             }
             
-            Text(viewModel.medicine.name)
+            Text(medicine.name)
                 .font(.title)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
@@ -143,7 +316,7 @@ struct MedicineDetailView: View {
         .padding(.vertical, 20)
     }
     
-    private var stockSection: some View {
+    private func stockSection(medicine: Medicine) -> some View {
         VStack(spacing: 10) {
             Text("Niveau de stock")
                 .font(.headline)
@@ -151,10 +324,10 @@ struct MedicineDetailView: View {
             
             HStack(spacing: 20) {
                 StockIndicator(
-                    value: viewModel.medicine.currentQuantity,
-                    maxValue: viewModel.medicine.maxQuantity,
-                    warningThreshold: viewModel.medicine.warningThreshold,
-                    criticalThreshold: viewModel.medicine.criticalThreshold
+                    value: medicine.currentQuantity,
+                    maxValue: medicine.maxQuantity,
+                    warningThreshold: medicine.warningThreshold,
+                    criticalThreshold: medicine.criticalThreshold
                 )
                 .frame(width: 100, height: 100)
                 
@@ -162,55 +335,64 @@ struct MedicineDetailView: View {
                     HStack {
                         Text("Actuel:")
                             .foregroundColor(.secondary)
-                        Text("\(viewModel.medicine.currentQuantity) \(viewModel.medicine.unit)")
+                        Text("\(medicine.currentQuantity) \(medicine.unit)")
                             .font(.headline)
                     }
                     
                     HStack {
                         Text("Maximum:")
                             .foregroundColor(.secondary)
-                        Text("\(viewModel.medicine.maxQuantity) \(viewModel.medicine.unit)")
+                        Text("\(medicine.maxQuantity) \(medicine.unit)")
                     }
                     
                     HStack {
                         Text("Seuil d'alerte:")
                             .foregroundColor(.secondary)
-                        Text("\(viewModel.medicine.warningThreshold) \(viewModel.medicine.unit)")
+                        Text("\(medicine.warningThreshold) \(medicine.unit)")
                     }
                     
                     HStack {
                         Text("Seuil critique:")
                             .foregroundColor(.secondary)
-                        Text("\(viewModel.medicine.criticalThreshold) \(viewModel.medicine.unit)")
+                        Text("\(medicine.criticalThreshold) \(medicine.unit)")
                     }
                 }
+                
+                Spacer()
             }
+            
+            // Bouton d'ajustement rapide
+            Button("Ajuster le stock") {
+                showingAdjustStock = true
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
         }
     }
     
-    private var descriptionSection: some View {
+    private func descriptionSection(medicine: Medicine) -> some View {
         VStack(spacing: 10) {
             Text("Description")
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            Text(viewModel.medicine.description ?? "")
+            Text(medicine.description ?? "")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     
-    private var detailsSection: some View {
+    private func detailsSection(medicine: Medicine) -> some View {
         VStack(spacing: 10) {
             Text("Informations complémentaires")
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(spacing: 12) {
-                detailRow(label: "Référence", value: viewModel.medicine.reference ?? "")
+                detailRow(label: "Référence", value: medicine.reference ?? "")
                 
-                if let expiryDate = viewModel.medicine.expiryDate {
+                if let expiryDate = medicine.expiryDate {
                     detailRow(
                         label: "Date d'expiration",
                         value: formatDate(expiryDate),
@@ -218,8 +400,10 @@ struct MedicineDetailView: View {
                     )
                 }
                 
-                detailRow(label: "Dosage", value: viewModel.medicine.dosage ?? "")
-                detailRow(label: "Forme", value: viewModel.medicine.form ?? "")
+                detailRow(label: "Dosage", value: medicine.dosage ?? "")
+                detailRow(label: "Forme", value: medicine.form ?? "")
+                detailRow(label: "Créé le", value: formatDate(medicine.createdAt))
+                detailRow(label: "Modifié le", value: formatDate(medicine.updatedAt))
             }
         }
     }
@@ -281,7 +465,7 @@ struct MedicineDetailView: View {
                     }
                     
                     if viewModel.history.count > 5 {
-                        NavigationLink(destination: Text("Historique complet")) { // À remplacer par la vraie vue d'historique
+                        NavigationLink(destination: MedicineHistoryView(medicineId: medicineId)) {
                             Text("Voir tout l'historique")
                                 .font(.caption)
                                 .foregroundColor(.accentApp)
@@ -289,6 +473,25 @@ struct MedicineDetailView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    private func actionButtonsSection(medicine: Medicine) -> some View {
+        VStack(spacing: 12) {
+            // Bouton de suppression
+            Button(action: {
+                showingDeleteConfirmation = true
+            }) {
+                HStack {
+                    Image(systemName: "trash")
+                    Text("Supprimer")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.red.opacity(0.1))
+                .foregroundColor(.red)
+                .cornerRadius(10)
             }
         }
     }
@@ -360,7 +563,7 @@ struct StockIndicator: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(color)
                 
-                Text("\(maxValue)")
+                Text("/\(maxValue)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -368,34 +571,84 @@ struct StockIndicator: View {
     }
 }
 
+// MARK: - Mock Export Use Case
+
+// MARK: - MedicineHistoryView pour l'historique complet
+struct MedicineHistoryView: View {
+    let medicineId: String
+    @StateObject private var viewModel: HistoryViewModel
+    
+    init(medicineId: String) {
+        self.medicineId = medicineId
+        self._viewModel = StateObject(wrappedValue: HistoryViewModel(
+            getHistoryUseCase: RealGetHistoryUseCase(historyRepository: FirebaseHistoryRepository()),
+            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: FirebaseMedicineRepository())
+        ))
+    }
+    
+    var body: some View {
+        List(viewModel.history) { entry in
+            VStack(alignment: .leading, spacing: 5) {
+                HStack {
+                    Text(entry.action)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Spacer()
+                    
+                    Text(formatDate(entry.timestamp, withTime: true))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Text(entry.details)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+        .navigationTitle("Historique")
+        .onAppear {
+            Task {
+                await viewModel.loadHistoryForMedicine(medicineId: medicineId)
+            }
+        }
+    }
+    
+    private func formatDate(_ date: Date, withTime: Bool = false) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = withTime ? "dd/MM/yyyy HH:mm" : "dd/MM/yyyy"
+        return formatter.string(from: date)
+    }
+}
+
 #Preview {
-    let mockMedicine = Medicine(
-        id: "1",
-        name: "Doliprane",
-        description: "Paracétamol pour traitement de la douleur et de la fièvre",
-        dosage: "500 mg",
-        form: "Comprimé",
-        reference: "DOLI500",
-        unit: "comprimés",
-        currentQuantity: 15,
-        maxQuantity: 30,
-        warningThreshold: 10,
-        criticalThreshold: 5,
-        expiryDate: Date().addingTimeInterval(60*60*24*60), // 60 jours
-        aisleId: "aisle1",
-        createdAt: Date(),
-        updatedAt: Date()
-    )
-    
-    let mockViewModel = MedicineDetailViewModel(
-        medicine: mockMedicine,
-        getMedicineUseCase: MockGetMedicineUseCase(),
-        updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
-        deleteMedicineUseCase: MockDeleteMedicineUseCase(),
-        getHistoryUseCase: MockGetHistoryForMedicineUseCase()
-    )
-    
     NavigationStack {
-        MedicineDetailView(viewModel: mockViewModel)
+        MedicineDetailView(
+            medicineId: "preview-id",
+            viewModel: MedicineDetailViewModel(
+                medicine: Medicine(
+                    id: "1",
+                    name: "Paracétamol",
+                    description: "Antalgique et antipyrétique pour le traitement symptomatique des douleurs et de la fièvre",
+                    dosage: "500mg",
+                    form: "Comprimé",
+                    reference: "PAR-500",
+                    unit: "comprimés",
+                    currentQuantity: 45,
+                    maxQuantity: 100,
+                    warningThreshold: 20,
+                    criticalThreshold: 10,
+                    expiryDate: Calendar.current.date(byAdding: .month, value: 6, to: Date()),
+                    aisleId: "aisle-1",
+                    createdAt: Date(),
+                    updatedAt: Date()
+                ),
+                getMedicineUseCase: MockGetMedicineUseCase(),
+                updateMedicineStockUseCase: MockUpdateMedicineStockUseCase(),
+                deleteMedicineUseCase: MockDeleteMedicineUseCase(),
+                getHistoryUseCase: MockGetHistoryForMedicineUseCase()
+            )
+        )
     }
 }

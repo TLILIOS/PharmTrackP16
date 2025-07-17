@@ -1,10 +1,29 @@
 import SwiftUI
 
+// MARK: - Enums
+enum TimeRange: String, CaseIterable, Identifiable {
+    case all = "Toutes les dates"
+    case today = "Aujourd'hui"
+    case week = "Cette semaine"
+    case month = "Ce mois"
+    case year = "Cette année"
+    
+    var id: String { self.rawValue }
+}
+
+enum ActionType: String, CaseIterable, Identifiable {
+    case all = "Toutes les actions"
+    case add = "Ajouts"
+    case remove = "Retraits"
+    case update = "Mises à jour"
+    
+    var id: String { self.rawValue }
+}
+
 struct HistoryView: View {
     @StateObject private var viewModel: HistoryViewModel
     @State private var searchText = ""
     @State private var isRefreshing = false
-    @State private var showingExportOptions = false
     
     // Filtres
     @State private var selectedMedicine: Medicine?
@@ -33,8 +52,7 @@ struct HistoryView: View {
                         medicines: viewModel.medicines,
                         headerOffset: headerOffset,
                         headerOpacity: headerOpacity,
-                        onFilterChange: applyFilters,
-                        onExport: { showingExportOptions = true }
+                        onFilterChange: applyFilters
                     )
                     
                     HistoryContentView(
@@ -64,17 +82,30 @@ struct HistoryView: View {
                 onDismiss: viewModel.resetState
             )
         }
-        .sheet(isPresented: $showingExportOptions) {
-            HistoryExportSheet(
-                filteredHistory: filteredHistory,
-                viewModel: viewModel,
-                isPresented: $showingExportOptions
-            )
-        }
         .onAppear {
             Task {
                 await loadData()
                 startAnimations()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await loadData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await loadData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))) { _ in
+            Task {
+                await loadData()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))) { _ in
+            Task {
+                await loadData()
             }
         }
     }
@@ -136,40 +167,18 @@ extension HistoryView {
     }
 }
 
-// MARK: - Enums
-extension HistoryView {
-    enum TimeRange: String, CaseIterable, Identifiable {
-        case all = "Toutes les dates"
-        case today = "Aujourd'hui"
-        case week = "Cette semaine"
-        case month = "Ce mois"
-        case year = "Cette année"
-        
-        var id: String { self.rawValue }
-    }
-    
-    enum ActionType: String, CaseIterable, Identifiable {
-        case all = "Toutes les actions"
-        case add = "Ajouts"
-        case remove = "Retraits"
-        case update = "Mises à jour"
-        
-        var id: String { self.rawValue }
-    }
-}
 
 // MARK: - Header View
 struct HistoryHeaderView: View {
     @Binding var searchText: String
     @Binding var selectedMedicine: Medicine?
-    @Binding var selectedTimeRange: HistoryView.TimeRange
-    @Binding var selectedActionType: HistoryView.ActionType
+    @Binding var selectedTimeRange: TimeRange
+    @Binding var selectedActionType: ActionType
     
     let medicines: [Medicine]
     let headerOffset: CGFloat
     let headerOpacity: Double
     let onFilterChange: () -> Void
-    let onExport: () -> Void
     
     var body: some View {
         VStack(spacing: 10) {
@@ -179,8 +188,7 @@ struct HistoryHeaderView: View {
                 selectedTimeRange: $selectedTimeRange,
                 selectedActionType: $selectedActionType,
                 medicines: medicines,
-                onFilterChange: onFilterChange,
-                onExport: onExport
+                onFilterChange: onFilterChange
             )
         }
         .padding(.horizontal)
@@ -220,12 +228,11 @@ struct HistorySearchBar: View {
 // MARK: - Filter Bar
 struct HistoryFilterBar: View {
     @Binding var selectedMedicine: Medicine?
-    @Binding var selectedTimeRange: HistoryView.TimeRange
-    @Binding var selectedActionType: HistoryView.ActionType
+    @Binding var selectedTimeRange: TimeRange
+    @Binding var selectedActionType: ActionType
     
     let medicines: [Medicine]
     let onFilterChange: () -> Void
-    let onExport: () -> Void
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -245,8 +252,6 @@ struct HistoryFilterBar: View {
                     medicines: medicines,
                     onFilterChange: onFilterChange
                 )
-                
-                ExportButton(action: onExport)
             }
             .padding(.vertical, 5)
         }
@@ -255,12 +260,12 @@ struct HistoryFilterBar: View {
 
 // MARK: - Individual Filter Components
 struct TimeRangeFilter: View {
-    @Binding var selectedTimeRange: HistoryView.TimeRange
+    @Binding var selectedTimeRange: TimeRange
     let onFilterChange: () -> Void
     
     var body: some View {
         Menu {
-            ForEach(HistoryView.TimeRange.allCases) { range in
+            ForEach(TimeRange.allCases) { range in
                 Button(action: {
                     withAnimation {
                         selectedTimeRange = range
@@ -285,12 +290,12 @@ struct TimeRangeFilter: View {
 }
 
 struct ActionTypeFilter: View {
-    @Binding var selectedActionType: HistoryView.ActionType
+    @Binding var selectedActionType: ActionType
     let onFilterChange: () -> Void
     
     var body: some View {
         Menu {
-            ForEach(HistoryView.ActionType.allCases) { action in
+            ForEach(ActionType.allCases) { action in
                 Button(action: {
                     withAnimation {
                         selectedActionType = action
@@ -384,25 +389,6 @@ struct FilterLabel: View {
     }
 }
 
-struct ExportButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.caption)
-                Text("Exporter")
-                    .font(.caption)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.accentApp.opacity(0.2))
-            .foregroundColor(.accentApp)
-            .cornerRadius(15)
-        }
-    }
-}
 
 struct ResetFiltersButton: View {
     let isDisabled: Bool
@@ -423,8 +409,8 @@ struct HistoryContentView: View {
     let medicines: [Medicine]
     let searchText: String
     let selectedMedicine: Medicine?
-    let selectedTimeRange: HistoryView.TimeRange
-    let selectedActionType: HistoryView.ActionType
+    let selectedTimeRange: TimeRange
+    let selectedActionType: ActionType
     let listOpacity: Double
     let onRefresh: () async -> Void
     
@@ -545,72 +531,6 @@ struct HistoryErrorView: View {
     }
 }
 
-// MARK: - Export Sheet
-struct HistoryExportSheet: View {
-    let filteredHistory: [HistoryEntry]
-    let viewModel: HistoryViewModel
-    @Binding var isPresented: Bool
-    
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(header: Text("Format d'export")) {
-                    ExportFormatButton(
-                        icon: "doc.richtext",
-                        title: "PDF",
-                        color: .red
-                    ) {
-                        Task {
-                            await viewModel.exportHistory(format: .pdf, entries: filteredHistory)
-                            isPresented = false
-                        }
-                    }
-                    
-                    ExportFormatButton(
-                        icon: "tablecells",
-                        title: "CSV (Excel)",
-                        color: .green
-                    ) {
-                        Task {
-                            await viewModel.exportHistory(format: .csv, entries: filteredHistory)
-                            isPresented = false
-                        }
-                    }
-                }
-                
-                Section(header: Text("Options")) {
-                    ExportFormatButton(
-                        icon: "xmark.circle",
-                        title: "Annuler",
-                        color: .gray
-                    ) {
-                        isPresented = false
-                    }
-                }
-            }
-            .navigationTitle("Exporter l'historique")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .presentationDetents([.medium])
-    }
-}
-
-struct ExportFormatButton: View {
-    let icon: String
-    let title: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                Text(title)
-            }
-        }
-    }
-}
 
 // MARK: - Filter Logic
 struct HistoryFilter {
@@ -618,8 +538,8 @@ struct HistoryFilter {
         to history: [HistoryEntry],
         searchText: String,
         selectedMedicine: Medicine?,
-        selectedTimeRange: HistoryView.TimeRange,
-        selectedActionType: HistoryView.ActionType,
+        selectedTimeRange: TimeRange,
+        selectedActionType: ActionType,
         medicines: [Medicine]
     ) -> [HistoryEntry] {
         history.filter { entry in
@@ -635,7 +555,7 @@ struct HistoryFilter {
         return entry.medicineId == selectedMedicine.id
     }
     
-    private static func timeRangeFilter(_ entry: HistoryEntry, _ selectedTimeRange: HistoryView.TimeRange) -> Bool {
+    private static func timeRangeFilter(_ entry: HistoryEntry, _ selectedTimeRange: TimeRange) -> Bool {
         guard selectedTimeRange != .all else { return true }
         
         let now = Date()
@@ -659,7 +579,7 @@ struct HistoryFilter {
         return entry.timestamp >= startDate
     }
     
-    private static func actionTypeFilter(_ entry: HistoryEntry, _ selectedActionType: HistoryView.ActionType) -> Bool {
+    private static func actionTypeFilter(_ entry: HistoryEntry, _ selectedActionType: ActionType) -> Bool {
         guard selectedActionType != .all else { return true }
         
         let actionLowercase = entry.action.lowercased()
@@ -775,8 +695,7 @@ struct HistoryEntryRow: View {
 #Preview {
     let mockViewModel = HistoryViewModel(
         getHistoryUseCase: MockGetHistoryUseCase(),
-        getMedicinesUseCase: MockGetMedicinesUseCase(),
-        exportHistoryUseCase: MockExportHistoryUseCase()
+        getMedicinesUseCase: MockGetMedicinesUseCase()
     )
     
     HistoryView(historyViewModel: mockViewModel)

@@ -1,9 +1,13 @@
 import SwiftUI
 
 struct CriticalStockView: View {
+    @Environment(\.viewModelCreator) private var viewModelCreator
     @ObservedObject var dashboardViewModel: DashboardViewModel
-    @EnvironmentObject var appCoordinator: AppCoordinator
     @State private var isRefreshing = false
+    @State private var selectedMedicine: Medicine?
+    @State private var showingMedicineDetail = false
+    @State private var showingAdjustStock = false
+    @State private var medicineForAdjustment: Medicine?
     
     // Animation properties
     @State private var listItemsOpacity: [String: Double] = [:]
@@ -55,6 +59,53 @@ struct CriticalStockView: View {
         .refreshable {
             await performRefresh()
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("StockAdjusted"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .sheet(isPresented: $showingMedicineDetail) {
+            if let medicine = selectedMedicine {
+                NavigationStack {
+                    MedicineDetailView(
+                        medicineId: medicine.id,
+                        viewModel: viewModelCreator.createMedicineDetailViewModel(medicine: medicine)
+                    )
+                }
+            }
+        }
+        .sheet(isPresented: $showingAdjustStock) {
+            if let medicine = medicineForAdjustment {
+                NavigationStack {
+                    AdjustStockView(
+                        medicineId: medicine.id,
+                        viewModel: viewModelCreator.createAdjustStockViewModel(
+                            medicineId: medicine.id,
+                            medicine: medicine
+                        )
+                    )
+                }
+            }
+        }
     }
     
     private var criticalStockList: some View {
@@ -62,13 +113,24 @@ struct CriticalStockView: View {
             LazyVStack(spacing: 12) {
                 ForEach(dashboardViewModel.criticalStockMedicines, id: \.id) { medicine in
                     CriticalStockMedicineRow(medicine: medicine) {
-                        appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
-                    } onAdjustStock: {
-                        appCoordinator.navigateFromDashboard(.adjustStock(medicine.id))
-                    }
+                    // Navigation vers les détails du médicament via sheet
+                    selectedMedicine = medicine
+                    showingMedicineDetail = true
+                } onAdjustStock: {
+                    // Affichage direct de la vue d'ajustement du stock en sheet
+                    medicineForAdjustment = medicine
+                    showingAdjustStock = true
+                }
+                .onTapGesture {
+                    selectedMedicine = medicine
+                    showingMedicineDetail = true
+                }
                     .opacity(listItemsOpacity[medicine.id] ?? 0)
                     .offset(y: listItemsOffset[medicine.id] ?? 50)
-                    .animation(.easeOut(duration: 0.6).delay(Double(dashboardViewModel.criticalStockMedicines.firstIndex(where: { $0.id == medicine.id }) ?? 0) * 0.1), value: listItemsOpacity[medicine.id])
+                    .animation(
+                        .easeOut(duration: 0.6).delay(0.1),
+                        value: listItemsOpacity[medicine.id]
+                    )
                 }
             }
             .padding()
@@ -100,7 +162,7 @@ struct CriticalStockMedicineRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(medicine.name ?? "Nom non spécifié")
+                    Text(medicine.name)
                         .font(.headline)
                         .foregroundColor(.primary)
                     
@@ -124,7 +186,7 @@ struct CriticalStockMedicineRow: View {
             }
             
             // Barre de progression
-            ProgressView(value: Double(medicine.currentQuantity), total: Double(medicine.maxQuantity))
+            ProgressView(value: Double(max(0, min(medicine.currentQuantity, medicine.maxQuantity))), total: Double(max(1, medicine.maxQuantity)))
                 .progressViewStyle(LinearProgressViewStyle(tint: .red))
                 .scaleEffect(x: 1, y: 2, anchor: .center)
             
@@ -151,9 +213,7 @@ struct CriticalStockMedicineRow: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-        .onTapGesture {
-            onTap()
-        }
+        // Navigation gérée par NavigationLink wrapper
     }
 }
 

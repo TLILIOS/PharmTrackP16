@@ -77,9 +77,11 @@ struct LoginView: View {
                                 .frame(width: 20)
                             
                             if showPassword {
-                                TextField("••••••••", text: $password)
+                                TextField("Entrez votre mot de passe", text: $password)
+                                    .textContentType(.password)
                             } else {
-                                SecureField("••••••••", text: $password)
+                                SecureField("Entrez votre mot de passe", text: $password)
+                                    .textContentType(.password)
                             }
                             
                             Button(action: { showPassword.toggle() }) {

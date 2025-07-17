@@ -5,6 +5,7 @@ enum MedicineError: LocalizedError, Equatable {
     case invalidData
     case saveFailed
     case deleteFailed
+    case invalidQuantity
     case unknownError(Error?)
     
     var errorDescription: String? {
@@ -17,6 +18,8 @@ enum MedicineError: LocalizedError, Equatable {
             return "Échec de l'enregistrement du médicament."
         case .deleteFailed:
             return "Échec de la suppression du médicament."
+        case .invalidQuantity:
+            return "La quantité spécifiée n'est pas valide."
         case .unknownError(let error):
             return error?.localizedDescription ?? "Une erreur inconnue est survenue."
         }
@@ -27,7 +30,8 @@ enum MedicineError: LocalizedError, Equatable {
         case (.notFound, .notFound),
              (.invalidData, .invalidData),
              (.saveFailed, .saveFailed),
-             (.deleteFailed, .deleteFailed):
+             (.deleteFailed, .deleteFailed),
+             (.invalidQuantity, .invalidQuantity):
             return true
         case (.unknownError(let lhsError), .unknownError(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription

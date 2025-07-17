@@ -27,6 +27,11 @@ protocol MedicineRepositoryProtocol {
     /// - Parameter id: Identifiant du médicament à supprimer
     func deleteMedicine(id: String) async throws
     
+    /// Recherche des médicaments par nom ou référence
+    /// - Parameter query: Le texte de recherche
+    /// - Returns: Liste des médicaments correspondants
+    func searchMedicines(query: String) async throws -> [Medicine]
+    
     /// Observer les changements dans la collection de médicaments
     /// - Returns: Un publisher qui émet la liste mise à jour des médicaments
     func observeMedicines() -> AnyPublisher<[Medicine], Error>

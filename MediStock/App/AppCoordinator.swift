@@ -2,7 +2,37 @@ import Foundation
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import FirebaseAuth
 import Combine
+
+// MARK: - Utility Functions
+
+/// Récupère l'ID de l'utilisateur actuellement connecté
+func getCurrentUserId() -> String {
+    return Auth.auth().currentUser?.uid ?? "anonymous_user"
+}
+
+// MARK: - Tab Context for Navigation
+
+enum TabContext: String, CaseIterable {
+    case dashboard = "dashboard"
+    case medicines = "medicines"
+    case aisles = "aisles"
+    case history = "history"
+    case profile = "profile"
+}
+
+// Environment key for current tab context
+private struct CurrentTabContextKey: EnvironmentKey {
+    static let defaultValue: TabContext = .dashboard
+}
+
+extension EnvironmentValues {
+    var currentTabContext: TabContext {
+        get { self[CurrentTabContextKey.self] }
+        set { self[CurrentTabContextKey.self] = newValue }
+    }
+}
 
 // MARK: - Test Data Service
 
@@ -179,115 +209,8 @@ private let generalMedicines: [MedicineTemplate] = [
 ]
 
 // MARK: - Use Case Protocols
+// All protocols moved to dedicated files
 
-// Authentication Use Cases
-public protocol GetUserUseCaseProtocol {
-    func execute() async throws -> User
-}
-
-protocol SignInUseCaseProtocol {
-    func execute(email: String, password: String) async throws
-}
-
-protocol SignUpUseCaseProtocol {
-    func execute(email: String, password: String, name: String) async throws
-}
-
-public protocol SignOutUseCaseProtocol {
-    func execute() async throws
-}
-
-// Medicine Use Cases
-protocol GetMedicinesUseCaseProtocol {
-    func execute() async throws -> [Medicine]
-}
-
-protocol GetMedicineUseCaseProtocol {
-    func execute(id: String) async throws -> Medicine
-}
-
-protocol AddMedicineUseCaseProtocol {
-    func execute(medicine: Medicine) async throws
-}
-
-protocol UpdateMedicineUseCaseProtocol {
-    func execute(medicine: Medicine) async throws
-}
-
-protocol DeleteMedicineUseCaseProtocol {
-    func execute(id: String) async throws
-}
-
-protocol AdjustStockUseCaseProtocol {
-    func execute(medicineId: String, adjustment: Int, reason: String) async throws
-}
-
-protocol SearchMedicineUseCaseProtocol {
-    func execute(query: String) async throws -> [Medicine]
-}
-
-protocol GetHistoryForMedicineUseCaseProtocol {
-    func execute(medicineId: String) async throws -> [HistoryEntry]
-}
-
-protocol UpdateMedicineStockUseCaseProtocol {
-    func execute(medicineId: String, newQuantity: Int, comment: String) async throws -> Medicine
-}
-
-// Aisle Use Cases
-protocol GetAislesUseCaseProtocol {
-    func execute() async throws -> [Aisle]
-}
-
-protocol AddAisleUseCaseProtocol {
-    func execute(aisle: Aisle) async throws
-}
-
-protocol UpdateAisleUseCaseProtocol {
-    func execute(aisle: Aisle) async throws
-}
-
-protocol DeleteAisleUseCaseProtocol {
-    func execute(id: String) async throws
-}
-
-protocol SearchAisleUseCaseProtocol {
-    func execute(query: String) async throws -> [Aisle]
-}
-
-protocol GetMedicineCountByAisleUseCaseProtocol {
-    func execute(aisleId: String) async throws -> Int
-}
-
-// MARK: - Repository Protocols
-protocol AisleRepositoryProtocol {
-    func getAisles() async throws -> [Aisle]
-    func getAisle(id: String) async throws -> Aisle?
-    func saveAisle(_ aisle: Aisle) async throws -> Aisle
-    func deleteAisle(id: String) async throws
-    func getMedicineCountByAisle(aisleId: String) async throws -> Int
-    func observeAisles() -> AnyPublisher<[Aisle], Error>
-    func observeAisle(id: String) -> AnyPublisher<Aisle?, Error>
-}
-
-// History Use Cases
-protocol GetHistoryUseCaseProtocol {
-    func execute() async throws -> [HistoryEntry]
-}
-
-protocol GetRecentHistoryUseCaseProtocol {
-    func execute(limit: Int) async throws -> [HistoryEntry]
-}
-
-protocol ExportHistoryUseCaseProtocol {
-    func execute(format: ExportFormat) async throws -> Data
-}
-
-enum ExportFormat {
-    case csv
-    case json
-    case pdf
-}
 
 /// Énumération des destinations de navigation possibles
 enum NavigationDestination: Hashable {
@@ -363,12 +286,11 @@ enum NavigationDestination: Hashable {
 /// Classe coordinateur qui gère la navigation et l'injection de dépendances
 @MainActor
 class AppCoordinator: ObservableObject {
-    // MARK: - Navigation Paths
+    // MARK: - Navigation State
     
-    // Stack global unique pour toute l'application
-    @Published var globalNavigationPath: [NavigationDestination] = []
+    @Published var currentTab: TabContext = .dashboard
     
-    // Anciens stacks (conservés temporairement pour compatibilité)
+    // Navigation paths - complètement séparés par onglet
     @Published var dashboardNavigationPath: [NavigationDestination] = []
     @Published var medicineNavigationPath: [NavigationDestination] = []
     @Published var aislesNavigationPath: [NavigationDestination] = []
@@ -393,6 +315,7 @@ class AppCoordinator: ObservableObject {
     lazy var getAislesUseCase: GetAislesUseCaseProtocol = RealGetAislesUseCase(aisleRepository: aisleRepository)
     lazy var searchAisleUseCase: SearchAisleUseCaseProtocol = RealSearchAisleUseCase(aisleRepository: aisleRepository)
     lazy var addMedicineUseCase: AddMedicineUseCaseProtocol = RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
+    lazy var adjustStockUseCase: AdjustStockUseCaseProtocol = RealAdjustStockUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository)
     
     // MARK: - ViewModels
     
@@ -427,8 +350,7 @@ class AppCoordinator: ObservableObject {
     lazy var historyViewModel: HistoryViewModel = {
         return HistoryViewModel(
             getHistoryUseCase: RealGetHistoryUseCase(historyRepository: historyRepository),
-            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: medicineRepository),
-            exportHistoryUseCase: RealExportHistoryUseCase(historyRepository: historyRepository)
+            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: medicineRepository)
         )
     }()
     
@@ -451,21 +373,71 @@ class AppCoordinator: ObservableObject {
     
     // MARK: - Navigation Methods
     
-    func navigateTo(_ destination: NavigationDestination) {
-        // Navigation simplifiée : toutes les destinations vont dans le stack global
-        globalNavigationPath.append(destination)
+    /// Navigation contextuelle - utilise automatiquement le bon stack selon le contexte
+    func navigate(to destination: NavigationDestination, in context: TabContext) {
+        switch context {
+        case .dashboard:
+            dashboardNavigationPath.append(destination)
+        case .medicines:
+            medicineNavigationPath.append(destination)
+        case .aisles:
+            aislesNavigationPath.append(destination)
+        case .history:
+            historyNavigationPath.append(destination)
+        case .profile:
+            profileNavigationPath.append(destination)
+        }
     }
     
-    // Note: Logique de navigation contextuelle supprimée - plus nécessaire avec le stack global
-    
+    /// Navigation depuis le dashboard (pour compatibilité)
     func navigateFromDashboard(_ destination: NavigationDestination) {
-        // Navigation simplifiée : utilise le stack global
-        globalNavigationPath.append(destination)
+        navigate(to: destination, in: .dashboard)
     }
     
+    /// Navigation depuis les médicaments
+    func navigateFromMedicineList(_ destination: NavigationDestination) {
+        navigate(to: destination, in: .medicines)
+    }
+    
+    /// Navigation depuis les rayons
     func navigateFromAisle(_ destination: NavigationDestination) {
-        // Navigation simplifiée : utilise le stack global
-        globalNavigationPath.append(destination)
+        navigate(to: destination, in: .aisles)
+    }
+    
+    /// Navigation depuis l'historique
+    func navigateFromHistory(_ destination: NavigationDestination) {
+        navigate(to: destination, in: .history)
+    }
+    
+    /// Navigation depuis le profil
+    func navigateFromProfile(_ destination: NavigationDestination) {
+        navigate(to: destination, in: .profile)
+    }
+    
+    /// Navigation générique (utilise le contexte actuel)
+    func navigateTo(_ destination: NavigationDestination) {
+        navigate(to: destination, in: currentTab)
+    }
+    
+    /// Vider la pile de navigation d'un onglet spécifique
+    func clearNavigationStack(for context: TabContext) {
+        switch context {
+        case .dashboard:
+            dashboardNavigationPath.removeAll()
+        case .medicines:
+            medicineNavigationPath.removeAll()
+        case .aisles:
+            aislesNavigationPath.removeAll()
+        case .history:
+            historyNavigationPath.removeAll()
+        case .profile:
+            profileNavigationPath.removeAll()
+        }
+    }
+    
+    /// Revenir à la racine d'un onglet
+    func popToRoot(for context: TabContext) {
+        clearNavigationStack(for: context)
     }
     
     func dismissGlobalError() {
@@ -513,7 +485,7 @@ class AppCoordinator: ObservableObject {
             medicine: medicine,
             getMedicineUseCase: getMedicineUseCase,
             updateMedicineStockUseCase: RealUpdateMedicineStockUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
-            deleteMedicineUseCase: RealDeleteMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
+            deleteMedicineUseCase: RealDeleteMedicineUseCase(medicineRepository: medicineRepository),
             getHistoryUseCase: MockGetHistoryForMedicineUseCase()
         )
     }
@@ -523,14 +495,13 @@ class AppCoordinator: ObservableObject {
             getMedicineUseCase: getMedicineUseCase,
             getAislesUseCase: getAislesUseCase,
             addMedicineUseCase: RealAddMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
-            updateMedicineUseCase: RealUpdateMedicineUseCase(medicineRepository: medicineRepository, historyRepository: historyRepository),
+            updateMedicineUseCase: RealUpdateMedicineUseCase(medicineRepository: medicineRepository),
             medicine: medicine
         )
     }
     
     private func createAdjustStockViewModel(for medicine: Medicine) -> some View {
-        let medicineDetailViewModel = createMedicineDetailViewModel(for: medicine)
-        return AdjustStockView(viewModel: medicineDetailViewModel)
+        return NewAdjustStockView(medicineId: medicine.id)
     }
     
     private func createAisleFormViewModel(for aisle: Aisle?) -> some View {
@@ -557,7 +528,7 @@ struct AdjustStockViewWrapper: View {
             if isLoading {
                 ProgressView("Chargement...")
             } else if let medicine = medicine {
-                AdjustStockView(viewModel: appCoordinator.createMedicineDetailViewModel(for: medicine))
+                createAdjustStockView(for: medicine)
             } else {
                 VStack {
                     Text("Médicament introuvable")
@@ -569,6 +540,18 @@ struct AdjustStockViewWrapper: View {
         .task {
             await loadMedicine()
         }
+    }
+    
+    private func createAdjustStockView(for medicine: Medicine) -> some View {
+        AdjustStockView(
+            medicineId: medicine.id,
+            viewModel: AdjustStockViewModel(
+                getMedicineUseCase: appCoordinator.getMedicineUseCase,
+                adjustStockUseCase: appCoordinator.adjustStockUseCase,
+                medicine: medicine,
+                medicineId: medicine.id
+            )
+        )
     }
     
     private func loadMedicine() async {
@@ -592,7 +575,7 @@ struct MedicineDetailViewWrapper: View {
             if isLoading {
                 ProgressView("Chargement...")
             } else if let medicine = medicine {
-                MedicineDetailView(viewModel: appCoordinator.createMedicineDetailViewModel(for: medicine))
+                MedicineDetailView(medicineId: medicine.id, viewModel: appCoordinator.createMedicineDetailViewModel(for: medicine))
             } else {
                 Text("Médicament introuvable")
             }
@@ -622,11 +605,11 @@ struct MedicineFormViewWrapper: View {
         Group {
             if medicineId == nil {
                 // New medicine
-                MedicineFormView(medicineFormViewModel: appCoordinator.createMedicineFormViewModel(for: nil))
+                MedicineFormView(medicineId: nil, viewModel: appCoordinator.createMedicineFormViewModel(for: nil))
             } else if isLoading {
                 ProgressView("Chargement...")
             } else if let medicine = medicine {
-                MedicineFormView(medicineFormViewModel: appCoordinator.createMedicineFormViewModel(for: medicine))
+                MedicineFormView(medicineId: medicine.id, viewModel: appCoordinator.createMedicineFormViewModel(for: medicine))
             } else {
                 Text("Médicament introuvable")
             }
@@ -837,266 +820,9 @@ struct AisleMedicineCard: View {
     }
 }
 
-// MARK: - Real Implementations
-
-// MARK: - Firebase Repository Implementations
-//class FirebaseMedicineRepository: MedicineRepositoryProtocol {
-//    private let db = Firestore.firestore()
-//    private let collection = "medicines"
-//    
-//    func getMedicines() async throws -> [Medicine] {
-//        let snapshot = try await db.collection(collection).getDocuments()
-//        return snapshot.documents.compactMap { document in
-//            try? document.data(as: MedicineDTO.self).toDomain()
-//        }
-//    }
-//    
-//    func getMedicine(id: String) async throws -> Medicine? {
-//        let document = try await db.collection(collection).document(id).getDocument()
-//        guard document.exists, let medicineDTO = try? document.data(as: MedicineDTO.self) else { return nil }
-//        return medicineDTO.toDomain()
-//    }
-//    
-//    func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
-//        let medicineDTO = MedicineDTO.fromDomain(medicine)
-//        if medicine.id.isEmpty {
-//            let documentRef = db.collection(collection).document()
-//            let newMedicine = Medicine(
-//                id: documentRef.documentID, name: medicine.name, description: medicine.description,
-//                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
-//                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
-//                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
-//                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
-//                createdAt: Date(), updatedAt: Date()
-//            )
-//            let newMedicineDTO = MedicineDTO.fromDomain(newMedicine)
-//            try await documentRef.setData(from: newMedicineDTO)
-//            return newMedicine
-//        } else {
-//            let updatedMedicine = Medicine(
-//                id: medicine.id, name: medicine.name, description: medicine.description,
-//                dosage: medicine.dosage, form: medicine.form, reference: medicine.reference,
-//                unit: medicine.unit, currentQuantity: medicine.currentQuantity, maxQuantity: medicine.maxQuantity,
-//                warningThreshold: medicine.warningThreshold, criticalThreshold: medicine.criticalThreshold,
-//                expiryDate: medicine.expiryDate, aisleId: medicine.aisleId,
-//                createdAt: medicine.createdAt, updatedAt: Date()
-//            )
-//            let updatedMedicineDTO = MedicineDTO.fromDomain(updatedMedicine)
-//            try await db.collection(collection).document(medicine.id).setData(from: updatedMedicineDTO)
-//            return updatedMedicine
-//        }
-//    }
-//    
-//    func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
-//        try await db.collection(collection).document(id).updateData([
-//            "currentQuantity": newStock, "updatedAt": FieldValue.serverTimestamp()
-//        ])
-//        guard let updatedMedicine = try await getMedicine(id: id) else {
-//            throw NSError(domain: "MedicineRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
-//        }
-//        return updatedMedicine
-//    }
-//    
-//    func deleteMedicine(id: String) async throws {
-//        try await db.collection(collection).document(id).delete()
-//    }
-//    
-//    func observeMedicines() -> AnyPublisher<[Medicine], Error> {
-//        return Future { promise in
-//            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
-//                if let error = error { promise(.failure(error)); return }
-//                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "MedicineRepository", code: 500))); return }
-//                let medicines = snapshot.documents.compactMap { try? $0.data(as: MedicineDTO.self).toDomain() }
-//                promise(.success(medicines))
-//            }
-//        }.eraseToAnyPublisher()
-//    }
-//    
-//    func observeMedicine(id: String) -> AnyPublisher<Medicine?, Error> {
-//        return Future { promise in
-//            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
-//                if let error = error { promise(.failure(error)); return }
-//                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
-//                do {
-//                    let medicine = try snapshot.data(as: MedicineDTO.self).toDomain()
-//                    promise(.success(medicine))
-//                } catch { promise(.failure(error)) }
-//            }
-//        }.eraseToAnyPublisher()
-//    }
-//}
-
-//class FirebaseAisleRepository: AisleRepositoryProtocol {
-//    private let db = Firestore.firestore()
-//    private let collection = "aisles"
-//    private let medicinesCollection = "medicines"
-//    
-//    func getAisles() async throws -> [Aisle] {
-//        let snapshot = try await db.collection(collection).getDocuments()
-//        return snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
-//    }
-//    
-//    func getAisle(id: String) async throws -> Aisle? {
-//        let document = try await db.collection(collection).document(id).getDocument()
-//        guard document.exists, let aisleDTO = try? document.data(as: AisleDTO.self) else { return nil }
-//        return aisleDTO.toDomain()
-//    }
-//    
-//    func saveAisle(_ aisle: Aisle) async throws -> Aisle {
-//        if aisle.id.isEmpty {
-//            let documentRef = db.collection(collection).document()
-//            let newAisle = Aisle(id: documentRef.documentID, name: aisle.name, description: aisle.description,
-//                                colorHex: aisle.colorHex, icon: aisle.icon)
-//            let newAisleDTO = AisleDTO.fromDomain(newAisle)
-//            try await documentRef.setData(from: newAisleDTO)
-//            return newAisle
-//        } else {
-//            let updatedAisle = Aisle(id: aisle.id, name: aisle.name, description: aisle.description,
-//                                   colorHex: aisle.colorHex, icon: aisle.icon)
-//            let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)
-//            try await db.collection(collection).document(aisle.id).setData(from: updatedAisleDTO)
-//            return updatedAisle
-//        }
-//    }
-//    
-//    func deleteAisle(id: String) async throws {
-//        let medicinesInAisle = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: id).getDocuments()
-//        if !medicinesInAisle.documents.isEmpty {
-//            throw NSError(domain: "AisleRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot delete aisle: it contains medicines"])
-//        }
-//        try await db.collection(collection).document(id).delete()
-//    }
-//    
-//    func getMedicineCountByAisle(aisleId: String) async throws -> Int {
-//        let snapshot = try await db.collection(medicinesCollection).whereField("aisleId", isEqualTo: aisleId).getDocuments()
-//        return snapshot.documents.count
-//    }
-//    
-//    func observeAisles() -> AnyPublisher<[Aisle], Error> {
-//        return Future { promise in
-//            let listener = self.db.collection(self.collection).addSnapshotListener { snapshot, error in
-//                if let error = error { promise(.failure(error)); return }
-//                guard let snapshot = snapshot else { promise(.failure(NSError(domain: "AisleRepository", code: 500))); return }
-//                let aisles = snapshot.documents.compactMap { try? $0.data(as: AisleDTO.self).toDomain() }
-//                promise(.success(aisles))
-//            }
-//        }.eraseToAnyPublisher()
-//    }
-//    
-//    func observeAisle(id: String) -> AnyPublisher<Aisle?, Error> {
-//        return Future { promise in
-//            let listener = self.db.collection(self.collection).document(id).addSnapshotListener { snapshot, error in
-//                if let error = error { promise(.failure(error)); return }
-//                guard let snapshot = snapshot, snapshot.exists else { promise(.success(nil)); return }
-//                do {
-//                    let aisle = try snapshot.data(as: AisleDTO.self).toDomain()
-//                    promise(.success(aisle))
-//                } catch { promise(.failure(error)) }
-//            }
-//        }.eraseToAnyPublisher()
-//    }
-//}
 
 // MARK: - Real Use Cases
-class RealGetMedicinesUseCase: GetMedicinesUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    init(medicineRepository: MedicineRepositoryProtocol) { self.medicineRepository = medicineRepository }
-    func execute() async throws -> [Medicine] { try await medicineRepository.getMedicines() }
-}
-
-class RealGetMedicineUseCase: GetMedicineUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    init(medicineRepository: MedicineRepositoryProtocol) { self.medicineRepository = medicineRepository }
-    func execute(id: String) async throws -> Medicine {
-        guard let medicine = try await medicineRepository.getMedicine(id: id) else {
-            throw NSError(domain: "MedicineUseCase", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
-        }
-        return medicine
-    }
-}
-
-class RealAddMedicineUseCase: AddMedicineUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
-        self.medicineRepository = medicineRepository
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(medicine: Medicine) async throws {
-        let savedMedicine = try await medicineRepository.saveMedicine(medicine)
-        
-        // Ajouter une entrée à l'historique
-        let historyEntry = HistoryEntry(
-            id: UUID().uuidString,
-            medicineId: savedMedicine.id,
-            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
-            action: "Médicament ajouté",
-            details: "Nouveau médicament '\(savedMedicine.name)' ajouté avec une quantité de \(savedMedicine.currentQuantity) \(savedMedicine.unit)",
-            timestamp: Date()
-        )
-        
-        _ = try await historyRepository.addHistoryEntry(historyEntry)
-    }
-}
-
-class RealUpdateMedicineUseCase: UpdateMedicineUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
-        self.medicineRepository = medicineRepository
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(medicine: Medicine) async throws {
-        let updatedMedicine = try await medicineRepository.saveMedicine(medicine)
-        
-        // Ajouter une entrée à l'historique
-        let historyEntry = HistoryEntry(
-            id: UUID().uuidString,
-            medicineId: updatedMedicine.id,
-            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
-            action: "Médicament modifié",
-            details: "Médicament '\(updatedMedicine.name)' mis à jour",
-            timestamp: Date()
-        )
-        
-        _ = try await historyRepository.addHistoryEntry(historyEntry)
-    }
-}
-
-class RealDeleteMedicineUseCase: DeleteMedicineUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
-        self.medicineRepository = medicineRepository
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(id: String) async throws {
-        // Récupérer le médicament avant de le supprimer pour l'historique
-        let medicine = try await medicineRepository.getMedicine(id: id)
-        
-        try await medicineRepository.deleteMedicine(id: id)
-        
-        // Ajouter une entrée à l'historique si le médicament existait
-        if let deletedMedicine = medicine {
-            let historyEntry = HistoryEntry(
-                id: UUID().uuidString,
-                medicineId: deletedMedicine.id,
-                userId: "current_user", // TODO: Récupérer l'utilisateur actuel
-                action: "Médicament supprimé",
-                details: "Médicament '\(deletedMedicine.name)' supprimé du stock",
-                timestamp: Date()
-            )
-            
-            _ = try await historyRepository.addHistoryEntry(historyEntry)
-        }
-    }
-}
+// Medicine use cases are imported from their dedicated files
 
 class RealGetAislesUseCase: GetAislesUseCaseProtocol {
     private let aisleRepository: AisleRepositoryProtocol
@@ -1128,20 +854,7 @@ class RealGetMedicineCountByAisleUseCase: GetMedicineCountByAisleUseCaseProtocol
     func execute(aisleId: String) async throws -> Int { try await aisleRepository.getMedicineCountByAisle(aisleId: aisleId) }
 }
 
-public class RealGetUserUseCase: GetUserUseCaseProtocol {
-    private let authRepository: AuthRepositoryProtocol
-    
-    public init(authRepository: AuthRepositoryProtocol) {
-        self.authRepository = authRepository
-    }
-    
-    public func execute() async throws -> User {
-        guard let currentUser = authRepository.currentUser else {
-            throw AuthError.userNotFound
-        }
-        return currentUser
-    }
-}
+// RealGetUserUseCase moved to dedicated file
 
 public class RealSignOutUseCase: SignOutUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
@@ -1155,52 +868,10 @@ public class RealSignOutUseCase: SignOutUseCaseProtocol {
     }
 }
 
-class RealGetHistoryUseCase: GetHistoryUseCaseProtocol {
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(historyRepository: HistoryRepositoryProtocol) {
-        self.historyRepository = historyRepository
-    }
-    
-    func execute() async throws -> [HistoryEntry] {
-        return try await historyRepository.getAllHistory()
-    }
-}
+// RealGetHistoryUseCase is imported from dedicated file
 
-class RealGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(historyRepository: HistoryRepositoryProtocol) {
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(limit: Int) async throws -> [HistoryEntry] {
-        let allHistory = try await historyRepository.getAllHistory()
-        let safeLimit = max(0, limit)
-        return Array(allHistory.prefix(safeLimit))
-    }
-}
+// RealGetRecentHistoryUseCase is imported from dedicated file
 
-class RealExportHistoryUseCase: ExportHistoryUseCaseProtocol {
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(historyRepository: HistoryRepositoryProtocol) {
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(format: ExportFormat) async throws -> Data {
-        let formatString: String
-        switch format {
-        case .csv:
-            formatString = "csv"
-        case .json:
-            formatString = "json"
-        case .pdf:
-            formatString = "pdf"
-        }
-        return try await historyRepository.exportHistory(format: formatString, medicineId: nil)
-    }
-}
 
 // MARK: - Mock Implementations
 
@@ -1292,69 +963,32 @@ class MockDeleteMedicineUseCase: DeleteMedicineUseCaseProtocol {
 }
 
 class MockAdjustStockUseCase: AdjustStockUseCaseProtocol {
-    func execute(medicineId: String, adjustment: Int, reason: String) async throws {}
+    func execute(medicineId: String, adjustment: Int, reason: String) async throws -> Medicine {
+        return Medicine(
+            id: medicineId,
+            name: "Adjusted Medicine",
+            description: "Mock Description",
+            dosage: "500mg",
+            form: "Comprimé",
+            reference: "ADJ-500",
+            unit: "comprimé",
+            currentQuantity: 50,
+            maxQuantity: 100,
+            warningThreshold: 20,
+            criticalThreshold: 10,
+            expiryDate: Calendar.current.date(byAdding: .month, value: 6, to: Date()),
+            aisleId: "aisle-1",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+    }
 }
 
-class RealSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    
-    init(medicineRepository: MedicineRepositoryProtocol) {
-        self.medicineRepository = medicineRepository
-    }
-    
-    func execute(query: String) async throws -> [Medicine] {
-        let allMedicines = try await medicineRepository.getMedicines()
-        
-        // Recherche insensible à la casse dans le nom et la description
-        return allMedicines.filter { medicine in
-            let searchQuery = query.lowercased()
-            let nameMatch = medicine.name.lowercased().contains(searchQuery)
-            let descriptionMatch = medicine.description?.lowercased().contains(searchQuery) ?? false
-            let referenceMatch = medicine.reference?.lowercased().contains(searchQuery) ?? false
-            
-            return nameMatch || descriptionMatch || referenceMatch
-        }
-    }
-}
+// RealSearchMedicineUseCase moved to dedicated file
 
 class MockSearchMedicineUseCase: SearchMedicineUseCaseProtocol {
     func execute(query: String) async throws -> [Medicine] {
         return []
-    }
-}
-
-class MockGetHistoryForMedicineUseCase: GetHistoryForMedicineUseCaseProtocol {
-    func execute(medicineId: String) async throws -> [HistoryEntry] {
-        return []
-    }
-}
-
-class RealUpdateMedicineStockUseCase: UpdateMedicineStockUseCaseProtocol {
-    private let medicineRepository: MedicineRepositoryProtocol
-    private let historyRepository: HistoryRepositoryProtocol
-    
-    init(medicineRepository: MedicineRepositoryProtocol, historyRepository: HistoryRepositoryProtocol) {
-        self.medicineRepository = medicineRepository
-        self.historyRepository = historyRepository
-    }
-    
-    func execute(medicineId: String, newQuantity: Int, comment: String) async throws -> Medicine {
-        // Mettre à jour le stock dans le repository
-        let updatedMedicine = try await medicineRepository.updateMedicineStock(id: medicineId, newStock: newQuantity)
-        
-        // Ajouter une entrée à l'historique
-        let historyEntry = HistoryEntry(
-            id: UUID().uuidString,
-            medicineId: medicineId,
-            userId: "current_user", // TODO: Récupérer l'utilisateur actuel
-            action: "Stock ajusté",
-            details: comment.isEmpty ? "Stock ajusté à \(newQuantity) \(updatedMedicine.unit)" : comment,
-            timestamp: Date()
-        )
-        
-        _ = try await historyRepository.addHistoryEntry(historyEntry)
-        
-        return updatedMedicine
     }
 }
 
@@ -1446,11 +1080,12 @@ class MockGetRecentHistoryUseCase: GetRecentHistoryUseCaseProtocol {
     }
 }
 
-class MockExportHistoryUseCase: ExportHistoryUseCaseProtocol {
-    func execute(format: ExportFormat) async throws -> Data {
-        return Data()
+class MockGetHistoryForMedicineUseCase: GetHistoryForMedicineUseCaseProtocol {
+    func execute(medicineId: String) async throws -> [HistoryEntry] {
+        return []
     }
 }
+
 
 // MARK: - Quick ViewModel definitions for compilation
 
@@ -1582,7 +1217,7 @@ struct CriticalStockMedicineRowWrapper: View {
             }
             
             // Barre de progression
-            ProgressView(value: Double(medicine.currentQuantity), total: Double(medicine.maxQuantity))
+            ProgressView(value: Double(max(0, min(medicine.currentQuantity, medicine.maxQuantity))), total: Double(max(1, medicine.maxQuantity)))
                 .progressViewStyle(LinearProgressViewStyle(tint: .red))
                 .scaleEffect(x: 1, y: 2, anchor: .center)
             
@@ -1621,8 +1256,7 @@ struct CriticalStockMedicineRowWrapper: View {
 func MockHistoryViewModel() -> HistoryViewModel {
     return HistoryViewModel(
         getHistoryUseCase: MockGetHistoryUseCase(),
-        getMedicinesUseCase: MockGetMedicinesUseCase(),
-        exportHistoryUseCase: MockExportHistoryUseCase()
+        getMedicinesUseCase: MockGetMedicinesUseCase()
     )
 }
 

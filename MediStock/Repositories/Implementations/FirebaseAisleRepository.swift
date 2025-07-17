@@ -57,9 +57,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
                 name: aisle.name,
                 description: aisle.description,
                 colorHex: aisle.colorHex,
-                icon: aisle.icon,
-                createdAt: Date(),
-                updatedAt: Date()
+                icon: aisle.icon
             )
             
             let newAisleDTO = AisleDTO.fromDomain(newAisle)
@@ -72,9 +70,7 @@ class FirebaseAisleRepository: AisleRepositoryProtocol {
                 name: aisle.name,
                 description: aisle.description,
                 colorHex: aisle.colorHex,
-                icon: aisle.icon,
-                createdAt: aisle.createdAt,
-                updatedAt: Date()
+                icon: aisle.icon
             )
             
             let updatedAisleDTO = AisleDTO.fromDomain(updatedAisle)

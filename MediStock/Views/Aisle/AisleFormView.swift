@@ -304,7 +304,7 @@ struct AisleFormView: View {
         getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase()
     )
     
-    return AisleFormView(viewModel: mockViewModel)
+    AisleFormView(viewModel: mockViewModel)
 }
 
 #Preview("Modifier un rayon") {
@@ -316,7 +316,7 @@ struct AisleFormView: View {
         getMedicineCountByAisleUseCase: MockGetMedicineCountByAisleUseCase()
     )
     
-    return AisleFormView(
+    AisleFormView(
         viewModel: mockViewModel,
         editingAisle: Aisle(
             id: "test",

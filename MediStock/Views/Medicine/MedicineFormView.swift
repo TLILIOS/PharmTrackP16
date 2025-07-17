@@ -7,16 +7,16 @@ struct MedicineFormView: View {
     @State private var showingDatePicker = false
     
     // Champs du formulaire
-    @State private var name: String
-    @State private var description: String
-    @State private var reference: String
-    @State private var dosage: String
-    @State private var form: String
-    @State private var unit: String
-    @State private var currentQuantity: Int
-    @State private var maxQuantity: Int
-    @State private var warningThreshold: Int
-    @State private var criticalThreshold: Int
+    @State private var name: String = ""
+    @State private var description: String = ""
+    @State private var reference: String = ""
+    @State private var dosage: String = ""
+    @State private var form: String = "Comprimé"
+    @State private var unit: String = "comprimés"
+    @State private var currentQuantity: Int = 0
+    @State private var maxQuantity: Int = 30
+    @State private var warningThreshold: Int = 10
+    @State private var criticalThreshold: Int = 5
     @State private var expiryDate: Date?
     
     // Animation properties
@@ -27,120 +27,97 @@ struct MedicineFormView: View {
     // Constantes de formulaire
     private let medicineFormOptions = MedicineFormOptions()
     
-    init(medicineFormViewModel: MedicineFormViewModel, medicine: Medicine? = nil) {
-        self._viewModel = StateObject(wrappedValue: medicineFormViewModel)
-        self._isEditing = State(initialValue: medicine != nil)
-        
-        // Initialiser avec les valeurs du médicament ou des valeurs par défaut
-        if let med = medicine {
-            self._name = State(initialValue: med.name)
-            self._description = State(initialValue: med.description ?? "")
-            self._reference = State(initialValue: med.reference ?? "")
-            self._dosage = State(initialValue: med.dosage ?? "")
-            self._form = State(initialValue: med.form ?? "")
-            self._unit = State(initialValue: med.unit)
-            self._currentQuantity = State(initialValue: med.currentQuantity)
-            self._maxQuantity = State(initialValue: med.maxQuantity)
-            self._warningThreshold = State(initialValue: med.warningThreshold)
-            self._criticalThreshold = State(initialValue: med.criticalThreshold)
-            self._expiryDate = State(initialValue: med.expiryDate)
-            self._editingMedicineId = State(initialValue: med.id)
-        } else {
-            self._name = State(initialValue: "")
-            self._description = State(initialValue: "")
-            self._reference = State(initialValue: "")
-            self._dosage = State(initialValue: "")
-            self._form = State(initialValue: "Comprimé")
-            self._unit = State(initialValue: "comprimés")
-            self._currentQuantity = State(initialValue: 0)
-            self._maxQuantity = State(initialValue: 30)
-            self._warningThreshold = State(initialValue: 10)
-            self._criticalThreshold = State(initialValue: 5)
-            self._expiryDate = State(initialValue: nil)
-            self._editingMedicineId = State(initialValue: nil)
-        }
+    let medicineId: String?
+    private var isEditing: Bool { medicineId != nil }
+    
+    init(medicineId: String?, viewModel: MedicineFormViewModel) {
+        self.medicineId = medicineId
+        self._viewModel = StateObject(wrappedValue: viewModel)
     }
     
-    @State private var isEditing: Bool
-    @State private var editingMedicineId: String?
-    
     var body: some View {
-        ZStack {
-            Color.backgroundApp.opacity(0.1).ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Informations générales du médicament
-                    generalInfoSection
-                    
-                    // Informations de stock
-                    stockInfoSection
-                    
-                    // Informations complémentaires
-                    additionalInfoSection
-                    
-                    // Bouton d'action
-                    PrimaryButton(
-                        title: isEditing ? "Mettre à jour" : "Ajouter ce médicament",
-                        icon: isEditing ? "checkmark" : "plus",
-                        isLoading: viewModel.state == .loading,
-                        isDisabled: !isFormValid
-                    ) {
-                        saveMedicine()
-                    }
-                    .padding(.top, 10)
-                    .padding(.bottom, 30)
-                }
-                .padding()
-                .offset(y: formOffset)
-                .opacity(formOpacity)
-            }
-            
-            // Message d'erreur
-            if case .error(let message) = viewModel.state {
-                VStack {
-                    Spacer()
-                    
-                    MessageView(message: message, type: .error) {
-                        viewModel.resetState()
-                    }
-                    .padding()
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                .animation(.easeInOut, value: viewModel.state)
-                .zIndex(1)
-            }
-        }
-        .navigationTitle(isEditing ? "Modifier un médicament" : "Ajouter un médicament")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Annuler") {
-                    dismiss()
-                }
-            }
-        }
-            .task {
-                await viewModel.fetchAisles()
+        NavigationView {
+            ZStack {
+                Color.backgroundApp.opacity(0.1).ignoresSafeArea()
                 
-                // Si en mode édition, récupérer le rayon associé
-                if let aisleId = viewModel.medicine?.aisleId {
-                    selectedAisle = viewModel.aisles.first { $0.id == aisleId }
+                if viewModel.state == .loading {
+                    ProgressView("Chargement...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Informations générales du médicament
+                            generalInfoSection
+                            
+                            // Informations de stock
+                            stockInfoSection
+                            
+                            // Informations complémentaires
+                            additionalInfoSection
+                            
+                            // Bouton d'action
+                            PrimaryButton(
+                                title: isEditing ? "Mettre à jour" : "Ajouter ce médicament",
+                                icon: isEditing ? "checkmark" : "plus",
+                                isLoading: viewModel.state == .loading,
+                                isDisabled: !isFormValid
+                            ) {
+                                saveMedicine()
+                            }
+                            .padding(.top, 10)
+                            .padding(.bottom, 30)
+                        }
+                        .padding()
+                        .offset(y: formOffset)
+                        .opacity(formOpacity)
+                    }
+                }
+                
+                // Message d'erreur
+                if case .error(let message) = viewModel.state {
+                    VStack {
+                        Spacer()
+                        
+                        MessageView(message: message, type: .error) {
+                            viewModel.resetState()
+                        }
+                        .padding()
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    .animation(.easeInOut, value: viewModel.state)
+                    .zIndex(1)
                 }
             }
-            .onChange(of: viewModel.state) { oldValue, newValue in
-                if case .success = newValue {
-                    dismiss()
+            .navigationTitle(isEditing ? "Modifier un médicament" : "Ajouter un médicament")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") {
+                        dismiss()
+                    }
                 }
-            }
-            .onAppear {
-                startAnimations()
-            }
-            .sheet(isPresented: $showingAisleSelector) {
-                aisleSelectionSheet
             }
         }
-    
+        .task {
+            await viewModel.fetchAisles()
+            
+            if isEditing, let medicineId = medicineId {
+                await viewModel.refreshMedicine(id: medicineId)
+                populateFormWithMedicine()
+            }
+        }
+        .onChange(of: viewModel.state) { oldValue, newValue in
+            if case .success = newValue {
+                dismiss()
+            }
+        }
+        .onAppear {
+            startAnimations()
+        }
+        .sheet(isPresented: $showingAisleSelector) {
+            aisleSelectionSheet
+        }
+    }
     
     // MARK: - Form Sections
     
@@ -177,7 +154,7 @@ struct MedicineFormView: View {
             
             // Rayon
             VStack(alignment: .leading, spacing: 5) {
-                Text("Rayon")
+                Text("Rayon*")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 
@@ -274,10 +251,10 @@ struct MedicineFormView: View {
                         .onChange(of: maxQuantity) { oldValue, newValue in
                             // Ajuster les seuils si nécessaire
                             if warningThreshold > newValue {
-                                warningThreshold = newValue / 3 * 2
+                                warningThreshold = max(1, newValue / 3 * 2)
                             }
                             if criticalThreshold > warningThreshold {
-                                criticalThreshold = warningThreshold / 2
+                                criticalThreshold = max(1, warningThreshold / 2)
                             }
                         }
                     
@@ -301,10 +278,10 @@ struct MedicineFormView: View {
                         .fontWeight(.bold)
                         .frame(width: 60, alignment: .center)
                     
-                    Stepper("", value: $warningThreshold, in: criticalThreshold...maxQuantity)
+                    Stepper("", value: $warningThreshold, in: max(1, criticalThreshold)...maxQuantity)
                         .onChange(of: warningThreshold) { oldValue, newValue in
                             if criticalThreshold > newValue {
-                                criticalThreshold = newValue / 2
+                                criticalThreshold = max(1, newValue / 2)
                             }
                         }
                     
@@ -328,7 +305,7 @@ struct MedicineFormView: View {
                         .fontWeight(.bold)
                         .frame(width: 60, alignment: .center)
                     
-                    Stepper("", value: $criticalThreshold, in: 0...warningThreshold)
+                    Stepper("", value: $criticalThreshold, in: 1...warningThreshold)
                     
                     Text(unit)
                         .foregroundColor(.secondary)
@@ -520,8 +497,17 @@ struct MedicineFormView: View {
                                     }
                                 }
                             
-                            Text(aisle.name)
-                                .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(aisle.name)
+                                    .foregroundColor(.primary)
+                                    .font(.body)
+                                
+                                if let description = aisle.description {
+                                    Text(description)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                             
                             Spacer()
                             
@@ -530,13 +516,12 @@ struct MedicineFormView: View {
                                     .foregroundColor(.accentApp)
                             }
                         }
+                        .padding(.vertical, 4)
                     }
                 }
                 
                 if viewModel.aisles.isEmpty {
-                    Text("Aucun rayon disponible")
-                        .foregroundColor(.secondary)
-                        .padding()
+                    ContentUnavailableView("Aucun rayon disponible", systemImage: "folder")
                 }
             }
             .navigationTitle("Sélectionner un rayon")
@@ -554,7 +539,14 @@ struct MedicineFormView: View {
     // MARK: - Helper Properties and Methods
     
     private var isFormValid: Bool {
-        !name.isEmpty && selectedAisle != nil && currentQuantity >= 0 && maxQuantity > 0 && warningThreshold >= 0 && criticalThreshold >= 0
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
+        selectedAisle != nil && 
+        currentQuantity >= 0 && 
+        maxQuantity > 0 && 
+        warningThreshold >= 0 && 
+        criticalThreshold >= 0 &&
+        criticalThreshold <= warningThreshold &&
+        warningThreshold <= maxQuantity
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -563,14 +555,35 @@ struct MedicineFormView: View {
         return formatter.string(from: date)
     }
     
+    private func populateFormWithMedicine() {
+        guard let medicine = viewModel.medicine else { return }
+        
+        name = medicine.name
+        description = medicine.description ?? ""
+        reference = medicine.reference ?? ""
+        dosage = medicine.dosage ?? ""
+        form = medicine.form ?? "Comprimé"
+        unit = medicine.unit
+        currentQuantity = medicine.currentQuantity
+        maxQuantity = medicine.maxQuantity
+        warningThreshold = medicine.warningThreshold
+        criticalThreshold = medicine.criticalThreshold
+        expiryDate = medicine.expiryDate
+        
+        // Trouver et sélectionner le rayon associé
+        selectedAisle = viewModel.aisles.first { $0.id == medicine.aisleId }
+    }
+    
     private func saveMedicine() {
+        guard let aisleId = selectedAisle?.id else { return }
+        
         Task {
             let medicine = Medicine(
-                id: editingMedicineId ?? "",
-                name: name,
+                id: medicineId ?? UUID().uuidString,
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 description: description.isEmpty ? nil : description,
-                dosage: dosage,
-                form: form,
+                dosage: dosage.isEmpty ? nil : dosage,
+                form: form.isEmpty ? nil : form,
                 reference: reference.isEmpty ? nil : reference,
                 unit: unit,
                 currentQuantity: currentQuantity,
@@ -578,10 +591,11 @@ struct MedicineFormView: View {
                 warningThreshold: warningThreshold,
                 criticalThreshold: criticalThreshold,
                 expiryDate: expiryDate,
-                aisleId: selectedAisle?.id ?? "",
-                createdAt: Date(),
+                aisleId: aisleId,
+                createdAt: isEditing ? viewModel.medicine?.createdAt ?? Date() : Date(),
                 updatedAt: Date()
-            )            
+            )
+            
             if isEditing {
                 await viewModel.updateMedicine(medicine)
             } else {
@@ -598,26 +612,22 @@ struct MedicineFormView: View {
     }
 }
 
+// MARK: - Medicine Form Options
 struct MedicineFormOptions {
     let units = [
         "comprimés", "gélules", "ampoules", "mL", "doses", "sachets", 
-        "patchs", "gouttes", "unités", "suppositoires", "sprays", "mg"
+        "patchs", "gouttes", "unités", "suppositoires", "sprays", "mg", "g"
     ]
     
     let forms = [
         "Comprimé", "Gélule", "Sirop", "Solution injectable", "Pommade", 
         "Crème", "Patch", "Suppositoire", "Spray", "Poudre", "Sachet", 
-        "Solution buvable", "Gouttes", "Suspension", "Collyre"
+        "Solution buvable", "Gouttes", "Suspension", "Collyre", "Capsule"
     ]
 }
 
 #Preview {
-    let mockViewModel = MedicineFormViewModel(
-        getMedicineUseCase: MockGetMedicineUseCase(),
-        getAislesUseCase: MockGetAislesUseCase(),
-        addMedicineUseCase: MockAddMedicineUseCase(),
-        updateMedicineUseCase: MockUpdateMedicineUseCase()
-    )
-    
-    MedicineFormView(medicineFormViewModel: mockViewModel)
+    NavigationStack {
+        Text("Medicine Form View Preview")
+    }
 }

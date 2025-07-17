@@ -7,13 +7,8 @@ enum HistoryViewState: Equatable {
     case loading
     case success
     case error(String)
-    case exporting
 }
 
-enum HistoryExportFormat {
-    case pdf
-    case csv
-}
 
 @MainActor
 class HistoryViewModel: ObservableObject {
@@ -21,7 +16,6 @@ class HistoryViewModel: ObservableObject {
     
     private let getHistoryUseCase: GetHistoryUseCaseProtocol
     private let getMedicinesUseCase: GetMedicinesUseCaseProtocol
-    private let exportHistoryUseCase: ExportHistoryUseCaseProtocol
     
     @Published private(set) var history: [HistoryEntry] = []
     @Published private(set) var medicines: [Medicine] = []
@@ -34,12 +28,23 @@ class HistoryViewModel: ObservableObject {
     
     init(
         getHistoryUseCase: GetHistoryUseCaseProtocol,
-        getMedicinesUseCase: GetMedicinesUseCaseProtocol,
-        exportHistoryUseCase: ExportHistoryUseCaseProtocol
+        getMedicinesUseCase: GetMedicinesUseCaseProtocol
     ) {
         self.getHistoryUseCase = getHistoryUseCase
         self.getMedicinesUseCase = getMedicinesUseCase
-        self.exportHistoryUseCase = exportHistoryUseCase
+    }
+    
+    // Convenience initializer for specific medicine
+    convenience init(
+        medicineId: String,
+        getHistoryUseCase: GetHistoryUseCaseProtocol,
+        medicineRepository: any MedicineRepositoryProtocol,
+        historyRepository: any HistoryRepositoryProtocol
+    ) {
+        self.init(
+            getHistoryUseCase: getHistoryUseCase,
+            getMedicinesUseCase: RealGetMedicinesUseCase(medicineRepository: medicineRepository)
+        )
     }
     
     // MARK: - Public Methods
@@ -78,42 +83,26 @@ class HistoryViewModel: ObservableObject {
     }
     
     @MainActor
-    func exportHistory(format: HistoryExportFormat, entries: [HistoryEntry]) async {
-        state = .exporting
+    func loadHistoryForMedicine(medicineId: String) async {
+        isLoading = true
+        state = .loading
         
         do {
-            let _ = createExportData(entries: entries)
+            let allHistory = try await getHistoryUseCase.execute()
+            history = allHistory.filter { $0.medicineId == medicineId }
+                .sorted { $0.timestamp > $1.timestamp }
             
-            let _ = "Historique_MediStock_\(formatDate(Date()))"
-            
-            switch format {
-            case .pdf:
-                _ = try await exportHistoryUseCase.execute(format: .pdf)
-            case .csv:
-                _ = try await exportHistoryUseCase.execute(format: .csv)
-            }
+            medicines = try await getMedicinesUseCase.execute()
             
             state = .success
         } catch {
-            state = .error("Erreur lors de l'exportation: \(error.localizedDescription)")
+            state = .error("Erreur lors du chargement de l'historique: \(error.localizedDescription)")
         }
+        
+        isLoading = false
     }
     
     // MARK: - Helper Methods
-    
-    private func createExportData(entries: [HistoryEntry]) -> [HistoryExportItem] {
-        return entries.map { entry in
-            let medicineName = medicines.first(where: { $0.id == entry.medicineId })?.name ?? "Médicament inconnu"
-            
-            return HistoryExportItem(
-                date: formatDate(entry.timestamp),
-                time: formatTime(entry.timestamp),
-                medicine: medicineName,
-                action: entry.action,
-                details: entry.details
-            )
-        }
-    }
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -128,11 +117,4 @@ class HistoryViewModel: ObservableObject {
     }
 }
 
-struct HistoryExportItem {
-    let date: String
-    let time: String
-    let medicine: String
-    let action: String
-    let details: String
-}
 

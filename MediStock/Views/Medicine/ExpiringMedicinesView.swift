@@ -55,6 +55,24 @@ struct ExpiringMedicinesView: View {
         .refreshable {
             await performRefresh()
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineUpdated"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineDeleted"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MedicineAdded"))) { _ in
+            Task {
+                await dashboardViewModel.fetchData()
+                animateListItems()
+            }
+        }
     }
     
     private var expiringMedicinesList: some View {
@@ -200,27 +218,7 @@ struct ExpiringMedicineRow: View {
     }
 }
 
-struct ExpiringMedicinesEmptyView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.green)
-            
-            Text("Aucune expiration proche")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            Text("Tous vos médicaments ont des dates d'expiration suffisamment éloignées.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .padding()
-    }
-}
+// ExpiringMedicinesEmptyView est définie dans NewDashboardView.swift
 
 struct ExpiringMedicinesViewWrapper: View {
     let dashboardViewModel: DashboardViewModel

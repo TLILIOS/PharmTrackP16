@@ -8,16 +8,11 @@ class SignUpUseCase: SignUpUseCaseProtocol {
     }
     
     func execute(email: String, password: String, name: String) async throws {
-        let user = try await authRepository.signUp(email: email, password: password)
-        
-        // Update user profile with display name if provided
+        // Use signUpWithName if name is provided, otherwise use regular signUp
         if !name.isEmpty {
-            let updatedUser = User(
-                id: user.id,
-                email: user.email,
-                displayName: name
-            )
-            try await authRepository.updateUserProfile(user: updatedUser)
+            _ = try await authRepository.signUpWithName(email: email, password: password, displayName: name)
+        } else {
+            _ = try await authRepository.signUp(email: email, password: password)
         }
     }
 }
