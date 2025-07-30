@@ -1,0 +1,58 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Fonction pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Fonction pour vérifier si l'utilisateur est le propriétaire
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Fonction pour valider le type de fichier (images uniquement)
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+        request.resource.size < 5 * 1024 * 1024; // Max 5MB
+    }
+    
+    // Images des médicaments
+    match /medicines/{userId}/{medicineId}/{fileName} {
+      // Lecture : seul le propriétaire peut lire ses images
+      allow read: if isOwner(userId);
+      
+      // Upload : seul le propriétaire avec validation
+      allow write: if isOwner(userId) && isValidImage();
+      
+      // Suppression : seul le propriétaire
+      allow delete: if isOwner(userId);
+    }
+    
+    // Photos de profil utilisateur
+    match /users/{userId}/profile/{fileName} {
+      // Lecture : authentifié (pour afficher dans l'app)
+      allow read: if isAuthenticated();
+      
+      // Upload : seul l'utilisateur concerné
+      allow write: if isOwner(userId) && isValidImage();
+      
+      // Suppression : seul l'utilisateur concerné
+      allow delete: if isOwner(userId);
+    }
+    
+    // Exports et rapports
+    match /exports/{userId}/{fileName} {
+      // Lecture et écriture : seul le propriétaire
+      allow read, write: if isOwner(userId) &&
+        request.resource.contentType.matches('(application/pdf|text/csv|application/vnd.ms-excel)') &&
+        request.resource.size < 10 * 1024 * 1024; // Max 10MB
+    }
+    
+    // Rejeter toute autre requête
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

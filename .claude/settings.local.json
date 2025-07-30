@@ -35,7 +35,12 @@
       "Bash(git reset:*)",
       "Bash(mkdir:*)",
       "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/fix_interpolation.sh)",
-      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/fix_all_interpolation.sh)"
+      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/fix_all_interpolation.sh)",
+      "Bash(./check_imports.sh)",
+      "Bash(cp:*)",
+      "Bash(./fix_redeclaration.sh:*)",
+      "Bash(./cleanup_duplicates.sh:*)",
+      "Bash(./final_cleanup.sh)"
     ],
     "deny": []
   }

@@ -3,6 +3,9 @@ xcuserdata/
 *.DS_Store
 DerivedData/
 build/
+*.xcworkspace
+*.xcresult
+*.xcactivitylog
 
 # Firebase configuration files
 GoogleService-Info.plist
@@ -14,3 +17,26 @@ google-services.json
 *.p12
 .env
 config.json
+
+# Archives et backups
+ARCHIVE_OLD_CODE/
+*.bak
+*.tmp
+*~
+
+# Logs
+*.log
+crash_logs/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent

@@ -3,371 +3,100 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		53E0D8972C06084700DE1134 /* MediStockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E0D8962C06084700DE1134 /* MediStockApp.swift */; };
-		53E0D8992C06084700DE1134 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E0D8982C06084700DE1134 /* ContentView.swift */; };
-		53E0D89B2C06084900DE1134 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53E0D89A2C06084900DE1134 /* Assets.xcassets */; };
-		53E0D8DE2C0609A800DE1134 /* MedicineStockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E0D8DD2C0609A800DE1134 /* MedicineStockViewModel.swift */; };
-		53E0D8E02C0609B900DE1134 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E0D8DF2C0609B900DE1134 /* SessionStore.swift */; };
-		53E0D8E22C065FFE00DE1134 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E0D8E12C065FFE00DE1134 /* AppDelegate.swift */; };
-		53E0D8E42C0660FD00DE1134 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 53E0D8E32C0660FD00DE1134 /* GoogleService-Info.plist */; };
-		D00A51822E2788EF0038336D /* UseCaseProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00A51812E2788EF0038336D /* UseCaseProtocols.swift */; };
-		D00A51842E2804800038336D /* QuickStockAdjustment.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00A51832E2804800038336D /* QuickStockAdjustment.swift */; };
-		D00A51872E28289E0038336D /* TabCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00A51862E28289E0038336D /* TabCoordinatorView.swift */; };
-		D00A51882E28289E0038336D /* SimpleMainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00A51852E28289E0038336D /* SimpleMainTabView.swift */; };
-		D044AEC32E2013E800D6F02A /* DashboardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEC02E2013E800D6F02A /* DashboardViewModelTests.swift */; };
-		D044AEC42E2013E800D6F02A /* HistoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEC12E2013E800D6F02A /* HistoryViewModelTests.swift */; };
-		D044AEC52E2013E800D6F02A /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEBF2E2013E800D6F02A /* AuthViewModelTests.swift */; };
-		D044AEC62E2013E800D6F02A /* AdjustStockViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEBD2E2013E800D6F02A /* AdjustStockViewModelTests.swift */; };
-		D044AEC72E2013E800D6F02A /* MedicineStockViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEC22E2013E800D6F02A /* MedicineStockViewModelTests.swift */; };
-		D044AEC82E2013E800D6F02A /* AisleFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D044AEBE2E2013E800D6F02A /* AisleFormViewModelTests.swift */; };
-		D06021932E2545200007BAB7 /* MockRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06021922E2545200007BAB7 /* MockRepositories.swift */; };
-		D0BAC9C22E269B30006BDCE2 /* NewDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9C12E269B30006BDCE2 /* NewDashboardView.swift */; };
-		D0BAC9C42E269B43006BDCE2 /* NewAislesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9C32E269B43006BDCE2 /* NewAislesView.swift */; };
-		D0BAC9C72E271C8E006BDCE2 /* FirebaseAisleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9C52E271C8E006BDCE2 /* FirebaseAisleRepository.swift */; };
-		D0BAC9C82E271C8E006BDCE2 /* FirebaseMedicineRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9C62E271C8E006BDCE2 /* FirebaseMedicineRepository.swift */; };
-		D0BAC9CD2E2727FE006BDCE2 /* SignOutUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9CB2E2727FE006BDCE2 /* SignOutUseCase.swift */; };
-		D0BAC9CE2E2727FE006BDCE2 /* RealGetUserUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9CA2E2727FE006BDCE2 /* RealGetUserUseCase.swift */; };
-		D0BAC9D92E272815006BDCE2 /* RealAddMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D12E272815006BDCE2 /* RealAddMedicineUseCase.swift */; };
-		D0BAC9DA2E272815006BDCE2 /* RealDeleteMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D32E272815006BDCE2 /* RealDeleteMedicineUseCase.swift */; };
-		D0BAC9DB2E272815006BDCE2 /* RealGetMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D52E272815006BDCE2 /* RealGetMedicineUseCase.swift */; };
-		D0BAC9DC2E272815006BDCE2 /* RealAdjustStockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D22E272815006BDCE2 /* RealAdjustStockUseCase.swift */; };
-		D0BAC9DD2E272815006BDCE2 /* RealSearchMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D62E272815006BDCE2 /* RealSearchMedicineUseCase.swift */; };
-		D0BAC9DE2E272815006BDCE2 /* RealGetMedicinesUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D42E272815006BDCE2 /* RealGetMedicinesUseCase.swift */; };
-		D0BAC9DF2E272815006BDCE2 /* RealUpdateMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D82E272815006BDCE2 /* RealUpdateMedicineUseCase.swift */; };
-		D0BAC9E02E272815006BDCE2 /* RealUpdateMedicineStockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9D72E272815006BDCE2 /* RealUpdateMedicineStockUseCase.swift */; };
-		D0BAC9E22E272832006BDCE2 /* AisleRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9E12E272832006BDCE2 /* AisleRepositoryProtocol.swift */; };
-		D0BAC9F32E272D18006BDCE2 /* RealGetRecentHistoryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9F12E272D18006BDCE2 /* RealGetRecentHistoryUseCase.swift */; };
-		D0BAC9F42E272D18006BDCE2 /* RealGetHistoryForMedicineUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9EF2E272D18006BDCE2 /* RealGetHistoryForMedicineUseCase.swift */; };
-		D0BAC9F52E272D18006BDCE2 /* RealGetHistoryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BAC9F02E272D18006BDCE2 /* RealGetHistoryUseCase.swift */; };
-		D0C2FC102E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC032E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift */; };
-		D0C2FC112E1DDC330020A35E /* ExportErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBDF2E1DDC330020A35E /* ExportErrorTests.swift */; };
-		D0C2FC122E1DDC330020A35E /* SignUpUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFD2E1DDC330020A35E /* SignUpUseCaseTests.swift */; };
-		D0C2FC132E1DDC330020A35E /* UserDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE52E1DDC330020A35E /* UserDTOTests.swift */; };
-		D0C2FC142E1DDC330020A35E /* HistoryEntryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE82E1DDC330020A35E /* HistoryEntryTests.swift */; };
-		D0C2FC152E1DDC330020A35E /* UserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF52E1DDC330020A35E /* UserTests.swift */; };
-		D0C2FC162E1DDC330020A35E /* MedicineFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC0E2E1DDC330020A35E /* MedicineFormViewModelTests.swift */; };
-		D0C2FC172E1DDC330020A35E /* RealGetAislesUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF82E1DDC330020A35E /* RealGetAislesUseCaseTests.swift */; };
-		D0C2FC182E1DDC330020A35E /* MedicineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE92E1DDC330020A35E /* MedicineTests.swift */; };
-		D0C2FC192E1DDC330020A35E /* RealAddAisleUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF72E1DDC330020A35E /* RealAddAisleUseCaseTests.swift */; };
-		D0C2FC1A2E1DDC330020A35E /* AisleDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE22E1DDC330020A35E /* AisleDTOTests.swift */; };
-		D0C2FC1B2E1DDC330020A35E /* RealGetHistoryUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFF2E1DDC330020A35E /* RealGetHistoryUseCaseTests.swift */; };
-		D0C2FC1C2E1DDC330020A35E /* RealAddMedicineUseCaseExtraTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC022E1DDC330020A35E /* RealAddMedicineUseCaseExtraTests.swift */; };
-		D0C2FC1D2E1DDC330020A35E /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF32E1DDC330020A35E /* TestHelpers.swift */; };
-		D0C2FC1E2E1DDC330020A35E /* MedicineErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE02E1DDC330020A35E /* MedicineErrorTests.swift */; };
-		D0C2FC1F2E1DDC330020A35E /* TestMedicineDataServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBEE2E1DDC330020A35E /* TestMedicineDataServiceTests.swift */; };
-		D0C2FC202E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC062E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift */; };
-		D0C2FC212E1DDC330020A35E /* MedicineDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE42E1DDC330020A35E /* MedicineDTOTests.swift */; };
-		D0C2FC222E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */; };
-		D0C2FC252E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC002E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift */; };
-		D0C2FC262E1DDC330020A35E /* TestUtilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF42E1DDC330020A35E /* TestUtilitiesTests.swift */; };
-		D0C2FC272E1DDC330020A35E /* AuthErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBDE2E1DDC330020A35E /* AuthErrorTests.swift */; };
-		D0C2FC282E1DDC330020A35E /* GetUserUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFA2E1DDC330020A35E /* GetUserUseCaseTests.swift */; };
-		D0C2FC292E1DDC330020A35E /* MockUseCases.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC052E1DDC330020A35E /* MockUseCases.swift */; };
-		D0C2FC2A2E1DDC330020A35E /* AislesViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC0C2E1DDC330020A35E /* AislesViewModelTests.swift */; };
-		D0C2FC2C2E1DDC330020A35E /* HistoryEntryDTOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE32E1DDC330020A35E /* HistoryEntryDTOTests.swift */; };
-		D0C2FC2D2E1DDC330020A35E /* SignOutUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFC2E1DDC330020A35E /* SignOutUseCaseTests.swift */; };
-		D0C2FC2E2E1DDC330020A35E /* SignInUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBFB2E1DDC330020A35E /* SignInUseCaseTests.swift */; };
-		D0C2FC2F2E1DDC330020A35E /* StringExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC0A2E1DDC330020A35E /* StringExtensionsTests.swift */; };
-		D0C2FC302E1DDC330020A35E /* MedicineDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC0D2E1DDC330020A35E /* MedicineDetailViewModelTests.swift */; };
-		D0C2FC312E1DDC330020A35E /* LocalCacheServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBF02E1DDC330020A35E /* LocalCacheServiceTests.swift */; };
-		D0C2FC322E1DDC330020A35E /* AisleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBE72E1DDC330020A35E /* AisleTests.swift */; };
-		D0C2FC332E1DDC330020A35E /* RealSearchAisleUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC072E1DDC330020A35E /* RealSearchAisleUseCaseTests.swift */; };
-		D0C2FC342E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */; };
-		D0C2FC362E1DDC330020A35E /* RealSearchMedicineUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC082E1DDC330020A35E /* RealSearchMedicineUseCaseTests.swift */; };
-		D0C2FC3A2E1DE7B50020A35E /* TestDependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C2FC392E1DE7B50020A35E /* TestDependencyContainer.swift */; };
-		D0C3DBD32E1A6CD8008D94A7 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DBD22E1A6CD8008D94A7 /* FirebaseFunctions */; };
-		D0C3DC272E1A8BF8008D94A7 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBE02E1A8BF8008D94A7 /* User.swift */; };
-		D0C3DC282E1A8BF8008D94A7 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBD42E1A8BF8008D94A7 /* AppCoordinator.swift */; };
-		D0C3DC292E1A8BF8008D94A7 /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC182E1A8BF8008D94A7 /* MessageView.swift */; };
-		D0C3DC2A2E1A8BF8008D94A7 /* MedicineListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC232E1A8BF8008D94A7 /* MedicineListView.swift */; };
-		D0C3DC2B2E1A8BF8008D94A7 /* ExportError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDC2E1A8BF8008D94A7 /* ExportError.swift */; };
-		D0C3DC2C2E1A8BF8008D94A7 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC1C2E1A8BF8008D94A7 /* DashboardView.swift */; };
-		D0C3DC2D2E1A8BF8008D94A7 /* MedicineDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBE42E1A8BF8008D94A7 /* MedicineDTO.swift */; };
-		D0C3DC2E2E1A8BF8008D94A7 /* HistoryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDD2E1A8BF8008D94A7 /* HistoryEntry.swift */; };
-		D0C3DC2F2E1A8BF8008D94A7 /* SignInUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBFA2E1A8BF8008D94A7 /* SignInUseCase.swift */; };
-		D0C3DC302E1A8BF8008D94A7 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC092E1A8BF8008D94A7 /* HistoryViewModel.swift */; };
-		D0C3DC312E1A8BF8008D94A7 /* AisleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC102E1A8BF8008D94A7 /* AisleFormView.swift */; };
-		D0C3DC322E1A8BF8008D94A7 /* AislesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC112E1A8BF8008D94A7 /* AislesView.swift */; };
-		D0C3DC332E1A8BF8008D94A7 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC132E1A8BF8008D94A7 /* LoginView.swift */; };
-		D0C3DC342E1A8BF8008D94A7 /* UserDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBE52E1A8BF8008D94A7 /* UserDTO.swift */; };
-		D0C3DC352E1A8BF8008D94A7 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC072E1A8BF8008D94A7 /* DashboardViewModel.swift */; };
-		D0C3DC362E1A8BF8008D94A7 /* SyncServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBF62E1A8BF8008D94A7 /* SyncServiceProtocol.swift */; };
-		D0C3DC372E1A8BF8008D94A7 /* MedicineError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDF2E1A8BF8008D94A7 /* MedicineError.swift */; };
-		D0C3DC382E1A8BF8008D94A7 /* FirebaseHistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBEB2E1A8BF8008D94A7 /* FirebaseHistoryRepository.swift */; };
-		D0C3DC392E1A8BF8008D94A7 /* AisleDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBE22E1A8BF8008D94A7 /* AisleDTO.swift */; };
-		D0C3DC3A2E1A8BF8008D94A7 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC052E1A8BF8008D94A7 /* AuthViewModel.swift */; };
-		D0C3DC3B2E1A8BF8008D94A7 /* SignUpUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBFB2E1A8BF8008D94A7 /* SignUpUseCase.swift */; };
-		D0C3DC3C2E1A8BF8008D94A7 /* MedicineRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBEF2E1A8BF8008D94A7 /* MedicineRepositoryProtocol.swift */; };
-		D0C3DC3D2E1A8BF8008D94A7 /* Color+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBD82E1A8BF8008D94A7 /* Color+Extensions.swift */; };
-		D0C3DC3E2E1A8BF8008D94A7 /* PasswordResetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC142E1A8BF8008D94A7 /* PasswordResetView.swift */; };
-		D0C3DC3F2E1A8BF8008D94A7 /* StyledTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC1A2E1A8BF8008D94A7 /* StyledTextField.swift */; };
-		D0C3DC402E1A8BF8008D94A7 /* Medicine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDE2E1A8BF8008D94A7 /* Medicine.swift */; };
-		D0C3DC412E1A8BF8008D94A7 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDB2E1A8BF8008D94A7 /* AuthError.swift */; };
-		D0C3DC422E1A8BF8008D94A7 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC152E1A8BF8008D94A7 /* SignUpView.swift */; };
-		D0C3DC432E1A8BF8008D94A7 /* LocalCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBF32E1A8BF8008D94A7 /* LocalCacheService.swift */; };
-		D0C3DC442E1A8BF8008D94A7 /* MedicineDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC0B2E1A8BF8008D94A7 /* MedicineDetailViewModel.swift */; };
-		D0C3DC452E1A8BF8008D94A7 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC1E2E1A8BF8008D94A7 /* HistoryView.swift */; };
-		D0C3DC462E1A8BF8008D94A7 /* MedicineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC212E1A8BF8008D94A7 /* MedicineDetailView.swift */; };
-		D0C3DC472E1A8BF8008D94A7 /* FirebaseAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBEA2E1A8BF8008D94A7 /* FirebaseAuthRepository.swift */; };
-		D0C3DC482E1A8BF8008D94A7 /* CacheServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBF52E1A8BF8008D94A7 /* CacheServiceProtocol.swift */; };
-		D0C3DC492E1A8BF8008D94A7 /* HistoryEntryDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBE32E1A8BF8008D94A7 /* HistoryEntryDTO.swift */; };
-		D0C3DC4A2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBFE2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift */; };
-		D0C3DC4B2E1A8BF8008D94A7 /* MedicineFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC0C2E1A8BF8008D94A7 /* MedicineFormViewModel.swift */; };
-		D0C3DC4C2E1A8BF8008D94A7 /* AppSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBF22E1A8BF8008D94A7 /* AppSyncService.swift */; };
-		D0C3DC4D2E1A8BF8008D94A7 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBD52E1A8BF8008D94A7 /* MainTabView.swift */; };
-		D0C3DC4E2E1A8BF8008D94A7 /* AuthRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBED2E1A8BF8008D94A7 /* AuthRepositoryProtocol.swift */; };
-		D0C3DC4F2E1A8BF8008D94A7 /* MedicineFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC222E1A8BF8008D94A7 /* MedicineFormView.swift */; };
-		D0C3DC502E1A8BF8008D94A7 /* AislesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC032E1A8BF8008D94A7 /* AislesViewModel.swift */; };
-		D0C3DC512E1A8BF8008D94A7 /* HistoryRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBEE2E1A8BF8008D94A7 /* HistoryRepositoryProtocol.swift */; };
-		D0C3DC522E1A8BF8008D94A7 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC192E1A8BF8008D94A7 /* PrimaryButton.swift */; };
-		D0C3DC532E1A8BF8008D94A7 /* AdjustStockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DC202E1A8BF8008D94A7 /* AdjustStockView.swift */; };
-		D0C3DC542E1A8BF8008D94A7 /* Aisle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBDA2E1A8BF8008D94A7 /* Aisle.swift */; };
-		D0C3DC552E1A8BF8008D94A7 /* GetMedicinesUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C3DBFD2E1A8BF8008D94A7 /* GetMedicinesUseCase.swift */; };
-		D0C3DC592E1A9E0B008D94A7 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC582E1A9E0B008D94A7 /* FirebaseAnalytics */; };
-		D0C3DC5B2E1A9E0B008D94A7 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC5A2E1A9E0B008D94A7 /* FirebaseAuth */; };
-		D0C3DC5D2E1A9E0B008D94A7 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC5C2E1A9E0B008D94A7 /* FirebaseAuthCombine-Community */; };
-		D0C3DC5F2E1A9E0B008D94A7 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC5E2E1A9E0B008D94A7 /* FirebaseCore */; };
-		D0C3DC612E1A9E0B008D94A7 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC602E1A9E0B008D94A7 /* FirebaseDatabase */; };
-		D0C3DC632E1A9E0B008D94A7 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC622E1A9E0B008D94A7 /* FirebaseFirestore */; };
-		D0C3DC652E1A9E0B008D94A7 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC642E1A9E0B008D94A7 /* FirebaseFirestoreCombine-Community */; };
-		D0C3DC672E1A9E0B008D94A7 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC662E1A9E0B008D94A7 /* FirebaseFunctions */; };
-		D0C3DC692E1A9E0B008D94A7 /* FirebaseInstallations in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC682E1A9E0B008D94A7 /* FirebaseInstallations */; };
-		D0C3DC6B2E1A9E0B008D94A7 /* FirebasePerformance in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC6A2E1A9E0B008D94A7 /* FirebasePerformance */; };
-		D0C3DC6D2E1A9E0B008D94A7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC6C2E1A9E0B008D94A7 /* FirebaseStorage */; };
-		D0C3DC6F2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0C3DC6E2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community */; };
-		D0E614012E262BB900B9A13A /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614002E262BB900B9A13A /* AppearanceSettingsView.swift */; };
-		D0E6140C2E262DC500B9A13A /* OfflineCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614082E262DC500B9A13A /* OfflineCacheService.swift */; };
-		D0E6140D2E262DC500B9A13A /* ExpirationNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614072E262DC500B9A13A /* ExpirationNotificationService.swift */; };
-		D0E6140E2E262DC500B9A13A /* PaginationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614092E262DC500B9A13A /* PaginationService.swift */; };
-		D0E6140F2E262DC500B9A13A /* QueryOptimizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6140A2E262DC500B9A13A /* QueryOptimizationService.swift */; };
-		D0E614102E262DC500B9A13A /* TestDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6140B2E262DC500B9A13A /* TestDataService.swift */; };
-		D0E614112E262DC500B9A13A /* BackgroundSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614062E262DC500B9A13A /* BackgroundSyncService.swift */; };
-		D0E614132E263A5400B9A13A /* NavigationDestinations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614122E263A5400B9A13A /* NavigationDestinations.swift */; };
-		D0E614182E26828300B9A13A /* EnvironmentKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614162E26828300B9A13A /* EnvironmentKeys.swift */; };
-		D0E614192E26828300B9A13A /* DIContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614152E26828300B9A13A /* DIContainer.swift */; };
-		D0E6141A2E26828300B9A13A /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614142E26828300B9A13A /* DependencyContainer.swift */; };
-		D0E6141C2E26833700B9A13A /* ViewModelFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6141B2E26833700B9A13A /* ViewModelFactory.swift */; };
-		D0E6141E2E26880000B9A13A /* NewAdjustStockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6141D2E26880000B9A13A /* NewAdjustStockView.swift */; };
-		D0E614252E26886D00B9A13A /* ExpiringMedicinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614202E26886D00B9A13A /* ExpiringMedicinesView.swift */; };
-		D0E614262E26886D00B9A13A /* NewMedicineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614222E26886D00B9A13A /* NewMedicineDetailView.swift */; };
-		D0E614272E26886D00B9A13A /* CriticalStockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6141F2E26886D00B9A13A /* CriticalStockView.swift */; };
-		D0E614282E26886D00B9A13A /* NewMedicineFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614232E26886D00B9A13A /* NewMedicineFormView.swift */; };
-		D0E614292E26886D00B9A13A /* NewMedicineListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614242E26886D00B9A13A /* NewMedicineListView.swift */; };
-		D0E6142A2E26886D00B9A13A /* MedicinesByAisleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614212E26886D00B9A13A /* MedicinesByAisleView.swift */; };
-		D0E6142E2E2689A100B9A13A /* ObservableMedicineFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6142D2E2689A100B9A13A /* ObservableMedicineFormViewModel.swift */; };
-		D0E6142F2E2689A100B9A13A /* ObservableAdjustStockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6142B2E2689A100B9A13A /* ObservableAdjustStockViewModel.swift */; };
-		D0E614302E2689A100B9A13A /* ObservableMedicineDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E6142C2E2689A100B9A13A /* ObservableMedicineDetailViewModel.swift */; };
-		D0E614322E2689FB00B9A13A /* ObservableAisleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E614312E2689FB00B9A13A /* ObservableAisleViewModel.swift */; };
-		D0F74D5D2E20E1AA004D34D5 /* AisleFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D5C2E20E1AA004D34D5 /* AisleFormViewModel.swift */; };
-		D0F74D5F2E20E1DA004D34D5 /* AdjustStockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */; };
-		D0F74D642E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */; };
-		D0F74D652E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */; };
-		D0F74D672E210008004D34D5 /* FirebaseAuthRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */; };
+		D0F40A2A2E37E72F00EC8B27 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A292E37E72F00EC8B27 /* FirebaseAI */; };
+		D0F40A2C2E37E72F00EC8B27 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A2B2E37E72F00EC8B27 /* FirebaseAnalytics */; };
+		D0F40A2E2E37E72F00EC8B27 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A2D2E37E72F00EC8B27 /* FirebaseAnalyticsCore */; };
+		D0F40A302E37E72F00EC8B27 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A2F2E37E72F00EC8B27 /* FirebaseAppCheck */; };
+		D0F40A322E37E72F00EC8B27 /* FirebaseAppDistribution-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A312E37E72F00EC8B27 /* FirebaseAppDistribution-Beta */; };
+		D0F40A342E37E72F00EC8B27 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A332E37E72F00EC8B27 /* FirebaseAuth */; };
+		D0F40A362E37E72F00EC8B27 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A352E37E72F00EC8B27 /* FirebaseAuthCombine-Community */; };
+		D0F40A382E37E72F00EC8B27 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A372E37E72F00EC8B27 /* FirebaseCore */; };
+		D0F40A3A2E37E72F00EC8B27 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A392E37E72F00EC8B27 /* FirebaseDatabase */; };
+		D0F40A3C2E37E72F00EC8B27 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A3B2E37E72F00EC8B27 /* FirebaseFirestore */; };
+		D0F40A3E2E37E72F00EC8B27 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A3D2E37E72F00EC8B27 /* FirebaseFirestoreCombine-Community */; };
+		D0F40A402E37E72F00EC8B27 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A3F2E37E72F00EC8B27 /* FirebaseFunctions */; };
+		D0F40A422E37E72F00EC8B27 /* FirebaseFunctionsCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A412E37E72F00EC8B27 /* FirebaseFunctionsCombine-Community */; };
+		D0F40A442E37E72F00EC8B27 /* FirebaseInstallations in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A432E37E72F00EC8B27 /* FirebaseInstallations */; };
+		D0F40A462E37E72F00EC8B27 /* FirebasePerformance in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A452E37E72F00EC8B27 /* FirebasePerformance */; };
+		D0F40A482E37E72F00EC8B27 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A472E37E72F00EC8B27 /* FirebaseStorage */; };
+		D0F40A4A2E37E72F00EC8B27 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40A492E37E72F00EC8B27 /* FirebaseStorageCombine-Community */; };
+		D0F40ADA2E38416200EC8B27 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = D0F40AD92E38416200EC8B27 /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		53E0D8A42C06084900DE1134 /* PBXContainerItemProxy */ = {
+		D0F409E12E37E25200EC8B27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 53E0D88B2C06084700DE1134 /* Project object */;
+			containerPortal = D0F409CB2E37E25100EC8B27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 53E0D8922C06084700DE1134;
+			remoteGlobalIDString = D0F409D22E37E25100EC8B27;
 			remoteInfo = MediStock;
 		};
-		53E0D8AE2C06084900DE1134 /* PBXContainerItemProxy */ = {
+		D0F409EB2E37E25200EC8B27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 53E0D88B2C06084700DE1134 /* Project object */;
+			containerPortal = D0F409CB2E37E25100EC8B27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 53E0D8922C06084700DE1134;
+			remoteGlobalIDString = D0F409D22E37E25100EC8B27;
 			remoteInfo = MediStock;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		53E0D8962C06084700DE1134 /* MediStockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediStockApp.swift; sourceTree = "<group>"; };
-		53E0D8982C06084700DE1134 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		53E0D89A2C06084900DE1134 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		53E0D8DD2C0609A800DE1134 /* MedicineStockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineStockViewModel.swift; sourceTree = "<group>"; };
-		53E0D8DF2C0609B900DE1134 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
-		53E0D8E12C065FFE00DE1134 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		53E0D8E32C0660FD00DE1134 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		D00A51812E2788EF0038336D /* UseCaseProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseCaseProtocols.swift; sourceTree = "<group>"; };
-		D00A51832E2804800038336D /* QuickStockAdjustment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStockAdjustment.swift; sourceTree = "<group>"; };
-		D00A51852E28289E0038336D /* SimpleMainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleMainTabView.swift; sourceTree = "<group>"; };
-		D00A51862E28289E0038336D /* TabCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCoordinatorView.swift; sourceTree = "<group>"; };
-		D01689E62E1E40C000520437 /* MediStock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediStock.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D01689E72E1E40C000520437 /* MediStockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediStockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D01689E82E1E40C000520437 /* MediStockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediStockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D044AEBD2E2013E800D6F02A /* AdjustStockViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustStockViewModelTests.swift; sourceTree = "<group>"; };
-		D044AEBE2E2013E800D6F02A /* AisleFormViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleFormViewModelTests.swift; sourceTree = "<group>"; };
-		D044AEBF2E2013E800D6F02A /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
-		D044AEC02E2013E800D6F02A /* DashboardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModelTests.swift; sourceTree = "<group>"; };
-		D044AEC12E2013E800D6F02A /* HistoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModelTests.swift; sourceTree = "<group>"; };
-		D044AEC22E2013E800D6F02A /* MedicineStockViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineStockViewModelTests.swift; sourceTree = "<group>"; };
-		D06021922E2545200007BAB7 /* MockRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositories.swift; sourceTree = "<group>"; };
-		D0BAC9C12E269B30006BDCE2 /* NewDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewDashboardView.swift; sourceTree = "<group>"; };
-		D0BAC9C32E269B43006BDCE2 /* NewAislesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAislesView.swift; sourceTree = "<group>"; };
-		D0BAC9C52E271C8E006BDCE2 /* FirebaseAisleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepository.swift; sourceTree = "<group>"; };
-		D0BAC9C62E271C8E006BDCE2 /* FirebaseMedicineRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepository.swift; sourceTree = "<group>"; };
-		D0BAC9CA2E2727FE006BDCE2 /* RealGetUserUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetUserUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9CB2E2727FE006BDCE2 /* SignOutUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignOutUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D12E272815006BDCE2 /* RealAddMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealAddMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D22E272815006BDCE2 /* RealAdjustStockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealAdjustStockUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D32E272815006BDCE2 /* RealDeleteMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealDeleteMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D42E272815006BDCE2 /* RealGetMedicinesUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetMedicinesUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D52E272815006BDCE2 /* RealGetMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D62E272815006BDCE2 /* RealSearchMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealSearchMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D72E272815006BDCE2 /* RealUpdateMedicineStockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealUpdateMedicineStockUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9D82E272815006BDCE2 /* RealUpdateMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealUpdateMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9E12E272832006BDCE2 /* AisleRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleRepositoryProtocol.swift; sourceTree = "<group>"; };
-		D0BAC9EF2E272D18006BDCE2 /* RealGetHistoryForMedicineUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetHistoryForMedicineUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9F02E272D18006BDCE2 /* RealGetHistoryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetHistoryUseCase.swift; sourceTree = "<group>"; };
-		D0BAC9F12E272D18006BDCE2 /* RealGetRecentHistoryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetRecentHistoryUseCase.swift; sourceTree = "<group>"; };
-		D0C2FBDE2E1DDC330020A35E /* AuthErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorTests.swift; sourceTree = "<group>"; };
-		D0C2FBDF2E1DDC330020A35E /* ExportErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportErrorTests.swift; sourceTree = "<group>"; };
-		D0C2FBE02E1DDC330020A35E /* MedicineErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineErrorTests.swift; sourceTree = "<group>"; };
-		D0C2FBE22E1DDC330020A35E /* AisleDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleDTOTests.swift; sourceTree = "<group>"; };
-		D0C2FBE32E1DDC330020A35E /* HistoryEntryDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEntryDTOTests.swift; sourceTree = "<group>"; };
-		D0C2FBE42E1DDC330020A35E /* MedicineDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineDTOTests.swift; sourceTree = "<group>"; };
-		D0C2FBE52E1DDC330020A35E /* UserDTOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDTOTests.swift; sourceTree = "<group>"; };
-		D0C2FBE72E1DDC330020A35E /* AisleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleTests.swift; sourceTree = "<group>"; };
-		D0C2FBE82E1DDC330020A35E /* HistoryEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEntryTests.swift; sourceTree = "<group>"; };
-		D0C2FBE92E1DDC330020A35E /* MedicineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineTests.swift; sourceTree = "<group>"; };
-		D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepositoryTestsExtended.swift; sourceTree = "<group>"; };
-		D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseHistoryRepositoryTests.swift; sourceTree = "<group>"; };
-		D0C2FBEE2E1DDC330020A35E /* TestMedicineDataServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMedicineDataServiceTests.swift; sourceTree = "<group>"; };
-		D0C2FBF02E1DDC330020A35E /* LocalCacheServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCacheServiceTests.swift; sourceTree = "<group>"; };
-		D0C2FBF32E1DDC330020A35E /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
-		D0C2FBF42E1DDC330020A35E /* TestUtilitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestUtilitiesTests.swift; sourceTree = "<group>"; };
-		D0C2FBF52E1DDC330020A35E /* UserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserTests.swift; sourceTree = "<group>"; };
-		D0C2FBF72E1DDC330020A35E /* RealAddAisleUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealAddAisleUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBF82E1DDC330020A35E /* RealGetAislesUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetAislesUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBFA2E1DDC330020A35E /* GetUserUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBFB2E1DDC330020A35E /* SignInUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBFC2E1DDC330020A35E /* SignOutUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignOutUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBFD2E1DDC330020A35E /* SignUpUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FBFF2E1DDC330020A35E /* RealGetHistoryUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetHistoryUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC002E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealGetRecentHistoryUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC022E1DDC330020A35E /* RealAddMedicineUseCaseExtraTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealAddMedicineUseCaseExtraTests.swift; sourceTree = "<group>"; };
-		D0C2FC032E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateMedicineStockUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC052E1DDC330020A35E /* MockUseCases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUseCases.swift; sourceTree = "<group>"; };
-		D0C2FC062E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealAddMedicineUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC072E1DDC330020A35E /* RealSearchAisleUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealSearchAisleUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC082E1DDC330020A35E /* RealSearchMedicineUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealSearchMedicineUseCaseTests.swift; sourceTree = "<group>"; };
-		D0C2FC0A2E1DDC330020A35E /* StringExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensionsTests.swift; sourceTree = "<group>"; };
-		D0C2FC0C2E1DDC330020A35E /* AislesViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AislesViewModelTests.swift; sourceTree = "<group>"; };
-		D0C2FC0D2E1DDC330020A35E /* MedicineDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineDetailViewModelTests.swift; sourceTree = "<group>"; };
-		D0C2FC0E2E1DDC330020A35E /* MedicineFormViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineFormViewModelTests.swift; sourceTree = "<group>"; };
-		D0C2FC392E1DE7B50020A35E /* TestDependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDependencyContainer.swift; sourceTree = "<group>"; };
-		D0C3DBD42E1A8BF8008D94A7 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
-		D0C3DBD52E1A8BF8008D94A7 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		D0C3DBD82E1A8BF8008D94A7 /* Color+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Extensions.swift"; sourceTree = "<group>"; };
-		D0C3DBDA2E1A8BF8008D94A7 /* Aisle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Aisle.swift; sourceTree = "<group>"; };
-		D0C3DBDB2E1A8BF8008D94A7 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
-		D0C3DBDC2E1A8BF8008D94A7 /* ExportError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportError.swift; sourceTree = "<group>"; };
-		D0C3DBDD2E1A8BF8008D94A7 /* HistoryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEntry.swift; sourceTree = "<group>"; };
-		D0C3DBDE2E1A8BF8008D94A7 /* Medicine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Medicine.swift; sourceTree = "<group>"; };
-		D0C3DBDF2E1A8BF8008D94A7 /* MedicineError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineError.swift; sourceTree = "<group>"; };
-		D0C3DBE02E1A8BF8008D94A7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		D0C3DBE22E1A8BF8008D94A7 /* AisleDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleDTO.swift; sourceTree = "<group>"; };
-		D0C3DBE32E1A8BF8008D94A7 /* HistoryEntryDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEntryDTO.swift; sourceTree = "<group>"; };
-		D0C3DBE42E1A8BF8008D94A7 /* MedicineDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineDTO.swift; sourceTree = "<group>"; };
-		D0C3DBE52E1A8BF8008D94A7 /* UserDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDTO.swift; sourceTree = "<group>"; };
-		D0C3DBEA2E1A8BF8008D94A7 /* FirebaseAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepository.swift; sourceTree = "<group>"; };
-		D0C3DBEB2E1A8BF8008D94A7 /* FirebaseHistoryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseHistoryRepository.swift; sourceTree = "<group>"; };
-		D0C3DBED2E1A8BF8008D94A7 /* AuthRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryProtocol.swift; sourceTree = "<group>"; };
-		D0C3DBEE2E1A8BF8008D94A7 /* HistoryRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRepositoryProtocol.swift; sourceTree = "<group>"; };
-		D0C3DBEF2E1A8BF8008D94A7 /* MedicineRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineRepositoryProtocol.swift; sourceTree = "<group>"; };
-		D0C3DBF22E1A8BF8008D94A7 /* AppSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSyncService.swift; sourceTree = "<group>"; };
-		D0C3DBF32E1A8BF8008D94A7 /* LocalCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCacheService.swift; sourceTree = "<group>"; };
-		D0C3DBF52E1A8BF8008D94A7 /* CacheServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheServiceProtocol.swift; sourceTree = "<group>"; };
-		D0C3DBF62E1A8BF8008D94A7 /* SyncServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncServiceProtocol.swift; sourceTree = "<group>"; };
-		D0C3DBFA2E1A8BF8008D94A7 /* SignInUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInUseCase.swift; sourceTree = "<group>"; };
-		D0C3DBFB2E1A8BF8008D94A7 /* SignUpUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpUseCase.swift; sourceTree = "<group>"; };
-		D0C3DBFD2E1A8BF8008D94A7 /* GetMedicinesUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetMedicinesUseCase.swift; sourceTree = "<group>"; };
-		D0C3DBFE2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateMedicineStockUseCase.swift; sourceTree = "<group>"; };
-		D0C3DC032E1A8BF8008D94A7 /* AislesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AislesViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC052E1A8BF8008D94A7 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC072E1A8BF8008D94A7 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC092E1A8BF8008D94A7 /* HistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC0B2E1A8BF8008D94A7 /* MedicineDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineDetailViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC0C2E1A8BF8008D94A7 /* MedicineFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineFormViewModel.swift; sourceTree = "<group>"; };
-		D0C3DC102E1A8BF8008D94A7 /* AisleFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleFormView.swift; sourceTree = "<group>"; };
-		D0C3DC112E1A8BF8008D94A7 /* AislesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AislesView.swift; sourceTree = "<group>"; };
-		D0C3DC132E1A8BF8008D94A7 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		D0C3DC142E1A8BF8008D94A7 /* PasswordResetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordResetView.swift; sourceTree = "<group>"; };
-		D0C3DC152E1A8BF8008D94A7 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
-		D0C3DC182E1A8BF8008D94A7 /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
-		D0C3DC192E1A8BF8008D94A7 /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
-		D0C3DC1A2E1A8BF8008D94A7 /* StyledTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyledTextField.swift; sourceTree = "<group>"; };
-		D0C3DC1C2E1A8BF8008D94A7 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		D0C3DC1E2E1A8BF8008D94A7 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		D0C3DC202E1A8BF8008D94A7 /* AdjustStockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustStockView.swift; sourceTree = "<group>"; };
-		D0C3DC212E1A8BF8008D94A7 /* MedicineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineDetailView.swift; sourceTree = "<group>"; };
-		D0C3DC222E1A8BF8008D94A7 /* MedicineFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineFormView.swift; sourceTree = "<group>"; };
-		D0C3DC232E1A8BF8008D94A7 /* MedicineListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicineListView.swift; sourceTree = "<group>"; };
-		D0E614002E262BB900B9A13A /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
-		D0E614062E262DC500B9A13A /* BackgroundSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncService.swift; sourceTree = "<group>"; };
-		D0E614072E262DC500B9A13A /* ExpirationNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpirationNotificationService.swift; sourceTree = "<group>"; };
-		D0E614082E262DC500B9A13A /* OfflineCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineCacheService.swift; sourceTree = "<group>"; };
-		D0E614092E262DC500B9A13A /* PaginationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationService.swift; sourceTree = "<group>"; };
-		D0E6140A2E262DC500B9A13A /* QueryOptimizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryOptimizationService.swift; sourceTree = "<group>"; };
-		D0E6140B2E262DC500B9A13A /* TestDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataService.swift; sourceTree = "<group>"; };
-		D0E614122E263A5400B9A13A /* NavigationDestinations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestinations.swift; sourceTree = "<group>"; };
-		D0E614142E26828300B9A13A /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
-		D0E614152E26828300B9A13A /* DIContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DIContainer.swift; sourceTree = "<group>"; };
-		D0E614162E26828300B9A13A /* EnvironmentKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentKeys.swift; sourceTree = "<group>"; };
-		D0E6141B2E26833700B9A13A /* ViewModelFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelFactory.swift; sourceTree = "<group>"; };
-		D0E6141D2E26880000B9A13A /* NewAdjustStockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAdjustStockView.swift; sourceTree = "<group>"; };
-		D0E6141F2E26886D00B9A13A /* CriticalStockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriticalStockView.swift; sourceTree = "<group>"; };
-		D0E614202E26886D00B9A13A /* ExpiringMedicinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpiringMedicinesView.swift; sourceTree = "<group>"; };
-		D0E614212E26886D00B9A13A /* MedicinesByAisleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicinesByAisleView.swift; sourceTree = "<group>"; };
-		D0E614222E26886D00B9A13A /* NewMedicineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMedicineDetailView.swift; sourceTree = "<group>"; };
-		D0E614232E26886D00B9A13A /* NewMedicineFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMedicineFormView.swift; sourceTree = "<group>"; };
-		D0E614242E26886D00B9A13A /* NewMedicineListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMedicineListView.swift; sourceTree = "<group>"; };
-		D0E6142B2E2689A100B9A13A /* ObservableAdjustStockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableAdjustStockViewModel.swift; sourceTree = "<group>"; };
-		D0E6142C2E2689A100B9A13A /* ObservableMedicineDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMedicineDetailViewModel.swift; sourceTree = "<group>"; };
-		D0E6142D2E2689A100B9A13A /* ObservableMedicineFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableMedicineFormViewModel.swift; sourceTree = "<group>"; };
-		D0E614312E2689FB00B9A13A /* ObservableAisleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservableAisleViewModel.swift; sourceTree = "<group>"; };
-		D0F74D5C2E20E1AA004D34D5 /* AisleFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AisleFormViewModel.swift; sourceTree = "<group>"; };
-		D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustStockViewModel.swift; sourceTree = "<group>"; };
-		D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAisleRepositoryTests.swift; sourceTree = "<group>"; };
-		D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseMedicineRepositoryTests.swift; sourceTree = "<group>"; };
-		D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthRepositoryTests.swift; sourceTree = "<group>"; };
+		D0F409D32E37E25100EC8B27 /* MediStock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediStock.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0F409E02E37E25200EC8B27 /* MediStockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediStockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0F409EA2E37E25200EC8B27 /* MediStockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediStockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D0F409D52E37E25100EC8B27 /* MediStock */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MediStock;
+			sourceTree = "<group>";
+		};
+		D0F409E32E37E25200EC8B27 /* MediStockTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MediStockTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
-		53E0D8902C06084700DE1134 /* Frameworks */ = {
+		D0F409D02E37E25100EC8B27 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0C3DC6B2E1A9E0B008D94A7 /* FirebasePerformance in Frameworks */,
-				D0C3DC612E1A9E0B008D94A7 /* FirebaseDatabase in Frameworks */,
-				D0C3DC652E1A9E0B008D94A7 /* FirebaseFirestoreCombine-Community in Frameworks */,
-				D0C3DC6F2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community in Frameworks */,
-				D0C3DC592E1A9E0B008D94A7 /* FirebaseAnalytics in Frameworks */,
-				D0C3DC672E1A9E0B008D94A7 /* FirebaseFunctions in Frameworks */,
-				D0C3DC6D2E1A9E0B008D94A7 /* FirebaseStorage in Frameworks */,
-				D0C3DC5F2E1A9E0B008D94A7 /* FirebaseCore in Frameworks */,
-				D0C3DC5B2E1A9E0B008D94A7 /* FirebaseAuth in Frameworks */,
-				D0C3DBD32E1A6CD8008D94A7 /* FirebaseFunctions in Frameworks */,
-				D0C3DC5D2E1A9E0B008D94A7 /* FirebaseAuthCombine-Community in Frameworks */,
-				D0C3DC632E1A9E0B008D94A7 /* FirebaseFirestore in Frameworks */,
-				D0C3DC692E1A9E0B008D94A7 /* FirebaseInstallations in Frameworks */,
+				D0F40A302E37E72F00EC8B27 /* FirebaseAppCheck in Frameworks */,
+				D0F40A442E37E72F00EC8B27 /* FirebaseInstallations in Frameworks */,
+				D0F40A462E37E72F00EC8B27 /* FirebasePerformance in Frameworks */,
+				D0F40A342E37E72F00EC8B27 /* FirebaseAuth in Frameworks */,
+				D0F40A2C2E37E72F00EC8B27 /* FirebaseAnalytics in Frameworks */,
+				D0F40A482E37E72F00EC8B27 /* FirebaseStorage in Frameworks */,
+				D0F40A4A2E37E72F00EC8B27 /* FirebaseStorageCombine-Community in Frameworks */,
+				D0F40A402E37E72F00EC8B27 /* FirebaseFunctions in Frameworks */,
+				D0F40A3C2E37E72F00EC8B27 /* FirebaseFirestore in Frameworks */,
+				D0F40A322E37E72F00EC8B27 /* FirebaseAppDistribution-Beta in Frameworks */,
+				D0F40A3E2E37E72F00EC8B27 /* FirebaseFirestoreCombine-Community in Frameworks */,
+				D0F40A2E2E37E72F00EC8B27 /* FirebaseAnalyticsCore in Frameworks */,
+				D0F40A422E37E72F00EC8B27 /* FirebaseFunctionsCombine-Community in Frameworks */,
+				D0F40A362E37E72F00EC8B27 /* FirebaseAuthCombine-Community in Frameworks */,
+				D0F40A3A2E37E72F00EC8B27 /* FirebaseDatabase in Frameworks */,
+				D0F40ADA2E38416200EC8B27 /* FirebaseCrashlytics in Frameworks */,
+				D0F40A382E37E72F00EC8B27 /* FirebaseCore in Frameworks */,
+				D0F40A2A2E37E72F00EC8B27 /* FirebaseAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		53E0D8A02C06084900DE1134 /* Frameworks */ = {
+		D0F409DD2E37E25200EC8B27 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		53E0D8AA2C06084900DE1134 /* Frameworks */ = {
+		D0F409E72E37E25200EC8B27 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -377,665 +106,174 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		53E0D88A2C06084700DE1134 = {
+		D0F409CA2E37E25100EC8B27 = {
 			isa = PBXGroup;
 			children = (
-				53E0D8952C06084700DE1134 /* MediStock */,
-				53E0D8A62C06084900DE1134 /* MediStockTests */,
-				D01689E62E1E40C000520437 /* MediStock.app */,
-				D01689E72E1E40C000520437 /* MediStockTests.xctest */,
-				D01689E82E1E40C000520437 /* MediStockUITests.xctest */,
+				D0F409D52E37E25100EC8B27 /* MediStock */,
+				D0F409E32E37E25200EC8B27 /* MediStockTests */,
+				D0F409D42E37E25100EC8B27 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		53E0D8952C06084700DE1134 /* MediStock */ = {
+		D0F409D42E37E25100EC8B27 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D0E614172E26828300B9A13A /* DI */,
-				53E0D8E32C0660FD00DE1134 /* GoogleService-Info.plist */,
-				53E0D8962C06084700DE1134 /* MediStockApp.swift */,
-				53E0D8982C06084700DE1134 /* ContentView.swift */,
-				53E0D89A2C06084900DE1134 /* Assets.xcassets */,
-				53E0D8DF2C0609B900DE1134 /* SessionStore.swift */,
-				53E0D8E12C065FFE00DE1134 /* AppDelegate.swift */,
-				D0C3DBD62E1A8BF8008D94A7 /* App */,
-				D0C3DBD92E1A8BF8008D94A7 /* Extensions */,
-				D0C3DBE72E1A8BF8008D94A7 /* Models */,
-				D0C3DBF12E1A8BF8008D94A7 /* Repositories */,
-				D0C3DBF82E1A8BF8008D94A7 /* Services */,
-				D0C3DC012E1A8BF8008D94A7 /* UseCases */,
-				D0C3DC022E1A8BF8008D94A7 /* Utilities */,
-				D0C3DC0F2E1A8BF8008D94A7 /* ViewModels */,
-				D0C3DC262E1A8BF8008D94A7 /* Views */,
+				D0F409D32E37E25100EC8B27 /* MediStock.app */,
+				D0F409E02E37E25200EC8B27 /* MediStockTests.xctest */,
+				D0F409EA2E37E25200EC8B27 /* MediStockUITests.xctest */,
 			);
-			path = MediStock;
-			sourceTree = "<group>";
-		};
-		53E0D8A62C06084900DE1134 /* MediStockTests */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBEA2E1DDC330020A35E /* Models */,
-				D0C2FBEF2E1DDC330020A35E /* Repositories */,
-				D0C2FBF12E1DDC330020A35E /* Services */,
-				D0C2FBF62E1DDC330020A35E /* TestUtilities */,
-				D0C2FC092E1DDC330020A35E /* UseCases */,
-				D0C2FC0B2E1DDC330020A35E /* Utilities */,
-				D0C2FC0F2E1DDC330020A35E /* ViewModels */,
-			);
-			path = MediStockTests;
-			sourceTree = "<group>";
-		};
-		D0BAC9F22E272D18006BDCE2 /* History */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9EF2E272D18006BDCE2 /* RealGetHistoryForMedicineUseCase.swift */,
-				D0BAC9F02E272D18006BDCE2 /* RealGetHistoryUseCase.swift */,
-				D0BAC9F12E272D18006BDCE2 /* RealGetRecentHistoryUseCase.swift */,
-			);
-			path = History;
-			sourceTree = "<group>";
-		};
-		D0C2FBE12E1DDC330020A35E /* Domain */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBDE2E1DDC330020A35E /* AuthErrorTests.swift */,
-				D0C2FBDF2E1DDC330020A35E /* ExportErrorTests.swift */,
-				D0C2FBE02E1DDC330020A35E /* MedicineErrorTests.swift */,
-			);
-			path = Domain;
-			sourceTree = "<group>";
-		};
-		D0C2FBE62E1DDC330020A35E /* DTOs */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBE22E1DDC330020A35E /* AisleDTOTests.swift */,
-				D0C2FBE32E1DDC330020A35E /* HistoryEntryDTOTests.swift */,
-				D0C2FBE42E1DDC330020A35E /* MedicineDTOTests.swift */,
-				D0C2FBE52E1DDC330020A35E /* UserDTOTests.swift */,
-			);
-			path = DTOs;
-			sourceTree = "<group>";
-		};
-		D0C2FBEA2E1DDC330020A35E /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBE12E1DDC330020A35E /* Domain */,
-				D0C2FBE62E1DDC330020A35E /* DTOs */,
-				D0C2FBE72E1DDC330020A35E /* AisleTests.swift */,
-				D0C2FBE82E1DDC330020A35E /* HistoryEntryTests.swift */,
-				D0C2FBE92E1DDC330020A35E /* MedicineTests.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		D0C2FBEF2E1DDC330020A35E /* Repositories */ = {
-			isa = PBXGroup;
-			children = (
-				D0F74D662E210008004D34D5 /* FirebaseAuthRepositoryTests.swift */,
-				D06021922E2545200007BAB7 /* MockRepositories.swift */,
-				D0F74D602E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift */,
-				D0F74D612E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift */,
-				D0C2FBEB2E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift */,
-				D0C2FBEC2E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift */,
-				D0C2FBEE2E1DDC330020A35E /* TestMedicineDataServiceTests.swift */,
-			);
-			path = Repositories;
-			sourceTree = "<group>";
-		};
-		D0C2FBF12E1DDC330020A35E /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBF02E1DDC330020A35E /* LocalCacheServiceTests.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		D0C2FBF62E1DDC330020A35E /* TestUtilities */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FC392E1DE7B50020A35E /* TestDependencyContainer.swift */,
-				D0C2FBF32E1DDC330020A35E /* TestHelpers.swift */,
-				D0C2FBF42E1DDC330020A35E /* TestUtilitiesTests.swift */,
-				D0C2FBF52E1DDC330020A35E /* UserTests.swift */,
-			);
-			path = TestUtilities;
-			sourceTree = "<group>";
-		};
-		D0C2FBF92E1DDC330020A35E /* Aisle */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBF72E1DDC330020A35E /* RealAddAisleUseCaseTests.swift */,
-				D0C2FBF82E1DDC330020A35E /* RealGetAislesUseCaseTests.swift */,
-			);
-			path = Aisle;
-			sourceTree = "<group>";
-		};
-		D0C2FBFE2E1DDC330020A35E /* Authentication */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBFA2E1DDC330020A35E /* GetUserUseCaseTests.swift */,
-				D0C2FBFB2E1DDC330020A35E /* SignInUseCaseTests.swift */,
-				D0C2FBFC2E1DDC330020A35E /* SignOutUseCaseTests.swift */,
-				D0C2FBFD2E1DDC330020A35E /* SignUpUseCaseTests.swift */,
-			);
-			path = Authentication;
-			sourceTree = "<group>";
-		};
-		D0C2FC012E1DDC330020A35E /* History */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBFF2E1DDC330020A35E /* RealGetHistoryUseCaseTests.swift */,
-				D0C2FC002E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift */,
-			);
-			path = History;
-			sourceTree = "<group>";
-		};
-		D0C2FC042E1DDC330020A35E /* Medicine */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FC022E1DDC330020A35E /* RealAddMedicineUseCaseExtraTests.swift */,
-				D0C2FC032E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift */,
-			);
-			path = Medicine;
-			sourceTree = "<group>";
-		};
-		D0C2FC092E1DDC330020A35E /* UseCases */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FBF92E1DDC330020A35E /* Aisle */,
-				D0C2FBFE2E1DDC330020A35E /* Authentication */,
-				D0C2FC012E1DDC330020A35E /* History */,
-				D0C2FC042E1DDC330020A35E /* Medicine */,
-				D0C2FC052E1DDC330020A35E /* MockUseCases.swift */,
-				D0C2FC062E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift */,
-				D0C2FC072E1DDC330020A35E /* RealSearchAisleUseCaseTests.swift */,
-				D0C2FC082E1DDC330020A35E /* RealSearchMedicineUseCaseTests.swift */,
-			);
-			path = UseCases;
-			sourceTree = "<group>";
-		};
-		D0C2FC0B2E1DDC330020A35E /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				D0C2FC0A2E1DDC330020A35E /* StringExtensionsTests.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		D0C2FC0F2E1DDC330020A35E /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				D044AEBD2E2013E800D6F02A /* AdjustStockViewModelTests.swift */,
-				D044AEBE2E2013E800D6F02A /* AisleFormViewModelTests.swift */,
-				D044AEBF2E2013E800D6F02A /* AuthViewModelTests.swift */,
-				D044AEC02E2013E800D6F02A /* DashboardViewModelTests.swift */,
-				D044AEC12E2013E800D6F02A /* HistoryViewModelTests.swift */,
-				D044AEC22E2013E800D6F02A /* MedicineStockViewModelTests.swift */,
-				D0C2FC0C2E1DDC330020A35E /* AislesViewModelTests.swift */,
-				D0C2FC0D2E1DDC330020A35E /* MedicineDetailViewModelTests.swift */,
-				D0C2FC0E2E1DDC330020A35E /* MedicineFormViewModelTests.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		D0C3DBD62E1A8BF8008D94A7 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				D00A51852E28289E0038336D /* SimpleMainTabView.swift */,
-				D00A51862E28289E0038336D /* TabCoordinatorView.swift */,
-				D0E614122E263A5400B9A13A /* NavigationDestinations.swift */,
-				D0C3DBD42E1A8BF8008D94A7 /* AppCoordinator.swift */,
-				D0C3DBD52E1A8BF8008D94A7 /* MainTabView.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		D0C3DBD92E1A8BF8008D94A7 /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBD82E1A8BF8008D94A7 /* Color+Extensions.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
-		D0C3DBE12E1A8BF8008D94A7 /* Domain */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBDA2E1A8BF8008D94A7 /* Aisle.swift */,
-				D0C3DBDB2E1A8BF8008D94A7 /* AuthError.swift */,
-				D0C3DBDC2E1A8BF8008D94A7 /* ExportError.swift */,
-				D0C3DBDD2E1A8BF8008D94A7 /* HistoryEntry.swift */,
-				D0C3DBDE2E1A8BF8008D94A7 /* Medicine.swift */,
-				D0C3DBDF2E1A8BF8008D94A7 /* MedicineError.swift */,
-				D0C3DBE02E1A8BF8008D94A7 /* User.swift */,
-			);
-			path = Domain;
-			sourceTree = "<group>";
-		};
-		D0C3DBE62E1A8BF8008D94A7 /* DTOs */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBE22E1A8BF8008D94A7 /* AisleDTO.swift */,
-				D0C3DBE32E1A8BF8008D94A7 /* HistoryEntryDTO.swift */,
-				D0C3DBE42E1A8BF8008D94A7 /* MedicineDTO.swift */,
-				D0C3DBE52E1A8BF8008D94A7 /* UserDTO.swift */,
-			);
-			path = DTOs;
-			sourceTree = "<group>";
-		};
-		D0C3DBE72E1A8BF8008D94A7 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBE12E1A8BF8008D94A7 /* Domain */,
-				D0C3DBE62E1A8BF8008D94A7 /* DTOs */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		D0C3DBEC2E1A8BF8008D94A7 /* Implementations */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9C52E271C8E006BDCE2 /* FirebaseAisleRepository.swift */,
-				D0BAC9C62E271C8E006BDCE2 /* FirebaseMedicineRepository.swift */,
-				D0C3DBEA2E1A8BF8008D94A7 /* FirebaseAuthRepository.swift */,
-				D0C3DBEB2E1A8BF8008D94A7 /* FirebaseHistoryRepository.swift */,
-			);
-			path = Implementations;
-			sourceTree = "<group>";
-		};
-		D0C3DBF02E1A8BF8008D94A7 /* Interfaces */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9E12E272832006BDCE2 /* AisleRepositoryProtocol.swift */,
-				D0C3DBED2E1A8BF8008D94A7 /* AuthRepositoryProtocol.swift */,
-				D0C3DBEE2E1A8BF8008D94A7 /* HistoryRepositoryProtocol.swift */,
-				D0C3DBEF2E1A8BF8008D94A7 /* MedicineRepositoryProtocol.swift */,
-			);
-			path = Interfaces;
-			sourceTree = "<group>";
-		};
-		D0C3DBF12E1A8BF8008D94A7 /* Repositories */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBEC2E1A8BF8008D94A7 /* Implementations */,
-			);
-			path = Repositories;
-			sourceTree = "<group>";
-		};
-		D0C3DBF42E1A8BF8008D94A7 /* Implementations */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBF22E1A8BF8008D94A7 /* AppSyncService.swift */,
-				D0C3DBF32E1A8BF8008D94A7 /* LocalCacheService.swift */,
-			);
-			path = Implementations;
-			sourceTree = "<group>";
-		};
-		D0C3DBF72E1A8BF8008D94A7 /* Interfaces */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBF52E1A8BF8008D94A7 /* CacheServiceProtocol.swift */,
-				D0C3DBF62E1A8BF8008D94A7 /* SyncServiceProtocol.swift */,
-			);
-			path = Interfaces;
-			sourceTree = "<group>";
-		};
-		D0C3DBF82E1A8BF8008D94A7 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				D0E614062E262DC500B9A13A /* BackgroundSyncService.swift */,
-				D0E614072E262DC500B9A13A /* ExpirationNotificationService.swift */,
-				D0E614082E262DC500B9A13A /* OfflineCacheService.swift */,
-				D0E614092E262DC500B9A13A /* PaginationService.swift */,
-				D0E6140A2E262DC500B9A13A /* QueryOptimizationService.swift */,
-				D0E6140B2E262DC500B9A13A /* TestDataService.swift */,
-				D0C3DBF42E1A8BF8008D94A7 /* Implementations */,
-				D0C3DBF72E1A8BF8008D94A7 /* Interfaces */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		D0C3DBFC2E1A8BF8008D94A7 /* Authentication */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9CA2E2727FE006BDCE2 /* RealGetUserUseCase.swift */,
-				D0BAC9CB2E2727FE006BDCE2 /* SignOutUseCase.swift */,
-				D0C3DBFA2E1A8BF8008D94A7 /* SignInUseCase.swift */,
-				D0C3DBFB2E1A8BF8008D94A7 /* SignUpUseCase.swift */,
-			);
-			path = Authentication;
-			sourceTree = "<group>";
-		};
-		D0C3DBFF2E1A8BF8008D94A7 /* Medicine */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9D12E272815006BDCE2 /* RealAddMedicineUseCase.swift */,
-				D0BAC9D22E272815006BDCE2 /* RealAdjustStockUseCase.swift */,
-				D0BAC9D32E272815006BDCE2 /* RealDeleteMedicineUseCase.swift */,
-				D0BAC9D42E272815006BDCE2 /* RealGetMedicinesUseCase.swift */,
-				D0BAC9D52E272815006BDCE2 /* RealGetMedicineUseCase.swift */,
-				D0BAC9D62E272815006BDCE2 /* RealSearchMedicineUseCase.swift */,
-				D0BAC9D72E272815006BDCE2 /* RealUpdateMedicineStockUseCase.swift */,
-				D0BAC9D82E272815006BDCE2 /* RealUpdateMedicineUseCase.swift */,
-				D0C3DBFD2E1A8BF8008D94A7 /* GetMedicinesUseCase.swift */,
-				D0C3DBFE2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift */,
-			);
-			path = Medicine;
-			sourceTree = "<group>";
-		};
-		D0C3DC012E1A8BF8008D94A7 /* UseCases */ = {
-			isa = PBXGroup;
-			children = (
-				D00A51812E2788EF0038336D /* UseCaseProtocols.swift */,
-				D0BAC9F22E272D18006BDCE2 /* History */,
-				D0C3DBFC2E1A8BF8008D94A7 /* Authentication */,
-				D0C3DBFF2E1A8BF8008D94A7 /* Medicine */,
-			);
-			path = UseCases;
-			sourceTree = "<group>";
-		};
-		D0C3DC022E1A8BF8008D94A7 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DBF02E1A8BF8008D94A7 /* Interfaces */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		D0C3DC042E1A8BF8008D94A7 /* Aisle */ = {
-			isa = PBXGroup;
-			children = (
-				D0E614312E2689FB00B9A13A /* ObservableAisleViewModel.swift */,
-				D0C3DC032E1A8BF8008D94A7 /* AislesViewModel.swift */,
-				D0F74D5C2E20E1AA004D34D5 /* AisleFormViewModel.swift */,
-			);
-			path = Aisle;
-			sourceTree = "<group>";
-		};
-		D0C3DC062E1A8BF8008D94A7 /* Authentication */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DC052E1A8BF8008D94A7 /* AuthViewModel.swift */,
-			);
-			path = Authentication;
-			sourceTree = "<group>";
-		};
-		D0C3DC082E1A8BF8008D94A7 /* Dashboard */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DC072E1A8BF8008D94A7 /* DashboardViewModel.swift */,
-			);
-			path = Dashboard;
-			sourceTree = "<group>";
-		};
-		D0C3DC0A2E1A8BF8008D94A7 /* History */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DC092E1A8BF8008D94A7 /* HistoryViewModel.swift */,
-			);
-			path = History;
-			sourceTree = "<group>";
-		};
-		D0C3DC0D2E1A8BF8008D94A7 /* Medicine */ = {
-			isa = PBXGroup;
-			children = (
-				D0E6142B2E2689A100B9A13A /* ObservableAdjustStockViewModel.swift */,
-				D0E6142C2E2689A100B9A13A /* ObservableMedicineDetailViewModel.swift */,
-				D0E6142D2E2689A100B9A13A /* ObservableMedicineFormViewModel.swift */,
-				D0F74D5E2E20E1DA004D34D5 /* AdjustStockViewModel.swift */,
-				D0C3DC0B2E1A8BF8008D94A7 /* MedicineDetailViewModel.swift */,
-				D0C3DC0C2E1A8BF8008D94A7 /* MedicineFormViewModel.swift */,
-			);
-			path = Medicine;
-			sourceTree = "<group>";
-		};
-		D0C3DC0E2E1A8BF8008D94A7 /* Stock */ = {
-			isa = PBXGroup;
-			children = (
-				53E0D8DD2C0609A800DE1134 /* MedicineStockViewModel.swift */,
-			);
-			path = Stock;
-			sourceTree = "<group>";
-		};
-		D0C3DC0F2E1A8BF8008D94A7 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				D0E6141B2E26833700B9A13A /* ViewModelFactory.swift */,
-				D0C3DC042E1A8BF8008D94A7 /* Aisle */,
-				D0C3DC062E1A8BF8008D94A7 /* Authentication */,
-				D0C3DC082E1A8BF8008D94A7 /* Dashboard */,
-				D0C3DC0A2E1A8BF8008D94A7 /* History */,
-				D0C3DC0D2E1A8BF8008D94A7 /* Medicine */,
-				D0C3DC0E2E1A8BF8008D94A7 /* Stock */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		D0C3DC122E1A8BF8008D94A7 /* Aisle */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9C32E269B43006BDCE2 /* NewAislesView.swift */,
-				D0C3DC102E1A8BF8008D94A7 /* AisleFormView.swift */,
-				D0C3DC112E1A8BF8008D94A7 /* AislesView.swift */,
-			);
-			path = Aisle;
-			sourceTree = "<group>";
-		};
-		D0C3DC162E1A8BF8008D94A7 /* Auth */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DC132E1A8BF8008D94A7 /* LoginView.swift */,
-				D0C3DC142E1A8BF8008D94A7 /* PasswordResetView.swift */,
-				D0C3DC152E1A8BF8008D94A7 /* SignUpView.swift */,
-			);
-			path = Auth;
-			sourceTree = "<group>";
-		};
-		D0C3DC1B2E1A8BF8008D94A7 /* Common */ = {
-			isa = PBXGroup;
-			children = (
-				D00A51832E2804800038336D /* QuickStockAdjustment.swift */,
-				D0C3DC182E1A8BF8008D94A7 /* MessageView.swift */,
-				D0C3DC192E1A8BF8008D94A7 /* PrimaryButton.swift */,
-				D0C3DC1A2E1A8BF8008D94A7 /* StyledTextField.swift */,
-			);
-			path = Common;
-			sourceTree = "<group>";
-		};
-		D0C3DC1D2E1A8BF8008D94A7 /* Dashboard */ = {
-			isa = PBXGroup;
-			children = (
-				D0BAC9C12E269B30006BDCE2 /* NewDashboardView.swift */,
-				D0C3DC1C2E1A8BF8008D94A7 /* DashboardView.swift */,
-			);
-			path = Dashboard;
-			sourceTree = "<group>";
-		};
-		D0C3DC1F2E1A8BF8008D94A7 /* History */ = {
-			isa = PBXGroup;
-			children = (
-				D0C3DC1E2E1A8BF8008D94A7 /* HistoryView.swift */,
-			);
-			path = History;
-			sourceTree = "<group>";
-		};
-		D0C3DC242E1A8BF8008D94A7 /* Medicine */ = {
-			isa = PBXGroup;
-			children = (
-				D0E6141F2E26886D00B9A13A /* CriticalStockView.swift */,
-				D0E614202E26886D00B9A13A /* ExpiringMedicinesView.swift */,
-				D0E614212E26886D00B9A13A /* MedicinesByAisleView.swift */,
-				D0E614222E26886D00B9A13A /* NewMedicineDetailView.swift */,
-				D0E614232E26886D00B9A13A /* NewMedicineFormView.swift */,
-				D0E614242E26886D00B9A13A /* NewMedicineListView.swift */,
-				D0E6141D2E26880000B9A13A /* NewAdjustStockView.swift */,
-				D0C3DC202E1A8BF8008D94A7 /* AdjustStockView.swift */,
-				D0C3DC212E1A8BF8008D94A7 /* MedicineDetailView.swift */,
-				D0C3DC222E1A8BF8008D94A7 /* MedicineFormView.swift */,
-				D0C3DC232E1A8BF8008D94A7 /* MedicineListView.swift */,
-			);
-			path = Medicine;
-			sourceTree = "<group>";
-		};
-		D0C3DC262E1A8BF8008D94A7 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				D0E614002E262BB900B9A13A /* AppearanceSettingsView.swift */,
-				D0C3DC122E1A8BF8008D94A7 /* Aisle */,
-				D0C3DC162E1A8BF8008D94A7 /* Auth */,
-				D0C3DC1B2E1A8BF8008D94A7 /* Common */,
-				D0C3DC1D2E1A8BF8008D94A7 /* Dashboard */,
-				D0C3DC1F2E1A8BF8008D94A7 /* History */,
-				D0C3DC242E1A8BF8008D94A7 /* Medicine */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		D0E614172E26828300B9A13A /* DI */ = {
-			isa = PBXGroup;
-			children = (
-				D0E614142E26828300B9A13A /* DependencyContainer.swift */,
-				D0E614152E26828300B9A13A /* DIContainer.swift */,
-				D0E614162E26828300B9A13A /* EnvironmentKeys.swift */,
-			);
-			path = DI;
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		53E0D8922C06084700DE1134 /* MediStock */ = {
+		D0F409D22E37E25100EC8B27 /* MediStock */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 53E0D8B72C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStock" */;
+			buildConfigurationList = D0F409F42E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStock" */;
 			buildPhases = (
-				53E0D88F2C06084700DE1134 /* Sources */,
-				53E0D8902C06084700DE1134 /* Frameworks */,
-				53E0D8912C06084700DE1134 /* Resources */,
+				D0F409CF2E37E25100EC8B27 /* Sources */,
+				D0F409D02E37E25100EC8B27 /* Frameworks */,
+				D0F409D12E37E25100EC8B27 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D0F409D52E37E25100EC8B27 /* MediStock */,
 			);
 			name = MediStock;
 			packageProductDependencies = (
-				D0C3DBD22E1A6CD8008D94A7 /* FirebaseFunctions */,
-				D0C3DC582E1A9E0B008D94A7 /* FirebaseAnalytics */,
-				D0C3DC5A2E1A9E0B008D94A7 /* FirebaseAuth */,
-				D0C3DC5C2E1A9E0B008D94A7 /* FirebaseAuthCombine-Community */,
-				D0C3DC5E2E1A9E0B008D94A7 /* FirebaseCore */,
-				D0C3DC602E1A9E0B008D94A7 /* FirebaseDatabase */,
-				D0C3DC622E1A9E0B008D94A7 /* FirebaseFirestore */,
-				D0C3DC642E1A9E0B008D94A7 /* FirebaseFirestoreCombine-Community */,
-				D0C3DC662E1A9E0B008D94A7 /* FirebaseFunctions */,
-				D0C3DC682E1A9E0B008D94A7 /* FirebaseInstallations */,
-				D0C3DC6A2E1A9E0B008D94A7 /* FirebasePerformance */,
-				D0C3DC6C2E1A9E0B008D94A7 /* FirebaseStorage */,
-				D0C3DC6E2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community */,
+				D0F40A292E37E72F00EC8B27 /* FirebaseAI */,
+				D0F40A2B2E37E72F00EC8B27 /* FirebaseAnalytics */,
+				D0F40A2D2E37E72F00EC8B27 /* FirebaseAnalyticsCore */,
+				D0F40A2F2E37E72F00EC8B27 /* FirebaseAppCheck */,
+				D0F40A312E37E72F00EC8B27 /* FirebaseAppDistribution-Beta */,
+				D0F40A332E37E72F00EC8B27 /* FirebaseAuth */,
+				D0F40A352E37E72F00EC8B27 /* FirebaseAuthCombine-Community */,
+				D0F40A372E37E72F00EC8B27 /* FirebaseCore */,
+				D0F40A392E37E72F00EC8B27 /* FirebaseDatabase */,
+				D0F40A3B2E37E72F00EC8B27 /* FirebaseFirestore */,
+				D0F40A3D2E37E72F00EC8B27 /* FirebaseFirestoreCombine-Community */,
+				D0F40A3F2E37E72F00EC8B27 /* FirebaseFunctions */,
+				D0F40A412E37E72F00EC8B27 /* FirebaseFunctionsCombine-Community */,
+				D0F40A432E37E72F00EC8B27 /* FirebaseInstallations */,
+				D0F40A452E37E72F00EC8B27 /* FirebasePerformance */,
+				D0F40A472E37E72F00EC8B27 /* FirebaseStorage */,
+				D0F40A492E37E72F00EC8B27 /* FirebaseStorageCombine-Community */,
+				D0F40AD92E38416200EC8B27 /* FirebaseCrashlytics */,
 			);
 			productName = MediStock;
-			productReference = D01689E62E1E40C000520437 /* MediStock.app */;
+			productReference = D0F409D32E37E25100EC8B27 /* MediStock.app */;
 			productType = "com.apple.product-type.application";
 		};
-		53E0D8A22C06084900DE1134 /* MediStockTests */ = {
+		D0F409DF2E37E25200EC8B27 /* MediStockTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 53E0D8BA2C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStockTests" */;
+			buildConfigurationList = D0F409F72E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStockTests" */;
 			buildPhases = (
-				53E0D89F2C06084900DE1134 /* Sources */,
-				53E0D8A02C06084900DE1134 /* Frameworks */,
-				53E0D8A12C06084900DE1134 /* Resources */,
+				D0F409DC2E37E25200EC8B27 /* Sources */,
+				D0F409DD2E37E25200EC8B27 /* Frameworks */,
+				D0F409DE2E37E25200EC8B27 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				53E0D8A52C06084900DE1134 /* PBXTargetDependency */,
+				D0F409E22E37E25200EC8B27 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D0F409E32E37E25200EC8B27 /* MediStockTests */,
 			);
 			name = MediStockTests;
+			packageProductDependencies = (
+			);
 			productName = MediStockTests;
-			productReference = D01689E72E1E40C000520437 /* MediStockTests.xctest */;
+			productReference = D0F409E02E37E25200EC8B27 /* MediStockTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		53E0D8AC2C06084900DE1134 /* MediStockUITests */ = {
+		D0F409E92E37E25200EC8B27 /* MediStockUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 53E0D8BD2C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStockUITests" */;
+			buildConfigurationList = D0F409FA2E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStockUITests" */;
 			buildPhases = (
-				53E0D8A92C06084900DE1134 /* Sources */,
-				53E0D8AA2C06084900DE1134 /* Frameworks */,
-				53E0D8AB2C06084900DE1134 /* Resources */,
+				D0F409E62E37E25200EC8B27 /* Sources */,
+				D0F409E72E37E25200EC8B27 /* Frameworks */,
+				D0F409E82E37E25200EC8B27 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				53E0D8AF2C06084900DE1134 /* PBXTargetDependency */,
+				D0F409EC2E37E25200EC8B27 /* PBXTargetDependency */,
 			);
 			name = MediStockUITests;
+			packageProductDependencies = (
+			);
 			productName = MediStockUITests;
-			productReference = D01689E82E1E40C000520437 /* MediStockUITests.xctest */;
+			productReference = D0F409EA2E37E25200EC8B27 /* MediStockUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		53E0D88B2C06084700DE1134 /* Project object */ = {
+		D0F409CB2E37E25100EC8B27 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1540;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
-					53E0D8922C06084700DE1134 = {
-						CreatedOnToolsVersion = 15.4;
+					D0F409D22E37E25100EC8B27 = {
+						CreatedOnToolsVersion = 16.4;
 					};
-					53E0D8A22C06084900DE1134 = {
-						CreatedOnToolsVersion = 15.4;
-						TestTargetID = 53E0D8922C06084700DE1134;
+					D0F409DF2E37E25200EC8B27 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D0F409D22E37E25100EC8B27;
 					};
-					53E0D8AC2C06084900DE1134 = {
-						CreatedOnToolsVersion = 15.4;
-						TestTargetID = 53E0D8922C06084700DE1134;
+					D0F409E92E37E25200EC8B27 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D0F409D22E37E25100EC8B27;
 					};
 				};
 			};
-			buildConfigurationList = 53E0D88E2C06084700DE1134 /* Build configuration list for PBXProject "MediStock" */;
-			compatibilityVersion = "Xcode 14.0";
+			buildConfigurationList = D0F409CE2E37E25100EC8B27 /* Build configuration list for PBXProject "MediStock" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 53E0D88A2C06084700DE1134;
+			mainGroup = D0F409CA2E37E25100EC8B27;
+			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
-			productRefGroup = 53E0D88A2C06084700DE1134;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D0F409D42E37E25100EC8B27 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				53E0D8922C06084700DE1134 /* MediStock */,
-				53E0D8A22C06084900DE1134 /* MediStockTests */,
-				53E0D8AC2C06084900DE1134 /* MediStockUITests */,
+				D0F409D22E37E25100EC8B27 /* MediStock */,
+				D0F409DF2E37E25200EC8B27 /* MediStockTests */,
+				D0F409E92E37E25200EC8B27 /* MediStockUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		53E0D8912C06084700DE1134 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				53E0D89B2C06084900DE1134 /* Assets.xcassets in Resources */,
-				53E0D8E42C0660FD00DE1134 /* GoogleService-Info.plist in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		53E0D8A12C06084900DE1134 /* Resources */ = {
+		D0F409D12E37E25100EC8B27 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		53E0D8AB2C06084900DE1134 /* Resources */ = {
+		D0F409DE2E37E25200EC8B27 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D0F409E82E37E25200EC8B27 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1045,166 +283,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		53E0D88F2C06084700DE1134 /* Sources */ = {
+		D0F409CF2E37E25100EC8B27 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				53E0D8E22C065FFE00DE1134 /* AppDelegate.swift in Sources */,
-				D0C3DC272E1A8BF8008D94A7 /* User.swift in Sources */,
-				D0C3DC282E1A8BF8008D94A7 /* AppCoordinator.swift in Sources */,
-				D0C3DC292E1A8BF8008D94A7 /* MessageView.swift in Sources */,
-				D0E6140C2E262DC500B9A13A /* OfflineCacheService.swift in Sources */,
-				D0E6140D2E262DC500B9A13A /* ExpirationNotificationService.swift in Sources */,
-				D0E6140E2E262DC500B9A13A /* PaginationService.swift in Sources */,
-				D0E6140F2E262DC500B9A13A /* QueryOptimizationService.swift in Sources */,
-				D0E614102E262DC500B9A13A /* TestDataService.swift in Sources */,
-				D0E614112E262DC500B9A13A /* BackgroundSyncService.swift in Sources */,
-				D0C3DC2A2E1A8BF8008D94A7 /* MedicineListView.swift in Sources */,
-				D0C3DC2B2E1A8BF8008D94A7 /* ExportError.swift in Sources */,
-				D0C3DC2C2E1A8BF8008D94A7 /* DashboardView.swift in Sources */,
-				D0C3DC2D2E1A8BF8008D94A7 /* MedicineDTO.swift in Sources */,
-				D0BAC9F32E272D18006BDCE2 /* RealGetRecentHistoryUseCase.swift in Sources */,
-				D0BAC9F42E272D18006BDCE2 /* RealGetHistoryForMedicineUseCase.swift in Sources */,
-				D0BAC9F52E272D18006BDCE2 /* RealGetHistoryUseCase.swift in Sources */,
-				D0C3DC2E2E1A8BF8008D94A7 /* HistoryEntry.swift in Sources */,
-				D0C3DC2F2E1A8BF8008D94A7 /* SignInUseCase.swift in Sources */,
-				D0C3DC302E1A8BF8008D94A7 /* HistoryViewModel.swift in Sources */,
-				D0C3DC312E1A8BF8008D94A7 /* AisleFormView.swift in Sources */,
-				D0C3DC322E1A8BF8008D94A7 /* AislesView.swift in Sources */,
-				D0E6141C2E26833700B9A13A /* ViewModelFactory.swift in Sources */,
-				D0C3DC332E1A8BF8008D94A7 /* LoginView.swift in Sources */,
-				D0C3DC342E1A8BF8008D94A7 /* UserDTO.swift in Sources */,
-				D0C3DC352E1A8BF8008D94A7 /* DashboardViewModel.swift in Sources */,
-				D0C3DC362E1A8BF8008D94A7 /* SyncServiceProtocol.swift in Sources */,
-				D0E614182E26828300B9A13A /* EnvironmentKeys.swift in Sources */,
-				D0E614192E26828300B9A13A /* DIContainer.swift in Sources */,
-				D0E6141A2E26828300B9A13A /* DependencyContainer.swift in Sources */,
-				D0C3DC372E1A8BF8008D94A7 /* MedicineError.swift in Sources */,
-				D00A51822E2788EF0038336D /* UseCaseProtocols.swift in Sources */,
-				D0C3DC382E1A8BF8008D94A7 /* FirebaseHistoryRepository.swift in Sources */,
-				D0C3DC392E1A8BF8008D94A7 /* AisleDTO.swift in Sources */,
-				D0C3DC3A2E1A8BF8008D94A7 /* AuthViewModel.swift in Sources */,
-				D0C3DC3B2E1A8BF8008D94A7 /* SignUpUseCase.swift in Sources */,
-				D0C3DC3C2E1A8BF8008D94A7 /* MedicineRepositoryProtocol.swift in Sources */,
-				D0C3DC3D2E1A8BF8008D94A7 /* Color+Extensions.swift in Sources */,
-				D0BAC9D92E272815006BDCE2 /* RealAddMedicineUseCase.swift in Sources */,
-				D0BAC9DA2E272815006BDCE2 /* RealDeleteMedicineUseCase.swift in Sources */,
-				D0BAC9DB2E272815006BDCE2 /* RealGetMedicineUseCase.swift in Sources */,
-				D0BAC9DC2E272815006BDCE2 /* RealAdjustStockUseCase.swift in Sources */,
-				D0BAC9DD2E272815006BDCE2 /* RealSearchMedicineUseCase.swift in Sources */,
-				D0BAC9DE2E272815006BDCE2 /* RealGetMedicinesUseCase.swift in Sources */,
-				D0BAC9DF2E272815006BDCE2 /* RealUpdateMedicineUseCase.swift in Sources */,
-				D0BAC9E02E272815006BDCE2 /* RealUpdateMedicineStockUseCase.swift in Sources */,
-				D0F74D5F2E20E1DA004D34D5 /* AdjustStockViewModel.swift in Sources */,
-				D0C3DC3E2E1A8BF8008D94A7 /* PasswordResetView.swift in Sources */,
-				D0E614132E263A5400B9A13A /* NavigationDestinations.swift in Sources */,
-				D0C3DC3F2E1A8BF8008D94A7 /* StyledTextField.swift in Sources */,
-				D0C3DC402E1A8BF8008D94A7 /* Medicine.swift in Sources */,
-				D0C3DC412E1A8BF8008D94A7 /* AuthError.swift in Sources */,
-				D0C3DC422E1A8BF8008D94A7 /* SignUpView.swift in Sources */,
-				D0C3DC432E1A8BF8008D94A7 /* LocalCacheService.swift in Sources */,
-				D0C3DC442E1A8BF8008D94A7 /* MedicineDetailViewModel.swift in Sources */,
-				D0BAC9C72E271C8E006BDCE2 /* FirebaseAisleRepository.swift in Sources */,
-				D0BAC9C82E271C8E006BDCE2 /* FirebaseMedicineRepository.swift in Sources */,
-				D0C3DC452E1A8BF8008D94A7 /* HistoryView.swift in Sources */,
-				D0BAC9E22E272832006BDCE2 /* AisleRepositoryProtocol.swift in Sources */,
-				D0C3DC462E1A8BF8008D94A7 /* MedicineDetailView.swift in Sources */,
-				D0C3DC472E1A8BF8008D94A7 /* FirebaseAuthRepository.swift in Sources */,
-				D0C3DC482E1A8BF8008D94A7 /* CacheServiceProtocol.swift in Sources */,
-				D0C3DC492E1A8BF8008D94A7 /* HistoryEntryDTO.swift in Sources */,
-				D0C3DC4A2E1A8BF8008D94A7 /* UpdateMedicineStockUseCase.swift in Sources */,
-				D0E6142E2E2689A100B9A13A /* ObservableMedicineFormViewModel.swift in Sources */,
-				D0E6142F2E2689A100B9A13A /* ObservableAdjustStockViewModel.swift in Sources */,
-				D0E614302E2689A100B9A13A /* ObservableMedicineDetailViewModel.swift in Sources */,
-				D00A51842E2804800038336D /* QuickStockAdjustment.swift in Sources */,
-				D0C3DC4B2E1A8BF8008D94A7 /* MedicineFormViewModel.swift in Sources */,
-				D0C3DC4C2E1A8BF8008D94A7 /* AppSyncService.swift in Sources */,
-				D0C3DC4D2E1A8BF8008D94A7 /* MainTabView.swift in Sources */,
-				D0C3DC4E2E1A8BF8008D94A7 /* AuthRepositoryProtocol.swift in Sources */,
-				D0C3DC4F2E1A8BF8008D94A7 /* MedicineFormView.swift in Sources */,
-				D0C3DC502E1A8BF8008D94A7 /* AislesViewModel.swift in Sources */,
-				D0C3DC512E1A8BF8008D94A7 /* HistoryRepositoryProtocol.swift in Sources */,
-				D0C3DC522E1A8BF8008D94A7 /* PrimaryButton.swift in Sources */,
-				D0C3DC532E1A8BF8008D94A7 /* AdjustStockView.swift in Sources */,
-				D0E6141E2E26880000B9A13A /* NewAdjustStockView.swift in Sources */,
-				D0C3DC542E1A8BF8008D94A7 /* Aisle.swift in Sources */,
-				D0C3DC552E1A8BF8008D94A7 /* GetMedicinesUseCase.swift in Sources */,
-				53E0D8E02C0609B900DE1134 /* SessionStore.swift in Sources */,
-				D0F74D5D2E20E1AA004D34D5 /* AisleFormViewModel.swift in Sources */,
-				53E0D8DE2C0609A800DE1134 /* MedicineStockViewModel.swift in Sources */,
-				53E0D8992C06084700DE1134 /* ContentView.swift in Sources */,
-				53E0D8972C06084700DE1134 /* MediStockApp.swift in Sources */,
-				D0E614322E2689FB00B9A13A /* ObservableAisleViewModel.swift in Sources */,
-				D0E614012E262BB900B9A13A /* AppearanceSettingsView.swift in Sources */,
-				D0E614252E26886D00B9A13A /* ExpiringMedicinesView.swift in Sources */,
-				D0E614262E26886D00B9A13A /* NewMedicineDetailView.swift in Sources */,
-				D0E614272E26886D00B9A13A /* CriticalStockView.swift in Sources */,
-				D0BAC9C42E269B43006BDCE2 /* NewAislesView.swift in Sources */,
-				D0E614282E26886D00B9A13A /* NewMedicineFormView.swift in Sources */,
-				D0BAC9CD2E2727FE006BDCE2 /* SignOutUseCase.swift in Sources */,
-				D0BAC9CE2E2727FE006BDCE2 /* RealGetUserUseCase.swift in Sources */,
-				D00A51872E28289E0038336D /* TabCoordinatorView.swift in Sources */,
-				D00A51882E28289E0038336D /* SimpleMainTabView.swift in Sources */,
-				D0E614292E26886D00B9A13A /* NewMedicineListView.swift in Sources */,
-				D0BAC9C22E269B30006BDCE2 /* NewDashboardView.swift in Sources */,
-				D0E6142A2E26886D00B9A13A /* MedicinesByAisleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		53E0D89F2C06084900DE1134 /* Sources */ = {
+		D0F409DC2E37E25200EC8B27 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0C2FC102E1DDC330020A35E /* UpdateMedicineStockUseCaseTests.swift in Sources */,
-				D0C2FC112E1DDC330020A35E /* ExportErrorTests.swift in Sources */,
-				D0C2FC122E1DDC330020A35E /* SignUpUseCaseTests.swift in Sources */,
-				D0C2FC132E1DDC330020A35E /* UserDTOTests.swift in Sources */,
-				D0C2FC142E1DDC330020A35E /* HistoryEntryTests.swift in Sources */,
-				D0C2FC152E1DDC330020A35E /* UserTests.swift in Sources */,
-				D0C2FC162E1DDC330020A35E /* MedicineFormViewModelTests.swift in Sources */,
-				D0C2FC172E1DDC330020A35E /* RealGetAislesUseCaseTests.swift in Sources */,
-				D0C2FC182E1DDC330020A35E /* MedicineTests.swift in Sources */,
-				D0C2FC192E1DDC330020A35E /* RealAddAisleUseCaseTests.swift in Sources */,
-				D0C2FC1A2E1DDC330020A35E /* AisleDTOTests.swift in Sources */,
-				D0C2FC1B2E1DDC330020A35E /* RealGetHistoryUseCaseTests.swift in Sources */,
-				D0C2FC3A2E1DE7B50020A35E /* TestDependencyContainer.swift in Sources */,
-				D0C2FC1C2E1DDC330020A35E /* RealAddMedicineUseCaseExtraTests.swift in Sources */,
-				D0C2FC1D2E1DDC330020A35E /* TestHelpers.swift in Sources */,
-				D0C2FC1E2E1DDC330020A35E /* MedicineErrorTests.swift in Sources */,
-				D0C2FC1F2E1DDC330020A35E /* TestMedicineDataServiceTests.swift in Sources */,
-				D0C2FC202E1DDC330020A35E /* RealAddMedicineUseCaseTests.swift in Sources */,
-				D0C2FC212E1DDC330020A35E /* MedicineDTOTests.swift in Sources */,
-				D06021932E2545200007BAB7 /* MockRepositories.swift in Sources */,
-				D0C2FC222E1DDC330020A35E /* FirebaseAuthRepositoryTestsExtended.swift in Sources */,
-				D0C2FC252E1DDC330020A35E /* RealGetRecentHistoryUseCaseTests.swift in Sources */,
-				D0C2FC262E1DDC330020A35E /* TestUtilitiesTests.swift in Sources */,
-				D0F74D672E210008004D34D5 /* FirebaseAuthRepositoryTests.swift in Sources */,
-				D0C2FC272E1DDC330020A35E /* AuthErrorTests.swift in Sources */,
-				D0C2FC282E1DDC330020A35E /* GetUserUseCaseTests.swift in Sources */,
-				D0C2FC292E1DDC330020A35E /* MockUseCases.swift in Sources */,
-				D0C2FC2A2E1DDC330020A35E /* AislesViewModelTests.swift in Sources */,
-				D0C2FC2C2E1DDC330020A35E /* HistoryEntryDTOTests.swift in Sources */,
-				D0C2FC2D2E1DDC330020A35E /* SignOutUseCaseTests.swift in Sources */,
-				D0F74D642E20F7E3004D34D5 /* FirebaseAisleRepositoryTests.swift in Sources */,
-				D0F74D652E20F7E3004D34D5 /* FirebaseMedicineRepositoryTests.swift in Sources */,
-				D0C2FC2E2E1DDC330020A35E /* SignInUseCaseTests.swift in Sources */,
-				D0C2FC2F2E1DDC330020A35E /* StringExtensionsTests.swift in Sources */,
-				D0C2FC302E1DDC330020A35E /* MedicineDetailViewModelTests.swift in Sources */,
-				D0C2FC312E1DDC330020A35E /* LocalCacheServiceTests.swift in Sources */,
-				D044AEC32E2013E800D6F02A /* DashboardViewModelTests.swift in Sources */,
-				D044AEC42E2013E800D6F02A /* HistoryViewModelTests.swift in Sources */,
-				D044AEC52E2013E800D6F02A /* AuthViewModelTests.swift in Sources */,
-				D044AEC62E2013E800D6F02A /* AdjustStockViewModelTests.swift in Sources */,
-				D044AEC72E2013E800D6F02A /* MedicineStockViewModelTests.swift in Sources */,
-				D044AEC82E2013E800D6F02A /* AisleFormViewModelTests.swift in Sources */,
-				D0C2FC322E1DDC330020A35E /* AisleTests.swift in Sources */,
-				D0C2FC332E1DDC330020A35E /* RealSearchAisleUseCaseTests.swift in Sources */,
-				D0C2FC342E1DDC330020A35E /* FirebaseHistoryRepositoryTests.swift in Sources */,
-				D0C2FC362E1DDC330020A35E /* RealSearchMedicineUseCaseTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		53E0D8A92C06084900DE1134 /* Sources */ = {
+		D0F409E62E37E25200EC8B27 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1214,20 +307,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		53E0D8A52C06084900DE1134 /* PBXTargetDependency */ = {
+		D0F409E22E37E25200EC8B27 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 53E0D8922C06084700DE1134 /* MediStock */;
-			targetProxy = 53E0D8A42C06084900DE1134 /* PBXContainerItemProxy */;
+			target = D0F409D22E37E25100EC8B27 /* MediStock */;
+			targetProxy = D0F409E12E37E25200EC8B27 /* PBXContainerItemProxy */;
 		};
-		53E0D8AF2C06084900DE1134 /* PBXTargetDependency */ = {
+		D0F409EC2E37E25200EC8B27 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 53E0D8922C06084700DE1134 /* MediStock */;
-			targetProxy = 53E0D8AE2C06084900DE1134 /* PBXContainerItemProxy */;
+			target = D0F409D22E37E25100EC8B27 /* MediStock */;
+			targetProxy = D0F409EB2E37E25200EC8B27 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		53E0D8B52C06084900DE1134 /* Debug */ = {
+		D0F409F22E37E25200EC8B27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1262,6 +355,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1279,7 +373,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1290,7 +384,7 @@
 			};
 			name = Debug;
 		};
-		53E0D8B62C06084900DE1134 /* Release */ = {
+		D0F409F32E37E25200EC8B27 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1325,6 +419,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1336,7 +431,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -1346,14 +441,13 @@
 			};
 			name = Release;
 		};
-		53E0D8B82C06084900DE1134 /* Debug */ = {
+		D0F409F52E37E25200EC8B27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"MediStock/Preview Content\"";
 				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1367,7 +461,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Tlili.MediStock;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStock";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1375,14 +469,13 @@
 			};
 			name = Debug;
 		};
-		53E0D8B92C06084900DE1134 /* Release */ = {
+		D0F409F62E37E25200EC8B27 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"MediStock/Preview Content\"";
 				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1396,7 +489,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Tlili.MediStock;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStock";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1404,16 +497,17 @@
 			};
 			name = Release;
 		};
-		53E0D8BB2C06084900DE1134 /* Debug */ = {
+		D0F409F82E37E25200EC8B27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rebonnte.MediStockTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStockTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1422,16 +516,17 @@
 			};
 			name = Debug;
 		};
-		53E0D8BC2C06084900DE1134 /* Release */ = {
+		D0F409F92E37E25200EC8B27 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rebonnte.MediStockTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStockTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1440,14 +535,15 @@
 			};
 			name = Release;
 		};
-		53E0D8BE2C06084900DE1134 /* Debug */ = {
+		D0F409FB2E37E25200EC8B27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rebonnte.MediStockUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStockUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1456,14 +552,15 @@
 			};
 			name = Debug;
 		};
-		53E0D8BF2C06084900DE1134 /* Release */ = {
+		D0F409FC2E37E25200EC8B27 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5FZ8ZXZS35;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rebonnte.MediStockUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "adam001247-yahoo.fr.MediStockUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -1475,38 +572,38 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		53E0D88E2C06084700DE1134 /* Build configuration list for PBXProject "MediStock" */ = {
+		D0F409CE2E37E25100EC8B27 /* Build configuration list for PBXProject "MediStock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				53E0D8B52C06084900DE1134 /* Debug */,
-				53E0D8B62C06084900DE1134 /* Release */,
+				D0F409F22E37E25200EC8B27 /* Debug */,
+				D0F409F32E37E25200EC8B27 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		53E0D8B72C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStock" */ = {
+		D0F409F42E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				53E0D8B82C06084900DE1134 /* Debug */,
-				53E0D8B92C06084900DE1134 /* Release */,
+				D0F409F52E37E25200EC8B27 /* Debug */,
+				D0F409F62E37E25200EC8B27 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		53E0D8BA2C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStockTests" */ = {
+		D0F409F72E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStockTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				53E0D8BB2C06084900DE1134 /* Debug */,
-				53E0D8BC2C06084900DE1134 /* Release */,
+				D0F409F82E37E25200EC8B27 /* Debug */,
+				D0F409F92E37E25200EC8B27 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		53E0D8BD2C06084900DE1134 /* Build configuration list for PBXNativeTarget "MediStockUITests" */ = {
+		D0F409FA2E37E25200EC8B27 /* Build configuration list for PBXNativeTarget "MediStockUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				53E0D8BE2C06084900DE1134 /* Debug */,
-				53E0D8BF2C06084900DE1134 /* Release */,
+				D0F409FB2E37E25200EC8B27 /* Debug */,
+				D0F409FC2E37E25200EC8B27 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1514,82 +611,108 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 11.15.0;
+				minimumVersion = 12.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D0C3DBD22E1A6CD8008D94A7 /* FirebaseFunctions */ = {
+		D0F40A292E37E72F00EC8B27 /* FirebaseAI */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FirebaseFunctions;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
 		};
-		D0C3DC582E1A9E0B008D94A7 /* FirebaseAnalytics */ = {
+		D0F40A2B2E37E72F00EC8B27 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
 		};
-		D0C3DC5A2E1A9E0B008D94A7 /* FirebaseAuth */ = {
+		D0F40A2D2E37E72F00EC8B27 /* FirebaseAnalyticsCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsCore;
+		};
+		D0F40A2F2E37E72F00EC8B27 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		D0F40A312E37E72F00EC8B27 /* FirebaseAppDistribution-Beta */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseAppDistribution-Beta";
+		};
+		D0F40A332E37E72F00EC8B27 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
 		};
-		D0C3DC5C2E1A9E0B008D94A7 /* FirebaseAuthCombine-Community */ = {
+		D0F40A352E37E72F00EC8B27 /* FirebaseAuthCombine-Community */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseAuthCombine-Community";
 		};
-		D0C3DC5E2E1A9E0B008D94A7 /* FirebaseCore */ = {
+		D0F40A372E37E72F00EC8B27 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
 		};
-		D0C3DC602E1A9E0B008D94A7 /* FirebaseDatabase */ = {
+		D0F40A392E37E72F00EC8B27 /* FirebaseDatabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseDatabase;
 		};
-		D0C3DC622E1A9E0B008D94A7 /* FirebaseFirestore */ = {
+		D0F40A3B2E37E72F00EC8B27 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
 		};
-		D0C3DC642E1A9E0B008D94A7 /* FirebaseFirestoreCombine-Community */ = {
+		D0F40A3D2E37E72F00EC8B27 /* FirebaseFirestoreCombine-Community */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseFirestoreCombine-Community";
 		};
-		D0C3DC662E1A9E0B008D94A7 /* FirebaseFunctions */ = {
+		D0F40A3F2E37E72F00EC8B27 /* FirebaseFunctions */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
 		};
-		D0C3DC682E1A9E0B008D94A7 /* FirebaseInstallations */ = {
+		D0F40A412E37E72F00EC8B27 /* FirebaseFunctionsCombine-Community */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseFunctionsCombine-Community";
+		};
+		D0F40A432E37E72F00EC8B27 /* FirebaseInstallations */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseInstallations;
 		};
-		D0C3DC6A2E1A9E0B008D94A7 /* FirebasePerformance */ = {
+		D0F40A452E37E72F00EC8B27 /* FirebasePerformance */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebasePerformance;
 		};
-		D0C3DC6C2E1A9E0B008D94A7 /* FirebaseStorage */ = {
+		D0F40A472E37E72F00EC8B27 /* FirebaseStorage */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
 		};
-		D0C3DC6E2E1A9E0B008D94A7 /* FirebaseStorageCombine-Community */ = {
+		D0F40A492E37E72F00EC8B27 /* FirebaseStorageCombine-Community */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0C3DC572E1A9E0B008D94A7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseStorageCombine-Community";
+		};
+		D0F40AD92E38416200EC8B27 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0F40A282E37E72F00EC8B27 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 53E0D88B2C06084700DE1134 /* Project object */;
+	rootObject = D0F409CB2E37E25100EC8B27 /* Project object */;
 }

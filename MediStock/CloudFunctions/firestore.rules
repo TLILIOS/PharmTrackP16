@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fonction helper pour vérifier l'authentification
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Fonction helper pour vérifier la propriété
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Fonction helper pour valider le format hex
+    function isValidHexColor(color) {
+      return color.matches('^#[0-9A-Fa-f]{6}$');
+    }
+    
+    // Fonction helper pour valider les quantités
+    function hasValidQuantities() {
+      return request.resource.data.currentQuantity >= 0
+        && request.resource.data.maxQuantity >= request.resource.data.currentQuantity
+        && request.resource.data.criticalThreshold < request.resource.data.warningThreshold
+        && request.resource.data.criticalThreshold >= 0
+        && request.resource.data.warningThreshold >= 0;
+    }
+    
+    // Fonction helper pour valider les timestamps
+    function hasValidTimestamps() {
+      return request.resource.data.keys().hasAll(['createdAt', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time;
+    }
+    
+    // Règles pour la collection 'aisles'
+    match /aisles/{aisleId} {
+      // Lecture : seulement ses propres rayons
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Création : avec validation complète
+      allow create: if isAuthenticated()
+        && isOwner(request.resource.data.userId)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && isValidHexColor(request.resource.data.colorHex)
+        && request.resource.data.icon.size() > 0
+        && hasValidTimestamps();
+      
+      // Mise à jour : seulement par le propriétaire, sans changer userId
+      allow update: if isAuthenticated()
+        && isOwner(resource.data.userId)
+        && isOwner(request.resource.data.userId)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && isValidHexColor(request.resource.data.colorHex)
+        && request.resource.data.updatedAt == request.time;
+      
+      // Suppression : seulement par le propriétaire
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // Règles pour la collection 'medicines'
+    match /medicines/{medicineId} {
+      // Lecture : seulement ses propres médicaments
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Création : avec validation complète
+      allow create: if isAuthenticated()
+        && isOwner(request.resource.data.userId)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.unit.size() > 0
+        && request.resource.data.aisleId.size() > 0
+        && hasValidQuantities()
+        && hasValidTimestamps();
+      
+      // Mise à jour : seulement par le propriétaire
+      allow update: if isAuthenticated()
+        && isOwner(resource.data.userId)
+        && isOwner(request.resource.data.userId)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && hasValidQuantities()
+        && request.resource.data.updatedAt == request.time;
+      
+      // Suppression : seulement par le propriétaire
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // Règles pour la collection 'history'
+    match /history/{historyId} {
+      // Lecture : seulement son propre historique
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Création : seulement avec les bonnes données
+      allow create: if isAuthenticated()
+        && isOwner(request.resource.data.userId)
+        && request.resource.data.medicineId.size() > 0
+        && request.resource.data.action.size() > 0
+        && request.resource.data.timestamp == request.time;
+      
+      // Pas de mise à jour ni suppression de l'historique
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // Règles pour la collection 'validation_errors' (logs serveur uniquement)
+    match /validation_errors/{errorId} {
+      allow read: if false;
+      allow write: if false;
+    }
+    
+    // Règles pour les statistiques utilisateur (lecture seule)
+    match /user_stats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if false; // Géré par Cloud Functions uniquement
+    }
+  }
+}
