@@ -50,7 +50,7 @@ struct MedicineListView: View {
                         MedicineFormView(medicine: nil)
                             .environmentObject(appState)
                     case .detail(let medicine):
-                        MedicineDetailView(medicine: medicine)
+                        MedicineDetailView(medicineId: medicine.id)
                             .environmentObject(appState)
                     case .edit(let medicine):
                         MedicineFormView(medicine: medicine)

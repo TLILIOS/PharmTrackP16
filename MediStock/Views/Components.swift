@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Ligne de médicament réutilisable
 
@@ -264,5 +265,17 @@ struct StatCard: View {
         .background(color.opacity(0.1))
         .cornerRadius(12)
     }
+}
+
+// MARK: - ShareSheet pour le partage de documents
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 

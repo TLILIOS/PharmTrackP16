@@ -4,12 +4,18 @@ struct MedicineDetailView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     
-    let medicine: Medicine
+    let medicineId: String
     @State private var showingEditForm = false
     @State private var showingDeleteAlert = false
     @State private var showingStockAdjustment = false
     
+    // Récupérer le médicament depuis appState pour avoir toujours la version à jour
+    private var medicine: Medicine? {
+        appState.medicines.first { $0.id == medicineId }
+    }
+    
     private var stockStatusLabel: String {
+        guard let medicine = medicine else { return "" }
         switch medicine.stockStatus {
         case .normal: return "Stock normal"
         case .warning: return "Stock faible"
@@ -18,16 +24,19 @@ struct MedicineDetailView: View {
     }
     
     private var aisle: Aisle? {
-        appState.aisles.first { $0.id == medicine.aisleId }
+        guard let medicine = medicine else { return nil }
+        return appState.aisles.first { $0.id == medicine.aisleId }
     }
     
     private var daysUntilExpiration: Int? {
-        guard let expiryDate = medicine.expiryDate else { return nil }
+        guard let medicine = medicine,
+              let expiryDate = medicine.expiryDate else { return nil }
         return Calendar.current.dateComponents([.day], from: Date(), to: expiryDate).day
     }
     
     var body: some View {
-        ScrollView {
+        if let medicine = medicine {
+            ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // En-tête avec statut
                 VStack(alignment: .leading, spacing: 10) {
@@ -234,16 +243,32 @@ struct MedicineDetailView: View {
         } message: {
             Text("Cette action est irréversible.")
         }
+        } else {
+            // Vue de fallback si le médicament n'existe plus
+            ContentUnavailableView(
+                "Médicament introuvable",
+                systemImage: "pills",
+                description: Text("Ce médicament n'existe plus dans la base de données.")
+            )
+            .onAppear {
+                // Retourner automatiquement après un court délai
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    dismiss()
+                }
+            }
+        }
     }
     
     private func increaseStock(by amount: Int) {
+        guard let medicine = medicine else { return }
         Task {
             await appState.adjustStock(medicine: medicine, adjustment: amount, reason: "Ajustement rapide +\(amount)")
         }
     }
     
     private func decreaseStock(by amount: Int) {
-        guard medicine.currentQuantity >= amount else { return }
+        guard let medicine = medicine,
+              medicine.currentQuantity >= amount else { return }
         
         Task {
             await appState.adjustStock(medicine: medicine, adjustment: -amount, reason: "Ajustement rapide -\(amount)")
@@ -251,6 +276,7 @@ struct MedicineDetailView: View {
     }
     
     private func deleteMedicine() {
+        guard let medicine = medicine else { return }
         Task {
             await appState.deleteMedicine(medicine)
             await MainActor.run {

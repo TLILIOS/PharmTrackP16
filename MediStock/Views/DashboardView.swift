@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct DashboardView: View {
     @EnvironmentObject var appState: AppState
@@ -417,7 +418,7 @@ struct CriticalStockListView: View {
                 MedicineFormView(medicine: nil)
                     .environmentObject(appState)
             case .detail(let medicine):
-                MedicineDetailView(medicine: medicine)
+                MedicineDetailView(medicineId: medicine.id)
                     .environmentObject(appState)
             case .edit(let medicine):
                 MedicineFormView(medicine: medicine)
@@ -447,7 +448,7 @@ struct ExpiringMedicinesListView: View {
                 MedicineFormView(medicine: nil)
                     .environmentObject(appState)
             case .detail(let medicine):
-                MedicineDetailView(medicine: medicine)
+                MedicineDetailView(medicineId: medicine.id)
                     .environmentObject(appState)
             case .edit(let medicine):
                 MedicineFormView(medicine: medicine)

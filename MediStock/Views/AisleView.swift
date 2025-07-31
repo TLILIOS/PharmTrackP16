@@ -446,7 +446,6 @@ struct AisleDetailView: View {
                                 NavigationLink(value: MedicineDestination.detail(medicine)) {
                                     MedicineRow(medicine: medicine)
                                 }
-                                .buttonStyle(.plain)
                                 
                                 if medicine.id != medicines.last?.id {
                                     Divider()
@@ -501,7 +500,7 @@ struct AisleDetailView: View {
         .navigationDestination(for: MedicineDestination.self) { destination in
             switch destination {
             case .detail(let medicine):
-                MedicineDetailView(medicine: medicine)
+                MedicineDetailView(medicineId: medicine.id)
                     .environmentObject(appState)
             case .edit(let medicine):
                 MedicineFormView(medicine: medicine)

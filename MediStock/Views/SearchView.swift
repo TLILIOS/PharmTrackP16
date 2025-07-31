@@ -100,7 +100,7 @@ struct SearchView: View {
             }
             .sheet(item: $showingMedicineDetail) { medicine in
                 NavigationStack {
-                    MedicineDetailView(medicine: medicine)
+                    MedicineDetailView(medicineId: medicine.id)
                 }
             }
         }
