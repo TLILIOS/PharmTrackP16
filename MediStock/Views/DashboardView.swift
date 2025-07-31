@@ -47,9 +47,7 @@ struct DashboardView: View {
                                 .font(.headline)
                                 .foregroundColor(.red)
                             Spacer()
-                            NavigationLink("Voir tout") {
-                                CriticalStockListView()
-                            }
+                            NavigationLink("Voir tout", value: DashboardDestination.criticalStock)
                             .font(.caption)
                         }
                         .padding(.horizontal)
@@ -74,9 +72,7 @@ struct DashboardView: View {
                                 .font(.headline)
                                 .foregroundColor(.orange)
                             Spacer()
-                            NavigationLink("Voir tout") {
-                                ExpiringMedicinesListView()
-                            }
+                            NavigationLink("Voir tout", value: DashboardDestination.expiringMedicines)
                             .font(.caption)
                         }
                         .padding(.horizontal)
@@ -131,6 +127,16 @@ struct DashboardView: View {
         }
         .navigationTitle("Tableau de bord")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: DashboardDestination.self) { destination in
+            switch destination {
+            case .criticalStock:
+                CriticalStockListView()
+                    .environmentObject(appState)
+            case .expiringMedicines:
+                ExpiringMedicinesListView()
+                    .environmentObject(appState)
+            }
+        }
         .refreshable {
             await appState.loadData()
         }
@@ -177,6 +183,22 @@ struct CriticalStockListView: View {
         }
         .navigationTitle("Stocks critiques")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: MedicineDestination.self) { destination in
+            switch destination {
+            case .add:
+                MedicineFormView(medicine: nil)
+                    .environmentObject(appState)
+            case .detail(let medicine):
+                MedicineDetailView(medicine: medicine)
+                    .environmentObject(appState)
+            case .edit(let medicine):
+                MedicineFormView(medicine: medicine)
+                    .environmentObject(appState)
+            case .adjustStock(let medicine):
+                StockAdjustmentView(medicine: medicine)
+                    .environmentObject(appState)
+            }
+        }
     }
 }
 
@@ -191,6 +213,22 @@ struct ExpiringMedicinesListView: View {
         }
         .navigationTitle("Expirations proches")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: MedicineDestination.self) { destination in
+            switch destination {
+            case .add:
+                MedicineFormView(medicine: nil)
+                    .environmentObject(appState)
+            case .detail(let medicine):
+                MedicineDetailView(medicine: medicine)
+                    .environmentObject(appState)
+            case .edit(let medicine):
+                MedicineFormView(medicine: medicine)
+                    .environmentObject(appState)
+            case .adjustStock(let medicine):
+                StockAdjustmentView(medicine: medicine)
+                    .environmentObject(appState)
+            }
+        }
     }
 }
 

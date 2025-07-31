@@ -47,11 +47,11 @@ struct MedicineRow: View {
                     Image(systemName: "calendar.badge.exclamationmark")
                         .font(.caption)
                         .accessibilityHidden(true)
-                    Text("Expire le \(expiryDate.formattedDate)")
+                    Text(medicine.isExpired ? "Expiré le \(expiryDate.formattedDate)" : "Expire le \(expiryDate.formattedDate)")
                         .font(.caption)
                         .dynamicTypeAccessibility()
                 }
-                .foregroundColor(medicine.isExpiringSoon ? .orange : .secondary)
+                .foregroundColor(medicine.isExpired ? .red : (medicine.isExpiringSoon ? .orange : .secondary))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Date d'expiration: \(expiryDate.formattedDate), \(medicine.isExpiringSoon ? "expire bientôt" : "expiration normale")")
             }
@@ -116,7 +116,7 @@ struct MedicineCard: View {
                         .font(.caption)
                     Spacer()
                 }
-                .foregroundColor(medicine.isExpiringSoon ? .orange : .secondary)
+                .foregroundColor(medicine.isExpired ? .red : (medicine.isExpiringSoon ? .orange : .secondary))
                 .padding(.top, 4)
             }
             

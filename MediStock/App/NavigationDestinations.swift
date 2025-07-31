@@ -28,3 +28,8 @@ enum ProfileDestination: Hashable {
     case about
     case help
 }
+
+enum DashboardDestination: Hashable {
+    case criticalStock
+    case expiringMedicines
+}

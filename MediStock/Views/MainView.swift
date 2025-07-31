@@ -9,6 +9,22 @@ struct MainView: View {
         TabView(selection: $selectedTab) {
             NavigationStack(path: $navigationPath) {
                 DashboardView()
+                    .navigationDestination(for: MedicineDestination.self) { destination in
+                        switch destination {
+                        case .add:
+                            MedicineFormView(medicine: nil)
+                                .environmentObject(appState)
+                        case .detail(let medicine):
+                            MedicineDetailView(medicine: medicine)
+                                .environmentObject(appState)
+                        case .edit(let medicine):
+                            MedicineFormView(medicine: medicine)
+                                .environmentObject(appState)
+                        case .adjustStock(let medicine):
+                            StockAdjustmentView(medicine: medicine)
+                                .environmentObject(appState)
+                        }
+                    }
             }
             .tabItem {
                 Label("Tableau de bord", systemImage: "chart.pie.fill")

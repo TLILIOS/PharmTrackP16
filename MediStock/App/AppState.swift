@@ -58,7 +58,7 @@ class AppState: ObservableObject {
     }
     
     var expiringMedicines: [Medicine] {
-        medicines.filter { $0.isExpiringSoon && !$0.isExpired }
+        medicines.filter { $0.isExpiringSoon || $0.isExpired }
     }
     
     var filteredMedicines: [Medicine] {
