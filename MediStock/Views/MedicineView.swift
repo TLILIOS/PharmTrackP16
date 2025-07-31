@@ -6,19 +6,38 @@ struct MedicineListView: View {
     @EnvironmentObject var appState: AppState
     @State private var showingAddForm = false
     @State private var showingSearchView = false
+    @State private var addButtonRotation: Double = 0
     
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("Médicaments")
-                .navigationBarTitleDisplayMode(.large)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: { showingAddForm = true }) {
-                            Image(systemName: "plus")
+            ZStack(alignment: .top) {
+                content
+                    .padding(.top, 10)
+                
+                // Header avec ombre
+                headerShadow
+            }
+            .navigationTitle("Médicaments")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            addButtonRotation += 90
                         }
+                        showingAddForm = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.accentColor)
+                            .clipShape(Circle())
+                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .rotationEffect(.degrees(addButtonRotation))
                     }
                 }
+            }
                 .sheet(isPresented: $showingAddForm) {
                     NavigationStack {
                         MedicineFormView(medicine: nil)
@@ -69,23 +88,46 @@ struct MedicineListView: View {
     }
     
     private var emptyView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Spacer()
-            Image(systemName: "pills")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            Text("Aucun médicament")
-                .font(.title2)
-                .fontWeight(.semibold)
-            Text("Ajoutez votre premier médicament pour commencer")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            Button(action: { showingAddForm = true }) {
+            
+            // Illustration moderne
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "pills.circle")
+                    .font(.system(size: 64, weight: .light))
+                    .foregroundColor(.accentColor)
+            }
+            
+            VStack(spacing: 12) {
+                Text("Aucun médicament")
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                
+                Text("Commencez à gérer votre inventaire\nen ajoutant votre premier médicament")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
+            
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    addButtonRotation += 90
+                }
+                showingAddForm = true
+            }) {
                 Label("Ajouter un médicament", systemImage: "plus.circle.fill")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .shadow(color: Color.accentColor.opacity(0.3), radius: 6, x: 0, y: 3)
+            
             Spacer()
         }
         .padding()
@@ -96,7 +138,7 @@ struct MedicineListView: View {
             VStack(spacing: 0) {
                 searchAndFilterBar
                 
-                // Nombre de résultats
+                // Nombre de résultats avec transition
                 if !appState.searchText.isEmpty || appState.selectedAisleId != nil {
                     HStack {
                         Text("\(appState.filteredMedicines.count) résultat(s)")
@@ -108,10 +150,10 @@ struct MedicineListView: View {
                 }
                 
                 // Liste des médicaments
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: 12) {
                     ForEach(appState.filteredMedicines) { medicine in
                         NavigationLink(value: MedicineDestination.detail(medicine)) {
-                            MedicineRow(medicine: medicine)
+                            ModernMedicineCard(medicine: medicine)
                         }
                         .buttonStyle(.plain)
                         .onAppear {
@@ -122,8 +164,6 @@ struct MedicineListView: View {
                                 }
                             }
                         }
-                        
-                        Divider()
                     }
                     
                     // Indicateur de chargement pour pagination
@@ -140,26 +180,41 @@ struct MedicineListView: View {
     }
     
     private var searchAndFilterBar: some View {
-        VStack(spacing: 10) {
-            // Barre de recherche
-            HStack {
+        VStack(spacing: 12) {
+            // Barre de recherche modernisée
+            HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(Color(.systemGray))
                 
-                TextField("Rechercher...", text: $appState.searchText)
+                TextField("Rechercher un médicament...", text: $appState.searchText)
                     .textFieldStyle(.plain)
+                    .font(.system(size: 16))
                 
                 if !appState.searchText.isEmpty {
-                    Button(action: { appState.searchText = "" }) {
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            appState.searchText = ""
+                        }
+                    }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 16))
+                            .foregroundColor(Color(.systemGray2))
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(.systemGray6))
+                    .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(.systemGray5), lineWidth: 0.5)
+            )
             
             // Filtre par rayon
             if !appState.aisles.isEmpty {
@@ -174,5 +229,156 @@ struct MedicineListView: View {
             }
         }
         .padding()
+    }
+    
+    @ViewBuilder
+    private var headerShadow: some View {
+        GeometryReader { geometry in
+            VStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(UIColor.systemBackground).opacity(0.9),
+                        Color(UIColor.systemBackground).opacity(0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 10)
+                .blur(radius: 2)
+                
+                Spacer()
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Carte de médicament moderne
+
+struct ModernMedicineCard: View {
+    let medicine: Medicine
+    @EnvironmentObject var appState: AppState
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icône du type de médicament
+            medicineIcon
+            
+            // Informations principales
+            VStack(alignment: .leading, spacing: 6) {
+                Text(medicine.name)
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                if let dosage = medicine.dosage {
+                    Text(dosage)
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                
+                // Rayon
+                if let aisle = appState.aisles.first(where: { $0.id == medicine.aisleId }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: aisle.icon)
+                            .font(.system(size: 12))
+                        Text(aisle.name)
+                            .font(.system(size: 13))
+                    }
+                    .foregroundColor(aisle.color.opacity(0.8))
+                }
+            }
+            
+            Spacer()
+            
+            // Badge de stock et quantité
+            VStack(alignment: .trailing, spacing: 8) {
+                ModernStockBadge(status: medicine.stockStatus)
+                
+                HStack(spacing: 2) {
+                    Text("\(medicine.currentQuantity)")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("/")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    Text("\(medicine.maxQuantity)")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
+        .cornerRadius(16)
+        .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(borderColor, lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(medicine.name), \(medicine.currentQuantity) sur \(medicine.maxQuantity) unités, état du stock: \(medicine.stockStatus.label)")
+    }
+    
+    @ViewBuilder
+    private var medicineIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(medicine.stockStatus.statusColor.opacity(0.1))
+                .frame(width: 48, height: 48)
+            
+            Image(systemName: "pills.fill")
+                .font(.system(size: 24))
+                .foregroundColor(medicine.stockStatus.statusColor)
+        }
+    }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.08)
+    }
+    
+    private var borderColor: Color {
+        colorScheme == .dark ? Color(.systemGray4) : Color(.systemGray5)
+    }
+}
+
+// MARK: - Badge de stock moderne
+
+struct ModernStockBadge: View {
+    let status: StockStatus
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(status.statusColor)
+                .frame(width: 6, height: 6)
+            
+            Text(status.shortLabel)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(status.statusColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(status.statusColor.opacity(0.15))
+        )
+    }
+}
+
+extension StockStatus {
+    var shortLabel: String {
+        switch self {
+        case .normal: return "Normal"
+        case .warning: return "Faible"
+        case .critical: return "Critique"
+        }
     }
 }

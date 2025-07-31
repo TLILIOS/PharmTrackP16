@@ -9,7 +9,7 @@ class DependencyContainer {
     private init() {}
     
     // Services
-    lazy var dataService = DataServiceRefactored()
+    lazy var dataService = DataService()
     lazy var authService = AuthService()
     lazy var notificationService = NotificationService()
     

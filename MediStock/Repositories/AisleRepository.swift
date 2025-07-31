@@ -3,9 +3,9 @@ import Foundation
 // MARK: - Aisle Repository
 
 class AisleRepository: AisleRepositoryProtocol {
-    private let dataService: DataServiceRefactored
+    private let dataService: DataService
     
-    init(dataService: DataServiceRefactored = DataServiceRefactored()) {
+    init(dataService: DataService = DataService()) {
         self.dataService = dataService
     }
     

@@ -5,12 +5,12 @@ import XCTest
 
 final class ValidationIntegrationTests: XCTestCase {
     
-    var dataService: DataServiceRefactored!
+    var dataService: DataService!
     var appState: AppState!
     
     override func setUp() async throws {
         try await super.setUp()
-        dataService = DataServiceRefactored()
+        dataService = DataService()
         appState = AppState()
     }
     

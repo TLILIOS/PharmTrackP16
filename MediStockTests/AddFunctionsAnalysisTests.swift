@@ -233,26 +233,5 @@ final class AddFunctionsAnalysisTests: XCTestCase {
 
 // MARK: - Erreurs de validation proposées
 
-enum ValidationError: LocalizedError {
-    case emptyName
-    case invalidColorFormat
-    case invalidIcon
-    case negativeQuantity
-    case invalidMaxQuantity
-    case invalidThresholds
-    case expiredDate
-    case invalidAisleReference
-    
-    var errorDescription: String? {
-        switch self {
-        case .emptyName: return "Le nom ne peut pas être vide"
-        case .invalidColorFormat: return "Format de couleur invalide (utilisez #RRGGBB)"
-        case .invalidIcon: return "Icône SF Symbol invalide"
-        case .negativeQuantity: return "La quantité ne peut pas être négative"
-        case .invalidMaxQuantity: return "La quantité maximale doit être supérieure à la quantité actuelle"
-        case .invalidThresholds: return "Le seuil critique doit être inférieur au seuil d'alerte"
-        case .expiredDate: return "La date d'expiration ne peut pas être dans le passé"
-        case .invalidAisleReference: return "Le rayon sélectionné n'existe pas"
-        }
-    }
-}
+// ValidationError est maintenant défini dans Models/ValidationError.swift
+// Cette redéclaration locale a été supprimée pour éviter les conflits

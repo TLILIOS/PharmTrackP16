@@ -4,7 +4,6 @@ struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var appState: AppState
     @State private var showingSignOutAlert = false
-    @State private var showingExportOptions = false
     @State private var showingNotificationSettings = false
     
     var body: some View {
@@ -37,17 +36,6 @@ struct ProfileView: View {
                 StatRow(label: "Rayons", value: "\(appState.aisles.count)")
                 StatRow(label: "Stocks critiques", value: "\(appState.criticalMedicines.count)")
                 StatRow(label: "Expirations proches", value: "\(appState.expiringMedicines.count)")
-            }
-            
-            // Actions
-            Section("Gestion des données") {
-                Button(action: { showingExportOptions = true }) {
-                    Label("Exporter les données", systemImage: "square.and.arrow.up")
-                }
-                
-                Button(action: importData) {
-                    Label("Importer des données", systemImage: "square.and.arrow.down")
-                }
             }
             
             // Paramètres
@@ -86,16 +74,9 @@ struct ProfileView: View {
         } message: {
             Text("Êtes-vous sûr de vouloir vous déconnecter ?")
         }
-        .sheet(isPresented: $showingExportOptions) {
-            ExportOptionsView()
-        }
         .sheet(isPresented: $showingNotificationSettings) {
             NotificationSettingsView()
         }
-    }
-    
-    func importData() {
-        // TODO: Implémenter l'import de données
     }
 }
 
@@ -115,6 +96,8 @@ struct StatRow: View {
 }
 
 struct AboutView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
     var body: some View {
         List {
             Section {
@@ -136,9 +119,9 @@ struct AboutView: View {
             }
             
             Section("Informations") {
-                InfoRow(label: "Développeur", value: "Votre nom")
-                InfoRow(label: "Licence", value: "MIT")
-                InfoRow(label: "Support", value: "support@medistock.com")
+                InfoRow(label: "Développeur", value: authViewModel.currentUser?.displayName ?? "Développeur")
+                InfoRow(label: "Licence", value: "TliliOS")
+                InfoRow(label: "Support", value: authViewModel.currentUser?.email ?? "contact@medistock.com")
             }
             
             Section("Technologies") {
@@ -149,53 +132,6 @@ struct AboutView: View {
         }
         .navigationTitle("À propos")
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct ExportOptionsView: View {
-    @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var appState: AppState
-    
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Format d'export") {
-                    Button(action: { exportData(format: .csv) }) {
-                        Label("Exporter en CSV", systemImage: "doc.text")
-                    }
-                    
-                    Button(action: { exportData(format: .json) }) {
-                        Label("Exporter en JSON", systemImage: "doc.richtext")
-                    }
-                    
-                    Button(action: { exportData(format: .pdf) }) {
-                        Label("Exporter en PDF", systemImage: "doc.fill")
-                    }
-                }
-                
-                Section {
-                    Text("Les données exportées incluront tous vos médicaments, rayons et historique.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .navigationTitle("Exporter les données")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Fermer") { dismiss() }
-                }
-            }
-        }
-    }
-    
-    enum ExportFormat {
-        case csv, json, pdf
-    }
-    
-    func exportData(format: ExportFormat) {
-        // TODO: Implémenter l'export selon le format
-        dismiss()
     }
 }
 

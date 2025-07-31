@@ -97,30 +97,7 @@ struct AppColors {
 }
 
 // MARK: - Color Extension for Light/Dark Support
-
-extension Color {
-    init(light: Color, dark: Color) {
-        self.init(UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return UIColor(dark)
-            default:
-                return UIColor(light)
-            }
-        })
-    }
-    
-    init(light: UIColor, dark: UIColor) {
-        self.init(UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return dark
-            default:
-                return light
-            }
-        })
-    }
-}
+// Note: Les extensions Color ont été déplacées dans Extensions/Color+Extensions.swift
 
 // MARK: - Typography avec Dynamic Type
 

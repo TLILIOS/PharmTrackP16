@@ -2,7 +2,7 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-// MARK: - Service de données unifié (remplace tous les repositories)
+// MARK: - Service de données unifié avec validation et transactions
 
 class DataService {
     private let db = Firestore.firestore()
@@ -43,7 +43,7 @@ class DataService {
         stopListening()
     }
     
-    // MARK: - Médicaments
+    // MARK: - Médicaments (Version refactorisée)
     
     private var lastMedicineDocument: DocumentSnapshot?
     private var hasMoreMedicines = true
@@ -88,84 +88,221 @@ class DataService {
         }
     }
     
+    // MARK: - Fonction saveMedicine refactorisée avec validation complète
+    
     func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
-        var medicineToSave = medicine
+        // 1. Validation côté client
+        try medicine.validate()
         
+        // 2. Vérifier que le rayon existe
+        let aisleExists = try await checkAisleExists(medicine.aisleId)
+        guard aisleExists else {
+            throw ValidationError.invalidAisleReference(aisleId: medicine.aisleId)
+        }
+        
+        // 3. Vérifier les limites utilisateur
         if medicine.id.isEmpty {
-            // Nouveau médicament
+            let medicineCount = try await getUserMedicineCount()
+            guard medicineCount < ValidationRules.maxMedicinesPerUser else {
+                throw ValidationError.tooManyAisles(max: ValidationRules.maxMedicinesPerUser)
+            }
+        }
+        
+        // 4. Préparer le médicament avec les bonnes données
+        let medicineToSave: Medicine
+        let isNewMedicine = medicine.id.isEmpty
+        
+        if isNewMedicine {
+            // Création : générer un nouvel ID et les timestamps
             let docRef = db.collection("medicines").document()
-            medicineToSave = Medicine(
+            medicineToSave = medicine.copyWith(
                 id: docRef.documentID,
-                name: medicine.name,
-                description: medicine.description,
-                dosage: medicine.dosage,
-                form: medicine.form,
-                reference: medicine.reference,
-                unit: medicine.unit,
-                currentQuantity: medicine.currentQuantity,
-                maxQuantity: medicine.maxQuantity,
-                warningThreshold: medicine.warningThreshold,
-                criticalThreshold: medicine.criticalThreshold,
-                expiryDate: medicine.expiryDate,
-                aisleId: medicine.aisleId,
+                name: ValidationHelper.sanitizeName(medicine.name),
                 createdAt: Date(),
                 updatedAt: Date()
             )
-            
-            var data = try Firestore.Encoder().encode(medicineToSave)
-            data["userId"] = userId
-            
-            try await docRef.setData(data)
         } else {
-            // Mise à jour
-            medicineToSave = Medicine(
-                id: medicine.id,
-                name: medicine.name,
-                description: medicine.description,
-                dosage: medicine.dosage,
-                form: medicine.form,
-                reference: medicine.reference,
-                unit: medicine.unit,
-                currentQuantity: medicine.currentQuantity,
-                maxQuantity: medicine.maxQuantity,
-                warningThreshold: medicine.warningThreshold,
-                criticalThreshold: medicine.criticalThreshold,
-                expiryDate: medicine.expiryDate,
-                aisleId: medicine.aisleId,
-                createdAt: medicine.createdAt,
+            // Mise à jour : conserver createdAt, mettre à jour updatedAt
+            medicineToSave = medicine.copyWith(
+                name: ValidationHelper.sanitizeName(medicine.name),
                 updatedAt: Date()
             )
-            
-            var data = try Firestore.Encoder().encode(medicineToSave)
-            data["userId"] = userId
-            
-            try await db.collection("medicines").document(medicine.id).setData(data)
         }
         
-        return medicineToSave
+        // 5. Utiliser une transaction pour garantir l'atomicité
+        let result = try await db.runTransaction { [weak self] transaction, errorPointer in
+            guard let self = self else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Service deallocated"])
+                return nil
+            }
+            
+            let docRef = self.db.collection("medicines").document(medicineToSave.id)
+            
+            // Encoder les données
+            var data: [String: Any]
+            do {
+                data = try Firestore.Encoder().encode(medicineToSave)
+                data["userId"] = self.userId
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            // Sauvegarder dans la transaction
+            transaction.setData(data, forDocument: docRef)
+            
+            // Créer l'entrée d'historique dans la même transaction
+            let historyEntry = HistoryEntry(
+                id: UUID().uuidString,
+                medicineId: medicineToSave.id,
+                userId: self.userId,
+                action: isNewMedicine ? "Création" : "Modification",
+                details: "Médicament: \(medicineToSave.name)",
+                timestamp: Date()
+            )
+            
+            do {
+                let historyData = try Firestore.Encoder().encode(historyEntry)
+                let historyRef = self.db.collection("history").document(historyEntry.id)
+                transaction.setData(historyData, forDocument: historyRef)
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            return medicineToSave
+        }
+        
+        guard let medicine = result as? Medicine else {
+            throw NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Transaction failed"])
+        }
+        
+        return medicine
     }
     
     func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
-        let docRef = db.collection("medicines").document(id)
+        // Validation de la quantité
+        guard newStock >= 0 else {
+            throw ValidationError.negativeQuantity(field: "stock")
+        }
         
-        try await docRef.updateData([
-            "currentQuantity": newStock,
-            "updatedAt": FieldValue.serverTimestamp()
-        ])
+        let result = try await db.runTransaction { [weak self] transaction, errorPointer in
+            guard let self = self else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Service deallocated"])
+                return nil
+            }
+            
+            let docRef = self.db.collection("medicines").document(id)
+            
+            // Lire le document actuel dans la transaction
+            let document: DocumentSnapshot
+            do {
+                document = try transaction.getDocument(docRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            guard document.exists,
+                  var medicine = try? document.data(as: Medicine.self) else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Médicament non trouvé"])
+                return nil
+            }
+            
+            // Capturer l'ancienne quantité avant la mise à jour
+            let oldQuantity = medicine.currentQuantity
+            
+            // Mettre à jour les données
+            medicine.currentQuantity = newStock
+            
+            // Sauvegarder
+            transaction.updateData([
+                "currentQuantity": newStock,
+                "updatedAt": FieldValue.serverTimestamp()
+            ], forDocument: docRef)
+            
+            // Créer l'entrée d'historique avec le format cohérent
+            let change = newStock - oldQuantity
+            let historyEntry = HistoryEntry(
+                id: UUID().uuidString,
+                medicineId: medicine.id,
+                userId: self.userId,
+                action: change > 0 ? "Ajout stock" : (change < 0 ? "Retrait stock" : "Ajustement de stock"),
+                details: "\(abs(change)) \(medicine.unit) - Ajustement manuel (Stock: \(oldQuantity) → \(newStock))",
+                timestamp: Date()
+            )
+            
+            do {
+                let historyData = try Firestore.Encoder().encode(historyEntry)
+                let historyRef = self.db.collection("history").document(historyEntry.id)
+                transaction.setData(historyData, forDocument: historyRef)
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            return medicine.copyWith(currentQuantity: newStock, updatedAt: Date())
+        }
         
-        let doc = try await docRef.getDocument()
-        guard let medicine = try? doc.data(as: Medicine.self) else {
-            throw NSError(domain: "DataService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Médicament non trouvé"])
+        guard let medicine = result as? Medicine else {
+            throw NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Transaction failed"])
         }
         
         return medicine
     }
     
     func deleteMedicine(id: String) async throws {
-        try await db.collection("medicines").document(id).delete()
+        _ = try await db.runTransaction { [weak self] transaction, errorPointer in
+            guard let self = self else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Service deallocated"])
+                return nil
+            }
+            
+            let docRef = self.db.collection("medicines").document(id)
+            
+            // Vérifier que le document existe
+            let document: DocumentSnapshot
+            do {
+                document = try transaction.getDocument(docRef)
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            guard document.exists else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Médicament non trouvé"])
+                return nil
+            }
+            
+            // Supprimer le médicament
+            transaction.deleteDocument(docRef)
+            
+            // Créer l'entrée d'historique
+            if let medicine = try? document.data(as: Medicine.self) {
+                let historyEntry = HistoryEntry(
+                    id: UUID().uuidString,
+                    medicineId: id,
+                    userId: self.userId,
+                    action: "Suppression",
+                    details: "Médicament supprimé: \(medicine.name)",
+                    timestamp: Date()
+                )
+                
+                do {
+                    let historyData = try Firestore.Encoder().encode(historyEntry)
+                    let historyRef = self.db.collection("history").document(historyEntry.id)
+                    transaction.setData(historyData, forDocument: historyRef)
+                } catch {
+                    errorPointer?.pointee = error as NSError
+                    return nil
+                }
+            }
+            
+            return true
+        }
     }
     
-    // MARK: - Rayons
+    // MARK: - Rayons (Version refactorisée)
     
     private var lastAisleDocument: DocumentSnapshot?
     private var hasMoreAisles = true
@@ -176,7 +313,10 @@ class DataService {
             .getDocuments()
         
         return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Aisle.self)
+            if let aisleWithTimestamps = try? doc.data(as: AisleWithTimestamps.self) {
+                return aisleWithTimestamps.toAisle
+            }
+            return try? doc.data(as: Aisle.self)
         }
     }
     
@@ -206,33 +346,155 @@ class DataService {
         lastAisleDocument = snapshot.documents.last
         
         return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Aisle.self)
+            if let aisleWithTimestamps = try? doc.data(as: AisleWithTimestamps.self) {
+                return aisleWithTimestamps.toAisle
+            }
+            return try? doc.data(as: Aisle.self)
         }
     }
     
+    // MARK: - Fonction saveAisle refactorisée avec validation complète
+    
     func saveAisle(_ aisle: Aisle) async throws -> Aisle {
-        var aisleToSave = aisle
+        // 1. Validation côté client
+        try aisle.validate()
         
+        // 2. Vérifier l'unicité du nom
+        let nameExists = try await checkAisleNameExists(aisle.name, excludingId: aisle.id)
+        guard !nameExists else {
+            throw ValidationError.nameAlreadyExists(name: aisle.name)
+        }
+        
+        // 3. Vérifier les limites utilisateur
         if aisle.id.isEmpty {
+            let aisleCount = try await getUserAisleCount()
+            guard aisleCount < ValidationRules.maxAislesPerUser else {
+                throw ValidationError.tooManyAisles(max: ValidationRules.maxAislesPerUser)
+            }
+        }
+        
+        // 4. Préparer le rayon avec timestamps
+        let aisleWithTimestamps: AisleWithTimestamps
+        let isNewAisle = aisle.id.isEmpty
+        
+        if isNewAisle {
+            // Création
             let docRef = db.collection("aisles").document()
-            aisleToSave = Aisle(
+            aisleWithTimestamps = aisle.copyWith(
                 id: docRef.documentID,
-                name: aisle.name,
-                description: aisle.description,
-                colorHex: aisle.colorHex,
-                icon: aisle.icon
+                name: ValidationHelper.sanitizeName(aisle.name),
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        } else {
+            // Mise à jour : récupérer createdAt existant
+            let existingDoc = try await db.collection("aisles").document(aisle.id).getDocument()
+            let createdAt = existingDoc.data()?["createdAt"] as? Timestamp ?? Timestamp(date: Date())
+            
+            aisleWithTimestamps = aisle.copyWith(
+                name: ValidationHelper.sanitizeName(aisle.name),
+                createdAt: createdAt.dateValue(),
+                updatedAt: Date()
             )
         }
         
-        var data = try Firestore.Encoder().encode(aisleToSave)
-        data["userId"] = userId
+        // 5. Utiliser une transaction pour l'atomicité
+        let result = try await db.runTransaction { [weak self] transaction, errorPointer in
+            guard let self = self else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Service deallocated"])
+                return nil
+            }
+            
+            let docRef = self.db.collection("aisles").document(aisleWithTimestamps.id)
+            
+            // Encoder et sauvegarder
+            var data: [String: Any]
+            do {
+                data = try Firestore.Encoder().encode(aisleWithTimestamps)
+                data["userId"] = self.userId
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+            
+            transaction.setData(data, forDocument: docRef)
+            
+            return aisleWithTimestamps.toAisle
+        }
         
-        try await db.collection("aisles").document(aisleToSave.id).setData(data)
-        return aisleToSave
+        guard let aisle = result as? Aisle else {
+            throw NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Transaction failed"])
+        }
+        
+        return aisle
     }
     
     func deleteAisle(id: String) async throws {
+        // Vérifier qu'aucun médicament n'est lié à ce rayon
+        let hasMedicines = try await checkAisleHasMedicines(id)
+        guard !hasMedicines else {
+            throw NSError(domain: "DataService", code: 400, 
+                         userInfo: [NSLocalizedDescriptionKey: "Impossible de supprimer un rayon contenant des médicaments"])
+        }
+        
         try await db.collection("aisles").document(id).delete()
+    }
+    
+    // MARK: - Méthodes utilitaires privées
+    
+    private func checkAisleExists(_ aisleId: String) async throws -> Bool {
+        let doc = try await db.collection("aisles")
+            .document(aisleId)
+            .getDocument()
+        
+        return doc.exists && doc.data()?["userId"] as? String == userId
+    }
+    
+    private func checkAisleNameExists(_ name: String, excludingId: String? = nil) async throws -> Bool {
+        let sanitizedName = ValidationHelper.sanitizeName(name).lowercased()
+        
+        var query = db.collection("aisles")
+            .whereField("userId", isEqualTo: userId)
+        
+        let snapshot = try await query.getDocuments()
+        
+        return snapshot.documents.contains { doc in
+            guard doc.documentID != excludingId else { return false }
+            if let docName = doc.data()["name"] as? String {
+                return docName.lowercased() == sanitizedName
+            }
+            return false
+        }
+    }
+    
+    private func checkAisleHasMedicines(_ aisleId: String) async throws -> Bool {
+        // Pour éviter l'erreur d'index, on récupère tous les médicaments de l'utilisateur
+        // et on filtre côté client
+        let snapshot = try await db.collection("medicines")
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        return snapshot.documents.contains { doc in
+            doc.data()["aisleId"] as? String == aisleId
+        }
+    }
+    
+    private func getUserAisleCount() async throws -> Int {
+        let snapshot = try await db.collection("aisles")
+            .whereField("userId", isEqualTo: userId)
+            .count
+            .getAggregation(source: .server)
+        
+        return Int(truncating: snapshot.count ?? 0)
+    }
+    
+    private func getUserMedicineCount() async throws -> Int {
+        let snapshot = try await db.collection("medicines")
+            .whereField("userId", isEqualTo: userId)
+            .count
+            .getAggregation(source: .server)
+        
+        return Int(truncating: snapshot.count ?? 0)
     }
     
     // MARK: - Historique
@@ -256,9 +518,14 @@ class DataService {
         try await db.collection("history").document(entry.id).setData(data)
     }
     
-    // MARK: - Batch Operations
+    // MARK: - Batch Operations avec validation
     
     func updateMultipleMedicines(_ medicines: [Medicine]) async throws {
+        // Valider tous les médicaments avant la transaction
+        for medicine in medicines {
+            try medicine.validate()
+        }
+        
         let batch = db.batch()
         
         for medicine in medicines {

@@ -48,7 +48,7 @@ struct MainView: View {
             .tag(2)
             
             NavigationStack {
-                HistoryView()
+                ModernHistoryView()
             }
             .tabItem {
                 Label("Historique", systemImage: "clock.arrow.circlepath")

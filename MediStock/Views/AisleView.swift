@@ -5,6 +5,8 @@ import SwiftUI
 struct AisleListView: View {
     @EnvironmentObject var appState: AppState
     @State private var showingAddForm = false
+    @State private var addButtonScale: CGFloat = 1.0
+    @State private var cardAppearAnimation = false
     
     var body: some View {
         Group {
@@ -13,39 +15,80 @@ struct AisleListView: View {
                 ProgressView("Chargement des rayons...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if appState.aisles.isEmpty {
-                // État vide
-                VStack(spacing: 20) {
+                // État vide modernisé
+                VStack(spacing: 24) {
                     Spacer()
-                    Image(systemName: "square.grid.2x2")
-                        .font(.system(size: 60))
-                        .foregroundColor(.secondary)
-                    Text("Aucun rayon")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Text("Créez votre premier rayon pour organiser vos médicaments")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button(action: { showingAddForm = true }) {
+                    
+                    // Illustration moderne
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                gradient: Gradient(colors: [Color.accentColor.opacity(0.1), Color.accentColor.opacity(0.05)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 140, height: 140)
+                        
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.system(size: 70, weight: .light))
+                            .foregroundColor(.accentColor)
+                            .symbolRenderingMode(.hierarchical)
+                    }
+                    .scaleEffect(cardAppearAnimation ? 1 : 0.5)
+                    .opacity(cardAppearAnimation ? 1 : 0)
+                    
+                    VStack(spacing: 12) {
+                        Text("Aucun rayon")
+                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        
+                        Text("Organisez vos médicaments\nen créant votre premier rayon")
+                            .font(.system(size: 17))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                    }
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            addButtonScale = 0.9
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                addButtonScale = 1.0
+                            }
+                        }
+                        showingAddForm = true
+                    }) {
                         Label("Créer un rayon", systemImage: "plus.circle.fill")
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .medium, design: .rounded))
+                            .padding(.horizontal, 28)
+                            .padding(.vertical, 16)
                     }
                     .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
                     Spacer()
                 }
                 .padding()
+                .onAppear {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1)) {
+                        cardAppearAnimation = true
+                    }
+                }
             } else {
-                // Liste des rayons
+                // Liste des rayons avec cards modernes
                 ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(appState.aisles) { aisle in
-                            NavigationLink {
-                                AisleDetailView(aisle: aisle)
-                                    .environmentObject(appState)
-                            } label: {
-                                AisleRow(aisle: aisle)
+                    LazyVStack(spacing: 12) {
+                        ForEach(Array(appState.aisles.enumerated()), id: \.element.id) { index, aisle in
+                            NavigationLink(destination: AisleDetailView(aisle: aisle).environmentObject(appState)) {
+                                ModernAisleCard(aisle: aisle)
+                                    .transition(.asymmetric(
+                                        insertion: .scale.combined(with: .opacity),
+                                        removal: .scale.combined(with: .opacity)
+                                    ))
+                                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05), value: cardAppearAnimation)
                             }
-                            .buttonStyle(.plain)
                             .onAppear {
                                 // Pagination
                                 if aisle.id == appState.aisles.last?.id {
@@ -54,8 +97,6 @@ struct AisleListView: View {
                                     }
                                 }
                             }
-                            
-                            Divider()
                         }
                         
                         // Indicateur de chargement pour pagination
@@ -64,9 +105,16 @@ struct AisleListView: View {
                                 .padding()
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
                 .refreshable {
                     await appState.loadData()
+                }
+                .onAppear {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        cardAppearAnimation = true
+                    }
                 }
             }
         }
@@ -74,11 +122,50 @@ struct AisleListView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddForm = true }) {
-                    Image(systemName: "plus")
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        addButtonScale = 0.9
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            addButtonScale = 1.0
+                        }
+                    }
+                    showingAddForm = true
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: Color.accentColor.opacity(0.3), radius: 6, x: 0, y: 3)
+                        
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .scaleEffect(addButtonScale)
                 }
+                .buttonStyle(.plain)
             }
         }
+        .background(
+            VStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(UIColor.systemBackground).opacity(0.9),
+                        Color(UIColor.systemBackground).opacity(0)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 10)
+                .blur(radius: 2)
+                .offset(y: 100)
+                
+                Spacer()
+            }
+            .allowsHitTesting(false)
+        )
         .sheet(isPresented: $showingAddForm) {
             NavigationStack {
                 AisleFormView(aisle: nil)
@@ -96,7 +183,123 @@ struct AisleListView: View {
     }
 }
 
-// MARK: - Ligne de rayon
+// MARK: - Carte de rayon moderne
+
+struct ModernAisleCard: View {
+    let aisle: Aisle
+    @EnvironmentObject var appState: AppState
+    @Environment(\.colorScheme) var colorScheme
+    
+    private var medicineCount: Int {
+        appState.medicines.filter { $0.aisleId == aisle.id }.count
+    }
+    
+    private var criticalCount: Int {
+        appState.medicines
+            .filter { $0.aisleId == aisle.id && $0.stockStatus == .critical }
+            .count
+    }
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icône avec fond coloré
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(aisle.color.opacity(0.15))
+                    .frame(width: 56, height: 56)
+                
+                Image(systemName: aisle.icon)
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundColor(aisle.color)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            
+            // Contenu principal
+            VStack(alignment: .leading, spacing: 6) {
+                Text(aisle.name)
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                // Nombre de médicaments
+                Text("\(medicineCount) médicament\(medicineCount > 1 ? "s" : "")")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+                
+                // Description si disponible
+                if let description = aisle.description {
+                    Text(description)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary.opacity(0.8))
+                        .lineLimit(1)
+                }
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 8) {
+                // Badge critique si nécessaire
+                if criticalCount > 0 {
+                    CriticalBadge(count: criticalCount)
+                }
+                
+                // Chevron
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.secondary.opacity(0.5))
+            }
+        }
+        .padding(20)
+        .background(cardBackground)
+        .cornerRadius(16)
+        .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(borderColor, lineWidth: 0.5)
+        )
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(aisle.name), \(medicineCount) médicaments\(criticalCount > 0 ? ", \(criticalCount) en stock critique" : "")")
+    }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.08)
+    }
+    
+    private var borderColor: Color {
+        colorScheme == .dark ? Color(.systemGray4) : Color(.systemGray5)
+    }
+}
+
+// MARK: - Badge critique moderne
+
+struct CriticalBadge: View {
+    let count: Int
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 6, height: 6)
+            
+            Text("\(count) critique\(count > 1 ? "s" : "")")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(.red)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(Color.red.opacity(0.15))
+        )
+    }
+}
+
+// MARK: - Ligne de rayon (ancienne version conservée pour compatibilité)
 
 struct AisleRow: View {
     let aisle: Aisle
@@ -209,21 +412,21 @@ struct AisleDetailView: View {
                 
                 // Statistiques
                 HStack(spacing: 15) {
-                    StatCard(
+                    AisleStatCard(
                         title: "Total",
                         value: "\(medicines.count)",
                         icon: "pills",
                         color: aisle.color
                     )
                     
-                    StatCard(
+                    AisleStatCard(
                         title: "Critique",
                         value: "\(medicines.filter { $0.stockStatus == .critical }.count)",
                         icon: "exclamationmark.triangle",
                         color: .red
                     )
                     
-                    StatCard(
+                    AisleStatCard(
                         title: "Expirant",
                         value: "\(medicines.filter { $0.isExpiringSoon }.count)",
                         icon: "clock",
@@ -316,7 +519,7 @@ struct AisleDetailView: View {
 
 // MARK: - Carte de statistique
 
-struct StatCard: View {
+struct AisleStatCard: View {
     let title: String
     let value: String
     let icon: String

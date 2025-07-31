@@ -31,12 +31,12 @@ class AppState: ObservableObject {
     
     // Services (injection simplifiée)
     let auth: AuthService
-    let data: DataServiceRefactored
+    let data: DataService
     let notifications: NotificationService
     
     init() {
         self.auth = AuthService()
-        self.data = DataServiceRefactored()
+        self.data = DataService()
         self.notifications = NotificationService()
         
         // Observer l'état d'authentification
@@ -219,13 +219,13 @@ class AppState: ObservableObject {
                 medicines[index] = saved
             }
             
-            // Historique
+            // Historique avec les quantités avant/après
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
                 medicineId: medicine.id,
                 userId: currentUser?.id ?? "",
                 action: adjustment > 0 ? "Ajout stock" : "Retrait stock",
-                details: "\(abs(adjustment)) \(medicine.unit) - \(reason)",
+                details: "\(abs(adjustment)) \(medicine.unit) - \(reason) (Stock: \(medicine.currentQuantity) → \(newQuantity))",
                 timestamp: Date()
             )
             try await data.addHistoryEntry(historyEntry)
@@ -271,11 +271,11 @@ class AppState: ObservableObject {
             stockHistory = history.compactMap { entry in
                 // Parser l'action pour déterminer le type
                 let type: StockHistory.HistoryType
-                if entry.action.contains("Ajout stock") || entry.action.contains("Retrait stock") {
+                if entry.action.contains("Ajout stock") || entry.action.contains("Retrait stock") || entry.action.contains("Ajustement de stock") {
                     type = .adjustment
-                } else if entry.action == "Ajout" {
+                } else if entry.action == "Ajout" || entry.action == "Création" {
                     type = .addition
-                } else if entry.action.contains("supprim") {
+                } else if entry.action.contains("Suppression") || entry.action.contains("supprim") {
                     type = .deletion
                 } else {
                     type = .adjustment
@@ -285,13 +285,18 @@ class AppState: ObservableObject {
                 let change = extractChange(from: entry.details)
                 let quantities = extractQuantities(from: entry.details)
                 
+                // Calculer le changement à partir des quantités si disponibles
+                let actualChange = quantities.previous > 0 && quantities.new > 0 
+                    ? quantities.new - quantities.previous 
+                    : (entry.action.contains("Retrait") ? -change : change)
+                
                 return StockHistory(
                     id: entry.id,
                     medicineId: entry.medicineId,
                     userId: entry.userId,
                     type: type,
                     date: entry.timestamp,
-                    change: change,
+                    change: actualChange,
                     previousQuantity: quantities.previous,
                     newQuantity: quantities.new,
                     reason: extractReason(from: entry.details)
@@ -311,16 +316,28 @@ class AppState: ObservableObject {
     }
     
     private func extractQuantities(from details: String) -> (previous: Int, new: Int) {
-        // Pour l'instant, retourner des valeurs par défaut
-        // Cela devrait être amélioré avec le vrai format des données
+        // Extraire les quantités depuis "(Stock: X → Y)"
+        if let match = details.firstMatch(of: /Stock:\s*(\d+)\s*→\s*(\d+)/) {
+            let previous = Int(match.1) ?? 0
+            let new = Int(match.2) ?? 0
+            return (previous, new)
+        }
         return (0, 0)
     }
     
     private func extractReason(from details: String) -> String? {
-        // Extraire la raison après le tiret
+        // Extraire la raison après le tiret et avant "(Stock:"
         if let dashIndex = details.firstIndex(of: "-") {
             let reasonStart = details.index(after: dashIndex)
-            return String(details[reasonStart...]).trimmingCharacters(in: .whitespaces)
+            let remainingString = String(details[reasonStart...])
+            
+            // Enlever la partie "(Stock: X → Y)" si elle existe
+            if let stockIndex = remainingString.firstIndex(of: "(") {
+                let reason = String(remainingString[..<stockIndex])
+                return reason.trimmingCharacters(in: .whitespaces)
+            } else {
+                return remainingString.trimmingCharacters(in: .whitespaces)
+            }
         }
         return nil
     }

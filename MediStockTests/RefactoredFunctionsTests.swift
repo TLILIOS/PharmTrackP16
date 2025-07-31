@@ -5,11 +5,11 @@ import XCTest
 
 final class RefactoredFunctionsTests: XCTestCase {
     
-    var dataService: DataServiceRefactored!
+    var dataService: DataService!
     
     override func setUp() async throws {
         try await super.setUp()
-        dataService = DataServiceRefactored()
+        dataService = DataService()
     }
     
     override func tearDown() async throws {
