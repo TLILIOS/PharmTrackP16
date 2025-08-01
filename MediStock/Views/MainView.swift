@@ -3,11 +3,15 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTab = 0
-    @State private var navigationPath = NavigationPath()
+    @State private var dashboardPath = NavigationPath()
+    @State private var medicinesPath = NavigationPath()
+    @State private var aislesPath = NavigationPath()
+    @State private var historyPath = NavigationPath()
+    @State private var profilePath = NavigationPath()
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack(path: $navigationPath) {
+            NavigationStack(path: $dashboardPath) {
                 DashboardView()
                     .navigationDestination(for: MedicineDestination.self) { destination in
                         switch destination {
@@ -15,7 +19,7 @@ struct MainView: View {
                             MedicineFormView(medicine: nil)
                                 .environmentObject(appState)
                         case .detail(let medicine):
-                            MedicineDetailView(medicineId: medicine.id)
+                            MedicineDetailView(medicine: medicine)
                                 .environmentObject(appState)
                         case .edit(let medicine):
                             MedicineFormView(medicine: medicine)
@@ -31,15 +35,31 @@ struct MainView: View {
             }
             .tag(0)
             
-            NavigationStack(path: $navigationPath) {
+            NavigationStack(path: $medicinesPath) {
                 MedicineListView()
+                    .navigationDestination(for: MedicineDestination.self) { destination in
+                        switch destination {
+                        case .add:
+                            MedicineFormView(medicine: nil)
+                                .environmentObject(appState)
+                        case .detail(let medicine):
+                            MedicineDetailView(medicine: medicine)
+                                .environmentObject(appState)
+                        case .edit(let medicine):
+                            MedicineFormView(medicine: medicine)
+                                .environmentObject(appState)
+                        case .adjustStock(let medicine):
+                            StockAdjustmentView(medicine: medicine)
+                                .environmentObject(appState)
+                        }
+                    }
             }
             .tabItem {
                 Label("Médicaments", systemImage: "pills.fill")
             }
             .tag(1)
             
-            NavigationStack {
+            NavigationStack(path: $aislesPath) {
                 AisleListView()
             }
             .tabItem {
@@ -47,21 +67,58 @@ struct MainView: View {
             }
             .tag(2)
             
-            NavigationStack {
+            NavigationStack(path: $historyPath) {
                 ModernHistoryView()
+                    .navigationDestination(for: HistoryDestination.self) { destination in
+                        switch destination {
+                        case .detail(let entry):
+                            HistoryDetailView()
+                                .environmentObject(appState)
+                        case .medicineHistory(let medicine):
+                            ModernHistoryView()
+                                .environmentObject(appState)
+                        }
+                    }
             }
             .tabItem {
                 Label("Historique", systemImage: "clock.arrow.circlepath")
             }
             .tag(3)
             
-            NavigationStack {
+            NavigationStack(path: $profilePath) {
                 ProfileView()
+                    .navigationDestination(for: ProfileDestination.self) { destination in
+                        switch destination {
+                        case .settings:
+                            ProfileView()
+                                .environmentObject(appState)
+                        case .appearance:
+                            ProfileView()
+                                .environmentObject(appState)
+                        case .notifications:
+                            ProfileView()
+                                .environmentObject(appState)
+                        case .about:
+                            ProfileView()
+                                .environmentObject(appState)
+                        case .help:
+                            ProfileView()
+                                .environmentObject(appState)
+                        }
+                    }
             }
             .tabItem {
                 Label("Profil", systemImage: "person.circle.fill")
             }
             .tag(4)
+        }
+        .onChange(of: selectedTab) { _ in
+            // Réinitialiser les paths de navigation lors du changement de tab
+            dashboardPath = NavigationPath()
+            medicinesPath = NavigationPath()
+            aislesPath = NavigationPath()
+            historyPath = NavigationPath()
+            profilePath = NavigationPath()
         }
         .task {
             // Charger les données si l'utilisateur est connecté

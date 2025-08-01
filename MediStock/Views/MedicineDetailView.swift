@@ -4,19 +4,19 @@ struct MedicineDetailView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     
-    let medicineId: String
+    let medicine: Medicine
     @State private var showingEditForm = false
     @State private var showingDeleteAlert = false
     @State private var showingStockAdjustment = false
     
     // Récupérer le médicament depuis appState pour avoir toujours la version à jour
-    private var medicine: Medicine? {
-        appState.medicines.first { $0.id == medicineId }
+    private var currentMedicine: Medicine? {
+        appState.medicines.first { $0.id == medicine.id }
     }
     
     private var stockStatusLabel: String {
-        guard let medicine = medicine else { return "" }
-        switch medicine.stockStatus {
+        let med = currentMedicine ?? medicine
+        switch med.stockStatus {
         case .normal: return "Stock normal"
         case .warning: return "Stock faible"
         case .critical: return "Stock critique"
@@ -24,24 +24,24 @@ struct MedicineDetailView: View {
     }
     
     private var aisle: Aisle? {
-        guard let medicine = medicine else { return nil }
-        return appState.aisles.first { $0.id == medicine.aisleId }
+        let med = currentMedicine ?? medicine
+        return appState.aisles.first { $0.id == med.aisleId }
     }
     
     private var daysUntilExpiration: Int? {
-        guard let medicine = medicine,
-              let expiryDate = medicine.expiryDate else { return nil }
+        let med = currentMedicine ?? medicine
+        guard let expiryDate = med.expiryDate else { return nil }
         return Calendar.current.dateComponents([.day], from: Date(), to: expiryDate).day
     }
     
     var body: some View {
-        if let medicine = medicine {
-            ScrollView {
+        let med = currentMedicine ?? medicine
+        ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // En-tête avec statut
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text(medicine.name)
+                        Text(med.name)
                             .font(.largeTitle)
                             .fontWeight(.bold)
                         
@@ -53,12 +53,12 @@ struct MedicineDetailView: View {
                             .fontWeight(.semibold)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(medicine.stockStatus.statusColor.opacity(0.2))
-                            .foregroundColor(medicine.stockStatus.statusColor)
+                            .background(med.stockStatus.statusColor.opacity(0.2))
+                            .foregroundColor(med.stockStatus.statusColor)
                             .cornerRadius(20)
                     }
                     
-                    if let dosage = medicine.dosage {
+                    if let dosage = med.dosage {
                         Text(dosage)
                             .font(.title3)
                             .foregroundColor(.secondary)
@@ -73,10 +73,10 @@ struct MedicineDetailView: View {
                         Label("Stock actuel", systemImage: "shippingbox")
                             .font(.headline)
                         Spacer()
-                        Text("\(medicine.currentQuantity) \(medicine.unit)")
+                        Text("\(med.currentQuantity) \(med.unit)")
                             .font(.title2)
                             .fontWeight(.semibold)
-                            .foregroundColor(medicine.stockStatus.statusColor)
+                            .foregroundColor(med.stockStatus.statusColor)
                     }
                     
                     Divider()
@@ -86,7 +86,7 @@ struct MedicineDetailView: View {
                         Label("Seuil d'alerte", systemImage: "exclamationmark.triangle")
                             .font(.headline)
                         Spacer()
-                        Text("\(medicine.warningThreshold) \(medicine.unit)")
+                        Text("\(med.warningThreshold) \(med.unit)")
                             .foregroundColor(.orange)
                     }
                     
@@ -96,7 +96,7 @@ struct MedicineDetailView: View {
                         Label("Seuil critique", systemImage: "exclamationmark.octagon")
                             .font(.headline)
                         Spacer()
-                        Text("\(medicine.criticalThreshold) \(medicine.unit)")
+                        Text("\(med.criticalThreshold) \(med.unit)")
                             .foregroundColor(.red)
                     }
                     
@@ -116,7 +116,7 @@ struct MedicineDetailView: View {
                     }
                     
                     // Date d'expiration
-                    if let expiryDate = medicine.expiryDate {
+                    if let expiryDate = med.expiryDate {
                         HStack {
                             Label("Expiration", systemImage: "calendar")
                                 .font(.headline)
@@ -166,13 +166,13 @@ struct MedicineDetailView: View {
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
-                        .disabled(medicine.currentQuantity == 0)
+                        .disabled(med.currentQuantity == 0)
                     }
                 }
                 .padding(.horizontal)
                 
                 // Description
-                if let description = medicine.description, !description.isEmpty {
+                if let description = med.description, !description.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Description", systemImage: "note.text")
                             .font(.headline)
@@ -188,11 +188,11 @@ struct MedicineDetailView: View {
                 
                 // Métadonnées
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Créé le \(medicine.createdAt, style: .date)")
+                    Text("Créé le \(med.createdAt, style: .date)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text("Modifié le \(medicine.updatedAt, style: .date)")
+                    Text("Modifié le \(med.updatedAt, style: .date)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -225,13 +225,13 @@ struct MedicineDetailView: View {
         }
         .sheet(isPresented: $showingEditForm) {
             NavigationStack {
-                MedicineFormView(medicine: medicine)
+                MedicineFormView(medicine: med)
                     .environmentObject(appState)
             }
         }
         .sheet(isPresented: $showingStockAdjustment) {
             NavigationStack {
-                StockAdjustmentView(medicine: medicine)
+                StockAdjustmentView(medicine: med)
                     .environmentObject(appState)
             }
         }
@@ -243,42 +243,28 @@ struct MedicineDetailView: View {
         } message: {
             Text("Cette action est irréversible.")
         }
-        } else {
-            // Vue de fallback si le médicament n'existe plus
-            ContentUnavailableView(
-                "Médicament introuvable",
-                systemImage: "pills",
-                description: Text("Ce médicament n'existe plus dans la base de données.")
-            )
-            .onAppear {
-                // Retourner automatiquement après un court délai
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    dismiss()
-                }
-            }
-        }
     }
     
     private func increaseStock(by amount: Int) {
-        guard let medicine = medicine else { return }
+        let med = currentMedicine ?? medicine
         Task {
-            await appState.adjustStock(medicine: medicine, adjustment: amount, reason: "Ajustement rapide +\(amount)")
+            await appState.adjustStock(medicine: med, adjustment: amount, reason: "Ajustement rapide +\(amount)")
         }
     }
     
     private func decreaseStock(by amount: Int) {
-        guard let medicine = medicine,
-              medicine.currentQuantity >= amount else { return }
+        let med = currentMedicine ?? medicine
+        guard med.currentQuantity >= amount else { return }
         
         Task {
-            await appState.adjustStock(medicine: medicine, adjustment: -amount, reason: "Ajustement rapide -\(amount)")
+            await appState.adjustStock(medicine: med, adjustment: -amount, reason: "Ajustement rapide -\(amount)")
         }
     }
     
     private func deleteMedicine() {
-        guard let medicine = medicine else { return }
+        let med = currentMedicine ?? medicine
         Task {
-            await appState.deleteMedicine(medicine)
+            await appState.deleteMedicine(med)
             await MainActor.run {
                 dismiss()
             }

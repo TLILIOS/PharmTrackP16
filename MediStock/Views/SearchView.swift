@@ -5,6 +5,7 @@ import SwiftUI
 struct SearchView: View {
     @StateObject private var searchViewModel = SearchViewModel()
     @EnvironmentObject var aisleListViewModel: AisleListViewModel
+    @EnvironmentObject var appState: AppState
     @State private var showingMedicineDetail: Medicine?
     
     var body: some View {
@@ -100,7 +101,8 @@ struct SearchView: View {
             }
             .sheet(item: $showingMedicineDetail) { medicine in
                 NavigationStack {
-                    MedicineDetailView(medicineId: medicine.id)
+                    MedicineDetailView(medicine: medicine)
+                        .environmentObject(appState)
                 }
             }
         }

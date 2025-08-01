@@ -443,7 +443,7 @@ struct AisleDetailView: View {
                         
                         LazyVStack(spacing: 0) {
                             ForEach(medicines) { medicine in
-                                NavigationLink(value: MedicineDestination.detail(medicine)) {
+                                NavigationLink(destination: MedicineDetailView(medicine: medicine).environmentObject(appState)) {
                                     MedicineRow(medicine: medicine)
                                 }
                                 
@@ -496,22 +496,6 @@ struct AisleDetailView: View {
             }
         } message: {
             Text("Cette action est irréversible. Assurez-vous qu'aucun médicament n'est associé à ce rayon.")
-        }
-        .navigationDestination(for: MedicineDestination.self) { destination in
-            switch destination {
-            case .detail(let medicine):
-                MedicineDetailView(medicineId: medicine.id)
-                    .environmentObject(appState)
-            case .edit(let medicine):
-                MedicineFormView(medicine: medicine)
-                    .environmentObject(appState)
-            case .adjustStock(let medicine):
-                StockAdjustmentView(medicine: medicine)
-                    .environmentObject(appState)
-            case .add:
-                MedicineFormView(medicine: nil)
-                    .environmentObject(appState)
-            }
         }
     }
 }

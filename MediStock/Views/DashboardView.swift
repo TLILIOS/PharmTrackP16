@@ -418,7 +418,7 @@ struct CriticalStockListView: View {
                 MedicineFormView(medicine: nil)
                     .environmentObject(appState)
             case .detail(let medicine):
-                MedicineDetailView(medicineId: medicine.id)
+                MedicineDetailView(medicine: medicine)
                     .environmentObject(appState)
             case .edit(let medicine):
                 MedicineFormView(medicine: medicine)
@@ -448,7 +448,7 @@ struct ExpiringMedicinesListView: View {
                 MedicineFormView(medicine: nil)
                     .environmentObject(appState)
             case .detail(let medicine):
-                MedicineDetailView(medicineId: medicine.id)
+                MedicineDetailView(medicine: medicine)
                     .environmentObject(appState)
             case .edit(let medicine):
                 MedicineFormView(medicine: medicine)
