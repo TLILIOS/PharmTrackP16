@@ -31,16 +31,16 @@ class AppState: ObservableObject {
     
     // Services (injection simplifiée)
     let auth: AuthService
-    let data: DataService
+    let data: DataServiceAdapter
     let notifications: NotificationService
     
-    init() {
-        self.auth = AuthService()
-        self.data = DataService()
-        self.notifications = NotificationService()
+    init(auth: AuthService? = nil, data: DataServiceAdapter? = nil, notifications: NotificationService? = nil) {
+        self.auth = auth ?? AuthService()
+        self.data = data ?? DataServiceAdapter()
+        self.notifications = notifications ?? NotificationService()
         
         // Observer l'état d'authentification
-        auth.$currentUser
+        self.auth.$currentUser
             .assign(to: &$currentUser)
         
         // Charger les données au démarrage si connecté
@@ -254,7 +254,7 @@ class AppState: ObservableObject {
     func deleteAisle(_ aisle: Aisle) async {
         isLoading = true
         do {
-            try await data.deleteAisle(id: aisle.id)
+            try await data.deleteAisle(aisle)
             aisles.removeAll { $0.id == aisle.id }
         } catch {
             errorMessage = error.localizedDescription

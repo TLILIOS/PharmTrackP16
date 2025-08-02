@@ -30,9 +30,23 @@ class AuthViewModelTests: XCTestCase {
         // Given
         let email = "test@example.com"
         let password = "password123"
+        let expectation = XCTestExpectation(description: "Auth state updated")
+        
+        // Observer l'authentification
+        viewModel.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                if isAuthenticated {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
         
         // When
         await viewModel.signIn(email: email, password: password)
+        
+        // Attendre que le publisher propage les changements
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         // Then
         XCTAssertEqual(mockRepository.signInCallCount, 1)
@@ -66,9 +80,23 @@ class AuthViewModelTests: XCTestCase {
         let email = "new@example.com"
         let password = "newPassword123"
         let displayName = "New User"
+        let expectation = XCTestExpectation(description: "Auth state updated")
+        
+        // Observer l'authentification
+        viewModel.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                if isAuthenticated {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
         
         // When
         await viewModel.signUp(email: email, password: password, displayName: displayName)
+        
+        // Attendre que le publisher propage les changements
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         // Then
         XCTAssertTrue(viewModel.isAuthenticated)
@@ -97,11 +125,36 @@ class AuthViewModelTests: XCTestCase {
     
     func testSignOutSuccess() async {
         // Given - Sign in first
+        let signInExpectation = XCTestExpectation(description: "Sign in completed")
+        
+        viewModel.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                if isAuthenticated {
+                    signInExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
         await viewModel.signIn(email: "test@example.com", password: "password")
+        await fulfillment(of: [signInExpectation], timeout: 1.0)
+        
         XCTAssertTrue(viewModel.isAuthenticated)
         
         // When
+        let signOutExpectation = XCTestExpectation(description: "Sign out completed")
+        
+        viewModel.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                if !isAuthenticated {
+                    signOutExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
         await viewModel.signOut()
+        await fulfillment(of: [signOutExpectation], timeout: 1.0)
         
         // Then
         XCTAssertEqual(mockRepository.signOutCallCount, 1)
@@ -111,7 +164,24 @@ class AuthViewModelTests: XCTestCase {
     
     func testSignOutError() async {
         // Given - Sign in first
+        let signInExpectation = XCTestExpectation(description: "Sign in completed")
+        
+        viewModel.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                if isAuthenticated {
+                    signInExpectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
         await viewModel.signIn(email: "test@example.com", password: "password")
+        await fulfillment(of: [signInExpectation], timeout: 1.0)
+        
+        // Verify user is signed in
+        XCTAssertTrue(viewModel.isAuthenticated)
+        
+        // Configure error for sign out
         mockRepository.shouldThrowError = true
         
         // When
@@ -125,7 +195,7 @@ class AuthViewModelTests: XCTestCase {
     
     // MARK: - Authentication State Observer Tests
     
-    func testAuthenticationStateObserver() {
+    func testAuthenticationStateObserver() async {
         // Given
         let expectation = XCTestExpectation(description: "Auth state changed")
         
@@ -141,7 +211,7 @@ class AuthViewModelTests: XCTestCase {
         mockRepository.currentUser = User.mock()
         
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 1.0)
     }
     
     // MARK: - Loading State Tests
@@ -164,7 +234,7 @@ class AuthViewModelTests: XCTestCase {
         await viewModel.signIn(email: "test@example.com", password: "password")
         
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertEqual(loadingStates, [false, true, false])
     }
     

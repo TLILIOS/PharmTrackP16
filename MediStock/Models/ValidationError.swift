@@ -7,11 +7,13 @@ enum ValidationError: LocalizedError {
     case nameTooLong(maxLength: Int)
     case nameAlreadyExists(name: String)
     case invalidId
+    case duplicateAisleName(name: String)
     
     // Erreurs Aisle
     case invalidColorFormat(provided: String)
     case invalidIcon(provided: String)
     case tooManyAisles(max: Int)
+    case aisleContainsMedicines(count: Int)
     
     // Erreurs Medicine
     case negativeQuantity(field: String)
@@ -21,6 +23,8 @@ enum ValidationError: LocalizedError {
     case invalidAisleReference(aisleId: String)
     case invalidUnit
     case missingRequiredField(field: String)
+    case invalidStockAdjustment
+    case transactionFailed
     
     var errorDescription: String? {
         switch self {
@@ -33,6 +37,8 @@ enum ValidationError: LocalizedError {
             return "Un élément avec le nom '\(name)' existe déjà"
         case .invalidId:
             return "L'identifiant est invalide"
+        case .duplicateAisleName(let name):
+            return "Un rayon avec le nom '\(name)' existe déjà"
             
         // Erreurs Aisle
         case .invalidColorFormat(let provided):
@@ -41,6 +47,8 @@ enum ValidationError: LocalizedError {
             return "Icône SF Symbol '\(provided)' invalide ou non disponible"
         case .tooManyAisles(let max):
             return "Vous avez atteint la limite de \(max) rayons"
+        case .aisleContainsMedicines(let count):
+            return "Le rayon contient \(count) médicament(s) et ne peut pas être supprimé"
             
         // Erreurs Medicine
         case .negativeQuantity(let field):
@@ -57,6 +65,10 @@ enum ValidationError: LocalizedError {
             return "L'unité de mesure est invalide"
         case .missingRequiredField(let field):
             return "Le champ '\(field)' est obligatoire"
+        case .invalidStockAdjustment:
+            return "L'ajustement de stock doit être différent de zéro"
+        case .transactionFailed:
+            return "La transaction a échoué"
         }
     }
 }

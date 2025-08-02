@@ -7,42 +7,60 @@ class DashboardViewTests: XCTestCase {
     
     var appState: AppState!
     var authViewModel: AuthViewModel!
+    var mockAuthRepository: MockAuthRepository!
     
     override func setUp() async throws {
         try await super.setUp()
         
-        // Initialiser AppState et AuthViewModel avec des données de test
-        appState = AppState()
-        authViewModel = AuthViewModel()
+        // Initialiser avec des mocks
+        mockAuthRepository = MockAuthRepository()
+        authViewModel = AuthViewModel(repository: mockAuthRepository)
+        appState = AppState(data: MockDataServiceAdapterForIntegration())
         
         // Ajouter des données de test
-        let testAisle = Aisle(id: "1", name: "Rayon A", icon: "pills", color: .blue)
+        let testAisle = Aisle(
+            id: "1", 
+            name: "Rayon A",
+            description: nil,
+            colorHex: "#0000FF",
+            icon: "pills"
+        )
         appState.aisles = [testAisle]
         
         let testMedicine1 = Medicine(
             id: "1",
             name: "Paracétamol",
+            description: nil,
             dosage: "500mg",
             form: "Comprimé",
+            reference: nil,
+            unit: "boîtes",
             currentQuantity: 10,
             maxQuantity: 100,
+            warningThreshold: 30,
             criticalThreshold: 20,
-            unit: "boîtes",
+            expiryDate: Date().addingTimeInterval(30 * 24 * 60 * 60), // Dans 30 jours
             aisleId: "1",
-            expiryDate: Date().addingTimeInterval(30 * 24 * 60 * 60) // Dans 30 jours
+            createdAt: Date(),
+            updatedAt: Date()
         )
         
         let testMedicine2 = Medicine(
             id: "2",
             name: "Ibuprofène",
+            description: nil,
             dosage: "400mg",
             form: "Comprimé",
+            reference: nil,
+            unit: "boîtes",
             currentQuantity: 5,
             maxQuantity: 50,
+            warningThreshold: 15,
             criticalThreshold: 10,
-            unit: "boîtes",
+            expiryDate: Date().addingTimeInterval(-1 * 24 * 60 * 60), // Expiré hier
             aisleId: "1",
-            expiryDate: Date().addingTimeInterval(-1 * 24 * 60 * 60) // Expiré hier
+            createdAt: Date(),
+            updatedAt: Date()
         )
         
         appState.medicines = [testMedicine1, testMedicine2]
@@ -50,25 +68,43 @@ class DashboardViewTests: XCTestCase {
         // Ajouter une entrée d'historique
         let historyEntry = HistoryEntry(
             id: "1",
-            action: "Ajout de médicament",
             medicineId: "1",
-            medicineName: "Paracétamol",
-            details: "Ajout de 10 boîtes",
             userId: "test-user",
-            userName: "Test User",
+            action: "Ajout de médicament",
+            details: "Ajout de 10 boîtes de Paracétamol",
             timestamp: Date()
         )
         appState.history = [historyEntry]
+        
+        // Configurer l'utilisateur de test
+        mockAuthRepository.currentUser = User(
+            id: "test-user",
+            email: "test@example.com",
+            displayName: "Test User"
+        )
+    }
+    
+    func testAppStateInitialization() {
+        XCTAssertEqual(appState.medicines.count, 2)
+        XCTAssertEqual(appState.aisles.count, 1)
+        XCTAssertEqual(appState.history.count, 1)
+    }
+    
+    func testCriticalMedicines() {
+        let criticalMeds = appState.criticalMedicines
+        XCTAssertEqual(criticalMeds.count, 2) // Les deux médicaments ont des stocks en dessous du seuil critique
+    }
+    
+    func testExpiringMedicines() {
+        let expiringMeds = appState.expiringMedicines
+        XCTAssertEqual(expiringMeds.count, 2) // Un expiré et un qui expire dans 30 jours
     }
     
     func testPDFGenerationDoesNotCrash() async throws {
         // Créer une instance de DashboardView
-        let view = DashboardView()
+        _ = DashboardView()
             .environmentObject(appState)
             .environmentObject(authViewModel)
-        
-        // Accéder à la méthode de génération PDF via Mirror
-        let mirror = Mirror(reflecting: view)
         
         // Test pour vérifier que la génération PDF ne crash pas
         let pdfMetaData = [
@@ -106,7 +142,6 @@ class DashboardViewTests: XCTestCase {
             .environmentObject(appState)
             .environmentObject(authViewModel)
         
-        // Utiliser ViewInspector ou une technique similaire pour vérifier la présence du bouton
         // Pour ce test simple, on vérifie juste que la vue peut être créée sans crash
         let hostingController = UIHostingController(rootView: view)
         XCTAssertNotNil(hostingController.view, "La vue devrait être créée avec succès")
@@ -117,9 +152,6 @@ class DashboardViewTests: XCTestCase {
         let pdfData = await generateTestPDF()
         
         XCTAssertTrue(pdfData.count > 1000, "Le PDF devrait avoir une taille raisonnable")
-        
-        // On pourrait ici analyser le contenu du PDF si nécessaire
-        // mais pour un test simple, on vérifie juste qu'il n'est pas vide
     }
     
     @MainActor

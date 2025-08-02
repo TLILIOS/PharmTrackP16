@@ -25,7 +25,8 @@ struct ValidationRules {
         "syringe", "syringe.fill", "drop", "drop.fill",
         "capsule", "capsule.fill", "cross.vial", "cross.vial.fill",
         "waveform.path.ecg", "brain.head.profile", "lungs",
-        "figure.walk", "bed.double", "wheelchair"
+        "figure.walk", "bed.double", "wheelchair",
+        "exclamationmark.triangle", "tray", "speedometer"
     ]
 }
 

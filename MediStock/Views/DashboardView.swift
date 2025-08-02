@@ -177,7 +177,7 @@ struct DashboardView: View {
             var yPosition: CGFloat = 50
             let leftMargin: CGFloat = 50
             let rightMargin: CGFloat = 50
-            let contentWidth = pageWidth - leftMargin - rightMargin
+            _ = pageWidth - leftMargin - rightMargin
             
             // Titre principal
             let titleAttributes: [NSAttributedString.Key: Any] = [

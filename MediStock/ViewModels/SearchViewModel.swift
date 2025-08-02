@@ -26,7 +26,7 @@ class SearchViewModel: ObservableObject {
     // MARK: - Private Properties
     
     private let medicineRepository: MedicineRepositoryProtocol
-    private let dataService: DataService
+    private let dataService: DataServiceAdapter
     private var cancellables = Set<AnyCancellable>()
     private let searchTextSubject = PassthroughSubject<String, Never>()
     
@@ -34,7 +34,7 @@ class SearchViewModel: ObservableObject {
     
     init(
         medicineRepository: MedicineRepositoryProtocol = MedicineRepository(),
-        dataService: DataService = DataService()
+        dataService: DataServiceAdapter = DataServiceAdapter()
     ) {
         self.medicineRepository = medicineRepository
         self.dataService = dataService

@@ -71,10 +71,10 @@ struct MainView: View {
                 ModernHistoryView()
                     .navigationDestination(for: HistoryDestination.self) { destination in
                         switch destination {
-                        case .detail(let entry):
+                        case .detail(_):
                             HistoryDetailView()
                                 .environmentObject(appState)
-                        case .medicineHistory(let medicine):
+                        case .medicineHistory(_):
                             ModernHistoryView()
                                 .environmentObject(appState)
                         }
@@ -112,7 +112,7 @@ struct MainView: View {
             }
             .tag(4)
         }
-        .onChange(of: selectedTab) { _ in
+        .onChange(of: selectedTab) {
             // Réinitialiser les paths de navigation lors du changement de tab
             dashboardPath = NavigationPath()
             medicinesPath = NavigationPath()

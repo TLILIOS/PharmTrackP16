@@ -4,12 +4,12 @@ import Foundation
 
 class HistoryRepository: HistoryRepositoryProtocol {
     func fetchHistoryForMedicine(_ medicineId: String) async throws -> [HistoryEntry] {
-        return [HistoryEntry]()
+        return try await dataService.getHistory(for: medicineId)
     }
     
-    private let dataService: DataService
+    private let dataService: DataServiceAdapter
     
-    init(dataService: DataService = DataService()) {
+    init(dataService: DataServiceAdapter = DataServiceAdapter()) {
         self.dataService = dataService
     }
     

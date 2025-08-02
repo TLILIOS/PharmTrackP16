@@ -3,19 +3,25 @@ import XCTest
 
 // MARK: - Tests d'analyse des fonctions d'ajout de rayon et médicament
 
+@MainActor
 final class AddFunctionsAnalysisTests: XCTestCase {
     
-    var dataService: DataService!
+    var mockDataService: MockDataServiceAdapterForIntegration!
     var appState: AppState!
     
+    @MainActor
     override func setUp() async throws {
         try await super.setUp()
-        dataService = DataService()
-        appState = AppState()
+        mockDataService = MockDataServiceAdapterForIntegration()
+        // Skip auth initialization in tests
+        // Note: This is a workaround since AuthService initializes Firebase
+        appState = AppState(data: mockDataService)
+        // Manually set properties to avoid auth initialization
+        appState.currentUser = nil
     }
     
     override func tearDown() async throws {
-        dataService = nil
+        mockDataService = nil
         appState = nil
         try await super.tearDown()
     }
@@ -33,9 +39,9 @@ final class AddFunctionsAnalysisTests: XCTestCase {
         // 5. Pas de vérification d'unicité du nom
         
         // Test avec données invalides
-        let invalidAisle1 = Aisle(id: "", name: "", description: nil, colorHex: "invalid", icon: "")
-        let invalidAisle2 = Aisle(id: "", name: "Test", description: nil, colorHex: "#GGGGGG", icon: "invalid.icon")
-        let invalidAisle3 = Aisle(id: "", name: "   ", description: nil, colorHex: "#FF0000", icon: "pills")
+        // Exemple 1: Aisle(id: "", name: "", description: nil, colorHex: "invalid", icon: "")
+        // Exemple 2: Aisle(id: "", name: "Test", description: nil, colorHex: "#GGGGGG", icon: "invalid.icon")
+        // Exemple 3: Aisle(id: "", name: "   ", description: nil, colorHex: "#FF0000", icon: "pills")
         
         // Ces cas devraient être rejetés mais ne le sont pas actuellement
         print("❌ Problème 1: Aucune validation du nom vide ou espaces uniquement")
@@ -70,23 +76,24 @@ final class AddFunctionsAnalysisTests: XCTestCase {
         // 5. L'aisleId n'est pas vérifié (rayon existant)
         // 6. La date d'expiration peut être dans le passé
         
-        let invalidMedicine1 = Medicine(
-            id: "",
-            name: "",
-            description: nil,
-            dosage: nil,
-            form: nil,
-            reference: nil,
-            unit: "boîte",
-            currentQuantity: -10,
-            maxQuantity: 5,
-            warningThreshold: 20,
-            criticalThreshold: 50, // Plus élevé que warning!
-            expiryDate: Date().addingTimeInterval(-86400), // Hier
-            aisleId: "non-existent",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
+        // Exemple de médicament invalide:
+        // Medicine(
+        //     id: "",
+        //     name: "",
+        //     description: nil,
+        //     dosage: nil,
+        //     form: nil,
+        //     reference: nil,
+        //     unit: "boîte",
+        //     currentQuantity: -10,
+        //     maxQuantity: 5,
+        //     warningThreshold: 20,
+        //     criticalThreshold: 50, // Plus élevé que warning!
+        //     expiryDate: Date().addingTimeInterval(-86400), // Hier
+        //     aisleId: "non-existent",
+        //     createdAt: Date(),
+        //     updatedAt: Date()
+        // )
         
         print("❌ Problème 7: Seuils incohérents acceptés (critical > warning)")
         print("❌ Problème 8: Quantités négatives acceptées")

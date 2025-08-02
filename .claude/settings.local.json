@@ -41,7 +41,8 @@
       "Bash(./fix_redeclaration.sh:*)",
       "Bash(./cleanup_duplicates.sh:*)",
       "Bash(./final_cleanup.sh)",
-      "Bash(./check_redeclarations.sh:*)"
+      "Bash(./check_redeclarations.sh:*)",
+      "Bash(./run_specific_tests.sh:*)"
     ],
     "deny": []
   }

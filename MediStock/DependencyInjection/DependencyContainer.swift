@@ -9,7 +9,7 @@ class DependencyContainer {
     private init() {}
     
     // Services
-    lazy var dataService = DataService()
+    lazy var dataService = DataServiceAdapter()
     lazy var authService = AuthService()
     lazy var notificationService = NotificationService()
     
@@ -18,13 +18,7 @@ class DependencyContainer {
     lazy var aisleRepository: AisleRepositoryProtocol = AisleRepository(dataService: dataService)
     lazy var historyRepository: HistoryRepositoryProtocol = HistoryRepository(dataService: dataService)
     
-    private var _authRepository: AuthRepositoryProtocol?
-    var authRepository: AuthRepositoryProtocol {
-        if _authRepository == nil {
-            _authRepository = AuthRepository(authService: authService)
-        }
-        return _authRepository!
-    }
+    lazy var authRepository: AuthRepositoryProtocol = AuthRepository(authService: authService)
     
     // ViewModels
     @MainActor

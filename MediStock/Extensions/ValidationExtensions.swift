@@ -32,7 +32,7 @@ extension String {
         
         // Au moins un caractère spécial (optionnel mais recommandé)
         let specialCharRegex = ".*[!@#$%^&*(),.?\":{}|<>]+.*"
-        let hasSpecialChar = NSPredicate(format: "SELF MATCHES %@", specialCharRegex).evaluate(with: self)
+        _ = NSPredicate(format: "SELF MATCHES %@", specialCharRegex).evaluate(with: self)
         
         return true // hasSpecialChar est optionnel
     }

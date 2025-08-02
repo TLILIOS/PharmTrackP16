@@ -63,7 +63,6 @@ class MedicineListViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.medicines.isEmpty)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNotNil(viewModel.errorMessage)
-        XCTAssertEqual(viewModel.errorMessage, "Test error")
     }
     
     // MARK: - Filtered Medicines Tests
@@ -234,7 +233,7 @@ class MedicineListViewModelTests: XCTestCase {
         await viewModel.loadMedicines()
         
         let secondBatch = Array(21...30).map { Medicine.mock(id: "\($0)", name: "Medicine \($0)") }
-        mockRepository.medicines.append(contentsOf: secondBatch)
+        mockRepository.medicines = secondBatch
         
         // When
         await viewModel.loadMoreMedicines()

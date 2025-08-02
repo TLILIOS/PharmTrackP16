@@ -148,6 +148,13 @@ class MockHistoryRepository: HistoryRepositoryProtocol {
         }
         history.append(entry)
     }
+    
+    func fetchHistoryForMedicine(_ medicineId: String) async throws -> [HistoryEntry] {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        return history.filter { $0.medicineId == medicineId }
+    }
 }
 
 // MARK: - Mock Auth Repository

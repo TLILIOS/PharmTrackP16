@@ -69,7 +69,7 @@ struct MedicineFormView: View {
                                 error: nameFieldError
                             )
                             .focused($focusedField, equals: .name)
-                            .onChange(of: name) { _ in
+                            .onChange(of: name) {
                                 validateName()
                             }
                             .padding(.horizontal, 20)

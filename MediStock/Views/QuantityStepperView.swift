@@ -82,7 +82,7 @@ struct QuantityStepperView: View {
         .onAppear {
             temporaryQuantity = quantity
         }
-        .onChange(of: quantity) { newValue in
+        .onChange(of: quantity) { oldValue, newValue in
             if !isAdjusting {
                 temporaryQuantity = newValue
             }
@@ -281,24 +281,16 @@ struct QuickStockAdjustmentView: View {
         isProcessing = true
         
         Task {
-            do {
-                await medicineListViewModel.adjustStock(
-                    medicine: medicine,
-                    adjustment: changeAmount,
-                    reason: reason
-                )
-                
-                await MainActor.run {
-                    alertMessage = "Stock mis à jour avec succès"
-                    showingAlert = true
-                    isProcessing = false
-                }
-            } catch {
-                await MainActor.run {
-                    alertMessage = "Erreur: \(error.localizedDescription)"
-                    showingAlert = true
-                    isProcessing = false
-                }
+            await medicineListViewModel.adjustStock(
+                medicine: medicine,
+                adjustment: changeAmount,
+                reason: reason
+            )
+            
+            await MainActor.run {
+                alertMessage = "Stock mis à jour avec succès"
+                showingAlert = true
+                isProcessing = false
             }
         }
     }

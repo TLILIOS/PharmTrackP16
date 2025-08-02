@@ -18,7 +18,7 @@ class DataService {
     func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {
         let listener = db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
-            .addSnapshotListener { [weak self] snapshot, error in
+            .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else {
                     print("Error fetching medicines: \(error?.localizedDescription ?? "Unknown error")")
                     return
@@ -453,7 +453,7 @@ class DataService {
     private func checkAisleNameExists(_ name: String, excludingId: String? = nil) async throws -> Bool {
         let sanitizedName = ValidationHelper.sanitizeName(name).lowercased()
         
-        var query = db.collection("aisles")
+        let query = db.collection("aisles")
             .whereField("userId", isEqualTo: userId)
         
         let snapshot = try await query.getDocuments()
@@ -485,7 +485,7 @@ class DataService {
             .count
             .getAggregation(source: .server)
         
-        return Int(truncating: snapshot.count ?? 0)
+        return Int(truncating: snapshot.count)
     }
     
     private func getUserMedicineCount() async throws -> Int {
@@ -494,7 +494,7 @@ class DataService {
             .count
             .getAggregation(source: .server)
         
-        return Int(truncating: snapshot.count ?? 0)
+        return Int(truncating: snapshot.count)
     }
     
     // MARK: - Historique
