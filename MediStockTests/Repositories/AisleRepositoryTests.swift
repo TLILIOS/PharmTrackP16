@@ -5,11 +5,11 @@ import XCTest
 final class AisleRepositoryTests: XCTestCase {
     
     private var repository: AisleRepository!
-    private var mockDataService: MockDataServiceAdapter!
+    private var mockDataService: MockDataServiceAdapterForAisleTests!
     
     override func setUp() {
         super.setUp()
-        mockDataService = MockDataServiceAdapter()
+        mockDataService = MockDataServiceAdapterForAisleTests()
         repository = AisleRepository(dataService: mockDataService)
     }
     
@@ -213,7 +213,7 @@ final class AisleRepositoryTests: XCTestCase {
 
 // MARK: - Mock Data Service Adapter
 
-final class MockDataServiceAdapter: DataServiceAdapter, @unchecked Sendable {
+final class MockDataServiceAdapterForAisleTests: DataServiceAdapter, @unchecked Sendable {
     var shouldThrowError = false
     var errorToThrow: Error?
     var operationDelay: TimeInterval = 0

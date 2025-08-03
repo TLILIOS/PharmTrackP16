@@ -42,7 +42,8 @@
       "Bash(./cleanup_duplicates.sh:*)",
       "Bash(./final_cleanup.sh)",
       "Bash(./check_redeclarations.sh:*)",
-      "Bash(./run_specific_tests.sh:*)"
+      "Bash(./run_specific_tests.sh:*)",
+      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/test_fixes_summary.sh)"
     ],
     "deny": []
   }
