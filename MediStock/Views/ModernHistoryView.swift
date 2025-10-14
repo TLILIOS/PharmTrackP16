@@ -2,11 +2,21 @@ import SwiftUI
 
 struct ModernHistoryView: View {
     @EnvironmentObject var appState: AppState
+    @StateObject private var historyViewModel = HistoryViewModel()
+    @StateObject private var medicineViewModel: MedicineListViewModel
     @State private var filterType: FilterType = .all
     @State private var expandedEntries: Set<String> = []
     @State private var searchText = ""
-    @State private var isLoading = false
     @Namespace private var animation
+
+    init() {
+        let container = DependencyContainer.shared
+        _medicineViewModel = StateObject(wrappedValue: MedicineListViewModel(
+            medicineRepository: container.medicineRepository,
+            historyRepository: container.historyRepository,
+            notificationService: container.notificationService
+        ))
+    }
     
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     
@@ -40,15 +50,15 @@ struct ModernHistoryView: View {
     var filteredHistory: [StockHistory] {
         let filtered = switch filterType {
         case .all:
-            appState.stockHistory
+            historyViewModel.stockHistory
         case .adjustments:
-            appState.stockHistory.filter { $0.type == .adjustment }
+            historyViewModel.stockHistory.filter { $0.type == .adjustment }
         case .additions:
-            appState.stockHistory.filter { $0.type == .addition }
+            historyViewModel.stockHistory.filter { $0.type == .addition }
         case .deletions:
-            appState.stockHistory.filter { $0.type == .deletion }
+            historyViewModel.stockHistory.filter { $0.type == .deletion }
         }
-        
+
         if searchText.isEmpty {
             return filtered
         } else {
@@ -64,7 +74,7 @@ struct ModernHistoryView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
             
-            if isLoading && appState.stockHistory.isEmpty {
+            if historyViewModel.isLoading && historyViewModel.stockHistory.isEmpty {
                 ProgressView()
                     .scaleEffect(1.2)
             } else if filteredHistory.isEmpty && !searchText.isEmpty {
@@ -75,7 +85,7 @@ struct ModernHistoryView: View {
                 ScrollView {
                     LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                         // Search Bar
-                        if !appState.stockHistory.isEmpty {
+                        if !historyViewModel.stockHistory.isEmpty {
                             searchBar
                                 .padding(.horizontal)
                                 .padding(.vertical, 10)
@@ -264,19 +274,19 @@ struct ModernHistoryView: View {
     }
     
     private func getMedicineName(for entry: StockHistory) -> String {
-        appState.medicines.first { $0.id == entry.medicineId }?.name ?? "Médicament supprimé"
+        medicineViewModel.medicines.first { $0.id == entry.medicineId }?.name ?? "Médicament supprimé"
     }
-    
+
     private func getCount(for type: FilterType) -> Int {
         switch type {
         case .all:
-            return appState.stockHistory.count
+            return historyViewModel.stockHistory.count
         case .adjustments:
-            return appState.stockHistory.filter { $0.type == .adjustment }.count
+            return historyViewModel.stockHistory.filter { $0.type == .adjustment }.count
         case .additions:
-            return appState.stockHistory.filter { $0.type == .addition }.count
+            return historyViewModel.stockHistory.filter { $0.type == .addition }.count
         case .deletions:
-            return appState.stockHistory.filter { $0.type == .deletion }.count
+            return historyViewModel.stockHistory.filter { $0.type == .deletion }.count
         }
     }
     
@@ -292,14 +302,14 @@ struct ModernHistoryView: View {
     }
     
     private func loadHistoryIfNeeded() async {
-        guard appState.stockHistory.isEmpty else { return }
-        isLoading = true
-        await appState.loadHistory()
-        isLoading = false
+        guard historyViewModel.stockHistory.isEmpty else { return }
+        await historyViewModel.loadHistory()
+        await medicineViewModel.loadMedicines()
     }
-    
+
     private func refreshHistory() async {
-        await appState.loadHistory()
+        await historyViewModel.loadHistory()
+        await medicineViewModel.loadMedicines()
         impactFeedback.impactOccurred()
     }
 }

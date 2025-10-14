@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyC7Wn2menru8zbgZtVPxF-u09JRrV1tNXs</string>
+	<string>AIzaSyABTYK3rtzdrmXCxFMVtrjBOVeAYbmDvR8</string>
 	<key>GCM_SENDER_ID</key>
-	<string>747561658183</string>
+	<string>2880735747</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>adam001247-yahoo.fr.MediStock</string>
 	<key>PROJECT_ID</key>
-	<string>medistocks-384b0</string>
+	<string>medistock-e88bb</string>
 	<key>STORAGE_BUCKET</key>
-	<string>medistocks-384b0.firebasestorage.app</string>
+	<string>medistock-e88bb.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:747561658183:ios:c0267eeea5ed66e63f4e62</string>
+	<string>1:2880735747:ios:08a89842109b9c4849dc36</string>
 </dict>
 </plist>

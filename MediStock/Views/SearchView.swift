@@ -382,6 +382,7 @@ struct SearchFiltersView: View {
 struct SearchView_Previews: PreviewProvider {
     static var previews: some View {
         SearchView()
-            .environmentObject(AisleListViewModel())
+            .environmentObject(AisleListViewModel.makeDefault())
+            .environmentObject(AppState())
     }
 }

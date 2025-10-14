@@ -9,6 +9,10 @@ class MockDataServiceAdapterForIntegration: DataServiceAdapter {
     var aisles: [Aisle] = []
     var medicines: [Medicine] = []
     var history: [HistoryEntry] = []
+
+    // IMPORTANT: Ce mock override TOUTES les méthodes pour ne jamais appeler Firebase
+    // Note: L'init parent crée des services Firebase mais ils ne sont jamais utilisés
+    // car toutes les méthodes appellent nos implémentations mock ci-dessous
     
     override func getAisles() async throws -> [Aisle] {
         if shouldThrowError {
@@ -177,5 +181,65 @@ class MockDataServiceAdapterForIntegration: DataServiceAdapter {
             throw NSError(domain: "Test", code: 0)
         }
         history.append(entry)
+    }
+
+    // MARK: - Méthodes supplémentaires pour couvrir TOUTES les méthodes de DataServiceAdapter
+
+    override func deleteMedicine(id: String) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        medicines.removeAll { $0.id == id }
+    }
+
+    override func updateMultipleMedicines(_ medicines: [Medicine]) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        for medicine in medicines {
+            if let index = self.medicines.firstIndex(where: { $0.id == medicine.id }) {
+                self.medicines[index] = medicine
+            }
+        }
+    }
+
+    override func deleteMultipleMedicines(ids: [String]) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        medicines.removeAll { ids.contains($0.id) }
+    }
+
+    override func checkAisleExists(_ aisleId: String) async throws -> Bool {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        return aisles.contains { $0.id == aisleId }
+    }
+
+    override func countMedicinesInAisle(_ aisleId: String) async throws -> Int {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        return medicines.filter { $0.aisleId == aisleId }.count
+    }
+
+    override func deleteAisle(id: String) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "Test", code: 0)
+        }
+        aisles.removeAll { $0.id == id }
+    }
+
+    override func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {
+        // Mock: ne fait rien, pas de listener Firebase
+    }
+
+    override func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
+        // Mock: ne fait rien, pas de listener Firebase
+    }
+
+    override func stopListening() {
+        // Mock: ne fait rien, pas de listener à arrêter
     }
 }

@@ -3,18 +3,18 @@ import SwiftUI
 // MARK: - Vue Rayons corrigée utilisant uniquement les ViewModels
 
 struct AisleListView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var viewModel: AisleListViewModel
     @State private var showingAddForm = false
     @State private var addButtonScale: CGFloat = 1.0
     @State private var cardAppearAnimation = false
-    
+
     var body: some View {
         Group {
-            if appState.isLoading && appState.aisles.isEmpty {
+            if viewModel.isLoading && viewModel.isEmpty {
                 // Chargement initial
                 ProgressView("Chargement des rayons...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if appState.aisles.isEmpty {
+            } else if viewModel.isEmpty {
                 // État vide modernisé
                 VStack(spacing: 24) {
                     Spacer()
@@ -80,8 +80,8 @@ struct AisleListView: View {
                 // Liste des rayons avec cards modernes
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(Array(appState.aisles.enumerated()), id: \.element.id) { index, aisle in
-                            NavigationLink(destination: AisleDetailView(aisle: aisle).environmentObject(appState)) {
+                        ForEach(Array(viewModel.aisles.enumerated()), id: \.element.id) { index, aisle in
+                            NavigationLink(destination: AisleDetailView(aisle: aisle)) {
                                 ModernAisleCard(aisle: aisle)
                                     .transition(.asymmetric(
                                         insertion: .scale.combined(with: .opacity),
@@ -91,16 +91,16 @@ struct AisleListView: View {
                             }
                             .onAppear {
                                 // Pagination
-                                if aisle.id == appState.aisles.last?.id {
+                                if aisle.id == viewModel.aisles.last?.id {
                                     Task {
-                                        await appState.loadMoreAisles()
+                                        await viewModel.loadMoreAisles()
                                     }
                                 }
                             }
                         }
-                        
+
                         // Indicateur de chargement pour pagination
-                        if appState.isLoadingMore {
+                        if viewModel.isLoadingMore {
                             ProgressView()
                                 .padding()
                         }
@@ -109,7 +109,7 @@ struct AisleListView: View {
                     .padding(.vertical, 12)
                 }
                 .refreshable {
-                    await appState.loadData()
+                    await viewModel.loadAisles()
                 }
                 .onAppear {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -169,14 +169,14 @@ struct AisleListView: View {
         .sheet(isPresented: $showingAddForm) {
             NavigationStack {
                 AisleFormView(aisle: nil)
-                    .environmentObject(appState)
+                    .environmentObject(viewModel)
             }
         }
         .onAppear {
             // S'assurer que les données sont chargées
-            if appState.aisles.isEmpty && !appState.isLoading {
+            if viewModel.isEmpty && !viewModel.isLoading {
                 Task {
-                    await appState.loadData()
+                    await viewModel.loadAisles()
                 }
             }
         }
@@ -187,15 +187,15 @@ struct AisleListView: View {
 
 struct ModernAisleCard: View {
     let aisle: Aisle
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @Environment(\.colorScheme) var colorScheme
-    
+
     private var medicineCount: Int {
-        appState.medicines.filter { $0.aisleId == aisle.id }.count
+        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }.count
     }
-    
+
     private var criticalCount: Int {
-        appState.medicines
+        medicineViewModel.medicines
             .filter { $0.aisleId == aisle.id && $0.stockStatus == .critical }
             .count
     }
@@ -303,14 +303,14 @@ struct CriticalBadge: View {
 
 struct AisleRow: View {
     let aisle: Aisle
-    @EnvironmentObject var appState: AppState
-    
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+
     private var medicineCount: Int {
-        appState.medicines.filter { $0.aisleId == aisle.id }.count
+        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }.count
     }
-    
+
     private var criticalCount: Int {
-        appState.medicines
+        medicineViewModel.medicines
             .filter { $0.aisleId == aisle.id && $0.stockStatus == .critical }
             .count
     }
@@ -368,13 +368,14 @@ struct AisleRow: View {
 
 struct AisleDetailView: View {
     let aisle: Aisle
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var viewModel: AisleListViewModel
     @State private var showingEditForm = false
     @State private var showingDeleteAlert = false
     @Environment(\.dismiss) var dismiss
-    
+
     private var medicines: [Medicine] {
-        appState.medicines.filter { $0.aisleId == aisle.id }
+        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }
     }
     
     var body: some View {
@@ -443,7 +444,7 @@ struct AisleDetailView: View {
                         
                         LazyVStack(spacing: 0) {
                             ForEach(medicines) { medicine in
-                                NavigationLink(destination: MedicineDetailView(medicine: medicine).environmentObject(appState)) {
+                                NavigationLink(destination: MedicineDetailView(medicine: medicine).environmentObject(medicineViewModel)) {
                                     MedicineRow(medicine: medicine)
                                 }
                                 
@@ -483,14 +484,14 @@ struct AisleDetailView: View {
         .sheet(isPresented: $showingEditForm) {
             NavigationStack {
                 AisleFormView(aisle: aisle)
-                    .environmentObject(appState)
+                    .environmentObject(viewModel)
             }
         }
         .alert("Supprimer ce rayon ?", isPresented: $showingDeleteAlert) {
             Button("Annuler", role: .cancel) {}
             Button("Supprimer", role: .destructive) {
                 Task {
-                    await appState.deleteAisle(aisle)
+                    await viewModel.deleteAisle(aisle)
                     dismiss()
                 }
             }

@@ -2,12 +2,12 @@ import SwiftUI
 
 struct ModernProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    @EnvironmentObject var appState: AppState
+    @StateObject private var dashboardViewModel = DashboardViewModel.makeDefault()
     @State private var showingSignOutAlert = false
     @State private var showingNotificationSettings = false
     @State private var selectedStat: StatType? = nil
     @Environment(\.colorScheme) var colorScheme
-    
+
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     
     enum StatType: String, CaseIterable, Identifiable {
@@ -78,6 +78,9 @@ struct ModernProfileView: View {
         .sheet(item: $selectedStat) { stat in
             StatDetailView(stat: stat)
         }
+        .task {
+            await dashboardViewModel.loadData()
+        }
     }
     
     private var profileHeader: some View {
@@ -140,40 +143,40 @@ struct ModernProfileView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
             ProfileStatCard(
                 type: StatType.medicines,
-                value: "\(appState.medicines.count)",
+                value: "\(dashboardViewModel.statistics.totalMedicines)",
                 trend: calculateTrend(for: .medicines)
             )
             .onTapGesture {
                 impactFeedback.impactOccurred()
                 selectedStat = .medicines
             }
-            
+
             ProfileStatCard(
                 type: StatType.aisles,
-                value: "\(appState.aisles.count)",
+                value: "\(dashboardViewModel.statistics.totalAisles)",
                 trend: nil
             )
             .onTapGesture {
                 impactFeedback.impactOccurred()
                 selectedStat = .aisles
             }
-            
+
             ProfileStatCard(
                 type: StatType.critical,
-                value: "\(appState.criticalMedicines.count)",
+                value: "\(dashboardViewModel.statistics.criticalStockCount)",
                 trend: calculateTrend(for: .critical),
-                isAlert: appState.criticalMedicines.count > 0
+                isAlert: dashboardViewModel.statistics.criticalStockCount > 0
             )
             .onTapGesture {
                 impactFeedback.impactOccurred()
                 selectedStat = .critical
             }
-            
+
             ProfileStatCard(
                 type: StatType.expiring,
-                value: "\(appState.expiringMedicines.count)",
+                value: "\(dashboardViewModel.statistics.expiringMedicinesCount)",
                 trend: calculateTrend(for: .expiring),
-                isAlert: appState.expiringMedicines.count > 0
+                isAlert: dashboardViewModel.statistics.expiringMedicinesCount > 0
             )
             .onTapGesture {
                 impactFeedback.impactOccurred()
@@ -254,8 +257,8 @@ struct ModernProfileView: View {
     }
     
     private func getNotificationBadge() -> Int? {
-        let criticalCount = appState.criticalMedicines.count
-        let expiringCount = appState.expiringMedicines.count
+        let criticalCount = dashboardViewModel.statistics.criticalStockCount
+        let expiringCount = dashboardViewModel.statistics.expiringMedicinesCount
         let total = criticalCount + expiringCount
         return total > 0 ? total : nil
     }

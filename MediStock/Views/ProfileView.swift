@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    @EnvironmentObject var appState: AppState
+    @StateObject private var dashboardViewModel = DashboardViewModel.makeDefault()
     @State private var showingSignOutAlert = false
     @State private var showingNotificationSettings = false
-    
+
     var body: some View {
         List {
             // Profil utilisateur
@@ -14,28 +14,28 @@ struct ProfileView: View {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.accentColor)
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(authViewModel.currentUser?.displayName ?? "Utilisateur")
                             .font(.title2)
                             .fontWeight(.semibold)
-                        
+
                         Text(authViewModel.currentUser?.email ?? "")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(.vertical, 8)
             }
-            
+
             // Statistiques
             Section("Statistiques") {
-                StatRow(label: "Médicaments", value: "\(appState.medicines.count)")
-                StatRow(label: "Rayons", value: "\(appState.aisles.count)")
-                StatRow(label: "Stocks critiques", value: "\(appState.criticalMedicines.count)")
-                StatRow(label: "Expirations proches", value: "\(appState.expiringMedicines.count)")
+                StatRow(label: "Médicaments", value: "\(dashboardViewModel.statistics.totalMedicines)")
+                StatRow(label: "Rayons", value: "\(dashboardViewModel.statistics.totalAisles)")
+                StatRow(label: "Stocks critiques", value: "\(dashboardViewModel.statistics.criticalStockCount)")
+                StatRow(label: "Expirations proches", value: "\(dashboardViewModel.statistics.expiringMedicinesCount)")
             }
             
             // Paramètres
@@ -77,6 +77,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showingNotificationSettings) {
             NotificationSettingsView()
         }
+        .task {
+            await dashboardViewModel.loadData()
+        }
     }
 }
 
@@ -95,45 +98,8 @@ struct StatRow: View {
     }
 }
 
-struct AboutView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
-    
-    var body: some View {
-        List {
-            Section {
-                VStack(spacing: 20) {
-                    Image(systemName: "pills.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.accentColor)
-                    
-                    Text("MediStock")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text("Version 1.0.0")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-            }
-            
-            Section("Informations") {
-                InfoRow(label: "Développeur", value: authViewModel.currentUser?.displayName ?? "Développeur")
-                InfoRow(label: "Licence", value: "TliliOS")
-                InfoRow(label: "Support", value: authViewModel.currentUser?.email ?? "contact@medistock.com")
-            }
-            
-            Section("Technologies") {
-                Text("Développé avec SwiftUI et Firebase")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .navigationTitle("À propos")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
+// MARK: - AboutView
+// ✅ AboutView est défini dans PlaceholderViews.swift pour éviter la duplication
 
 struct NotificationSettingsView: View {
     @Environment(\.dismiss) var dismiss

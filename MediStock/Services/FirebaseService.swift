@@ -13,17 +13,21 @@ class FirebaseService: ObservableObject {
     private init() {}
     
     // MARK: - Configuration
-    
+
     func configure() {
-        // Configuration Firebase
-        FirebaseApp.configure()
-        
+        // Configuration Firebase sécurisée avec FirebaseConfigLoader
+        #if DEBUG
+        FirebaseConfigLoader.configureForTesting()
+        #else
+        FirebaseConfigLoader.configure(for: .production)
+        #endif
+
         // Activer Analytics
         Analytics.setAnalyticsCollectionEnabled(true)
-        
+
         // Activer Crashlytics
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-        
+
         // Configuration cache Firestore
         let settings = FirestoreSettings()
         settings.cacheSettings = PersistentCacheSettings(sizeBytes: 10 * 1024 * 1024 as NSNumber)

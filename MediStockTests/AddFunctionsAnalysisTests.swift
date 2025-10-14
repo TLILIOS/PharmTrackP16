@@ -15,7 +15,7 @@ final class AddFunctionsAnalysisTests: XCTestCase {
         mockDataService = MockDataServiceAdapterForIntegration()
         // Skip auth initialization in tests
         // Note: This is a workaround since AuthService initializes Firebase
-        appState = AppState(data: mockDataService)
+        appState = AppState()
         // Manually set properties to avoid auth initialization
         appState.currentUser = nil
     }

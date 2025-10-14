@@ -2,10 +2,10 @@ import Foundation
 import FirebaseAuth
 import Combine
 
-// MARK: - Service d'authentification simplifié
+// MARK: - Service d'authentification Firebase
 
 @MainActor
-class AuthService: ObservableObject {
+class FirebaseAuthService: AuthServiceProtocol {
     @Published var currentUser: User?
     
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -78,4 +78,16 @@ class AuthService: ObservableObject {
     func resetPassword(email: String) async throws {
         try await Auth.auth().sendPasswordReset(withEmail: email)
     }
+
+    func getAuthToken() async throws -> String? {
+        guard let firebaseUser = Auth.auth().currentUser else {
+            return nil
+        }
+        return try await firebaseUser.getIDToken()
+    }
 }
+
+// MARK: - Rétrocompatibilité
+
+/// Typealias pour maintenir la compatibilité avec le code existant
+typealias AuthService = FirebaseAuthService

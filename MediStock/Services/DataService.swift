@@ -2,9 +2,9 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-// MARK: - Service de données unifié avec validation et transactions
+// MARK: - Service de données Firebase unifié avec validation et transactions
 
-class DataService {
+class FirebaseDataService: DataServiceProtocol {
     private let db = Firestore.firestore()
     private var listeners: [ListenerRegistration] = []
     
@@ -542,12 +542,17 @@ class DataService {
     
     func deleteMultipleMedicines(ids: [String]) async throws {
         let batch = db.batch()
-        
+
         for id in ids {
             let ref = db.collection("medicines").document(id)
             batch.deleteDocument(ref)
         }
-        
+
         try await batch.commit()
     }
 }
+
+// MARK: - Rétrocompatibilité
+
+/// Typealias pour maintenir la compatibilité avec le code existant
+typealias DataService = FirebaseDataService

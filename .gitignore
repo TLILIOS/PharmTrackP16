@@ -9,6 +9,7 @@ build/
 
 # Firebase configuration files
 GoogleService-Info.plist
+GoogleService-Info-Test.plist
 google-services.json
 
 # API Keys and secrets
@@ -17,6 +18,8 @@ google-services.json
 *.p12
 .env
 config.json
+Config.xcconfig
+Config-Test.xcconfig
 
 # Archives et backups
 ARCHIVE_OLD_CODE/

@@ -1,10 +1,11 @@
 import SwiftUI
 
 struct StockAdjustmentView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @Environment(\.dismiss) var dismiss
-    
+
     let medicine: Medicine
+    var onStockUpdated: (() -> Void)?
     
     @State private var adjustmentType = AdjustmentType.add
     @State private var quantity = ""
@@ -198,37 +199,29 @@ struct StockAdjustmentView: View {
         }
         
         isLoading = true
-        
+
         Task {
-            let updatedMedicine = Medicine(
-                id: medicine.id,
-                name: medicine.name,
-                description: medicine.description,
-                dosage: medicine.dosage,
-                form: medicine.form,
-                reference: medicine.reference,
-                unit: medicine.unit,
-                currentQuantity: finalQuantity,
-                maxQuantity: medicine.maxQuantity,
-                warningThreshold: medicine.warningThreshold,
-                criticalThreshold: medicine.criticalThreshold,
-                expiryDate: medicine.expiryDate,
-                aisleId: medicine.aisleId,
-                createdAt: medicine.createdAt,
-                updatedAt: Date()
+            // Calculer l'ajustement (la différence entre le stock final et le stock actuel)
+            let adjustment = finalQuantity - medicine.currentQuantity
+            let adjustmentReason = reason.isEmpty ? "Ajustement manuel" : reason
+
+            // Utiliser la méthode adjustStock du ViewModel
+            await medicineViewModel.adjustStock(
+                medicine: medicine,
+                adjustment: adjustment,
+                reason: adjustmentReason
             )
-            
-            let adjustment = adjustmentType == .add ? qty : (adjustmentType == .remove ? -qty : 0)
-            if adjustmentType == .set {
-                await appState.saveMedicine(updatedMedicine)
-            } else {
-                await appState.adjustStock(medicine: medicine, adjustment: adjustment, reason: reason.isEmpty ? adjustmentType.rawValue : reason)
-            }
-            
-            // TODO: Enregistrer l'historique avec la raison
-            
+
             await MainActor.run {
-                dismiss()
+                isLoading = false
+                if medicineViewModel.errorMessage == nil {
+                    onStockUpdated?()
+                    dismiss()
+                } else {
+                    errorMessage = medicineViewModel.errorMessage ?? "Erreur inconnue"
+                    showingError = true
+                    medicineViewModel.clearError()
+                }
             }
         }
     }

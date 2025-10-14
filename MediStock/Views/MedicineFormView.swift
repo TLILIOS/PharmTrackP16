@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct MedicineFormView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleViewModel: AisleListViewModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     
@@ -182,7 +183,7 @@ struct MedicineFormView: View {
                             // Sélecteur de rayon modernisé
                             ModernAislePicker(
                                 selectedAisleId: $selectedAisleId,
-                                aisles: appState.aisles
+                                aisles: aisleViewModel.aisles
                             )
                             .padding(.horizontal, 20)
                             
@@ -362,8 +363,8 @@ struct MedicineFormView: View {
                     updatedAt: Date()
                 )
                 
-                await appState.saveMedicine(newMedicine)
-                
+                await medicineViewModel.saveMedicine(newMedicine)
+
                 await MainActor.run {
                     dismiss()
                 }

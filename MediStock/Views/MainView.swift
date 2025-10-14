@@ -2,15 +2,14 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var appState: AppState
-    @State private var selectedTab = 0
     @State private var dashboardPath = NavigationPath()
     @State private var medicinesPath = NavigationPath()
     @State private var aislesPath = NavigationPath()
     @State private var historyPath = NavigationPath()
     @State private var profilePath = NavigationPath()
-    
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appState.selectedTab) {
             NavigationStack(path: $dashboardPath) {
                 DashboardView()
                     .navigationDestination(for: MedicineDestination.self) { destination in
@@ -71,11 +70,11 @@ struct MainView: View {
                 ModernHistoryView()
                     .navigationDestination(for: HistoryDestination.self) { destination in
                         switch destination {
-                        case .detail(_):
+                        case .detail:
                             HistoryDetailView()
                                 .environmentObject(appState)
-                        case .medicineHistory(_):
-                            ModernHistoryView()
+                        case .medicineHistory(let medicine):
+                            MedicineHistoryView(medicine: medicine)
                                 .environmentObject(appState)
                         }
                     }
@@ -90,19 +89,19 @@ struct MainView: View {
                     .navigationDestination(for: ProfileDestination.self) { destination in
                         switch destination {
                         case .settings:
-                            ProfileView()
+                            SettingsView()
                                 .environmentObject(appState)
                         case .appearance:
-                            ProfileView()
+                            AppearanceView()
                                 .environmentObject(appState)
                         case .notifications:
-                            ProfileView()
+                            NotificationsSettingsView()
                                 .environmentObject(appState)
                         case .about:
-                            ProfileView()
+                            AboutView()
                                 .environmentObject(appState)
                         case .help:
-                            ProfileView()
+                            HelpView()
                                 .environmentObject(appState)
                         }
                     }
@@ -112,7 +111,7 @@ struct MainView: View {
             }
             .tag(4)
         }
-        .onChange(of: selectedTab) {
+        .onChange(of: appState.selectedTab) {
             // Réinitialiser les paths de navigation lors du changement de tab
             dashboardPath = NavigationPath()
             medicinesPath = NavigationPath()
@@ -121,10 +120,7 @@ struct MainView: View {
             profilePath = NavigationPath()
         }
         .task {
-            // Charger les données si l'utilisateur est connecté
-            if appState.currentUser != nil {
-                await appState.loadData()
-            }
+            // Les données seront chargées par les ViewModels individuels
         }
     }
 }

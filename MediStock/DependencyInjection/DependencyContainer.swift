@@ -24,7 +24,7 @@ class DependencyContainer {
     @MainActor
     func makeMedicineListViewModel() -> MedicineListViewModel {
         MedicineListViewModel(
-            repository: medicineRepository,
+            medicineRepository: medicineRepository,
             historyRepository: historyRepository,
             notificationService: notificationService
         )

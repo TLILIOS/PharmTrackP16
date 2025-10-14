@@ -216,8 +216,104 @@ class MockAuthRepository: AuthRepositoryProtocol {
 
 class MockNotificationService: NotificationService {
     var checkExpirationsCallCount = 0
-    
+
     override func checkExpirations(medicines: [Medicine]) async {
         checkExpirationsCallCount += 1
+    }
+}
+
+// MARK: - Mock Auth Service (Standalone)
+
+@MainActor
+class MockAuthServiceStandalone: ObservableObject {
+    @Published var currentUser: User?
+    var signInCallCount = 0
+    var signUpCallCount = 0
+    var signOutCallCount = 0
+    var resetPasswordCallCount = 0
+    var shouldThrowError = false
+    var errorToThrow: Error?
+
+    init() {
+        self.currentUser = nil
+    }
+
+    func signIn(email: String, password: String) async throws {
+        signInCallCount += 1
+
+        if shouldThrowError {
+            throw errorToThrow ?? AuthError.unknownError(NSError(domain: "MockAuthService", code: 0))
+        }
+
+        // Validation basique pour les tests
+        guard !email.isEmpty else {
+            throw AuthError.invalidEmail
+        }
+        guard !password.isEmpty else {
+            throw AuthError.wrongPassword
+        }
+        guard email.contains("@") else {
+            throw AuthError.invalidEmail
+        }
+
+        currentUser = User(
+            id: "mock-user-\(UUID().uuidString)",
+            email: email,
+            displayName: "Mock User"
+        )
+    }
+
+    func signUp(email: String, password: String, displayName: String) async throws {
+        signUpCallCount += 1
+
+        if shouldThrowError {
+            throw errorToThrow ?? AuthError.unknownError(NSError(domain: "MockAuthService", code: 0))
+        }
+
+        // Validation basique
+        guard !email.isEmpty else {
+            throw AuthError.invalidEmail
+        }
+        guard !password.isEmpty else {
+            throw AuthError.weakPassword
+        }
+        guard password.count >= 6 else {
+            throw AuthError.weakPassword
+        }
+
+        currentUser = User(
+            id: "mock-user-\(UUID().uuidString)",
+            email: email,
+            displayName: displayName
+        )
+    }
+
+    func signOut() async throws {
+        signOutCallCount += 1
+
+        if shouldThrowError {
+            throw errorToThrow ?? AuthError.unknownError(NSError(domain: "MockAuthService", code: 0))
+        }
+
+        currentUser = nil
+    }
+
+    func resetPassword(email: String) async throws {
+        resetPasswordCallCount += 1
+
+        if shouldThrowError {
+            throw errorToThrow ?? AuthError.unknownError(NSError(domain: "MockAuthService", code: 0))
+        }
+
+        guard !email.isEmpty else {
+            throw AuthError.invalidEmail
+        }
+        guard email.contains("@") else {
+            throw AuthError.invalidEmail
+        }
+    }
+
+    func getCurrentUser() -> User? {
+        return currentUser
     }
 }

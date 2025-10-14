@@ -335,7 +335,7 @@ struct QuantityStepperView_Previews: PreviewProvider {
                     updatedAt: Date()
                 )
             )
-            .environmentObject(MedicineListViewModel())
+            .environmentObject(MedicineListViewModel.makeDefault())
         }
         .padding()
     }

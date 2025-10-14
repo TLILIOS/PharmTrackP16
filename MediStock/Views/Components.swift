@@ -67,8 +67,8 @@ struct MedicineRow: View {
 struct MedicineCard: View {
     let medicine: Medicine
     var showExpiry: Bool = false
-    @EnvironmentObject var appState: AppState
-    
+    var aisle: Aisle? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             // En-tête
@@ -77,23 +77,23 @@ struct MedicineCard: View {
                     Text(medicine.name)
                         .font(.headline)
                         .lineLimit(1)
-                    
+
                     if let dosage = medicine.dosage {
                         Text(dosage)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Circle()
                     .fill(medicine.stockStatus.statusColor)
                     .frame(width: 12, height: 12)
             }
-            
+
             Divider()
-            
+
             // Stock
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
@@ -103,11 +103,11 @@ struct MedicineCard: View {
                         .fontWeight(.semibold)
                 }
                 .font(.caption)
-                
+
                 ProgressView(value: Double(medicine.currentQuantity), total: Double(medicine.maxQuantity))
                     .tint(medicine.stockStatus.statusColor)
             }
-            
+
             // Expiration si demandée
             if showExpiry, let expiryDate = medicine.expiryDate {
                 HStack {
@@ -120,9 +120,9 @@ struct MedicineCard: View {
                 .foregroundColor(medicine.isExpired ? .red : (medicine.isExpiringSoon ? .orange : .secondary))
                 .padding(.top, 4)
             }
-            
+
             // Rayon
-            if let aisle = appState.aisles.first(where: { $0.id == medicine.aisleId }) {
+            if let aisle = aisle {
                 HStack {
                     Image(systemName: aisle.icon)
                         .font(.caption)
@@ -226,16 +226,7 @@ extension Date {
     }
 }
 
-extension StockStatus {
-    var label: String {
-        switch self {
-        case .normal: return "Stock suffisant"
-        case .warning: return "Stock faible"
-        case .critical: return "Stock critique"
-        }
-    }
-}
-
+// Extension StockStatus.label déplacée dans Models.swift
 // Extension Color déplacée dans Extensions/Color+Extensions.swift
 
 // MARK: - Stat Card générique pour Dashboard et autres vues

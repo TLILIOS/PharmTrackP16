@@ -3,9 +3,9 @@ import Foundation
 // MARK: - Medicine Repository
 
 class MedicineRepository: MedicineRepositoryProtocol {
-    private let dataService: DataServiceAdapter
-    
-    init(dataService: DataServiceAdapter = DataServiceAdapter()) {
+    private let dataService: DataServiceProtocol
+
+    init(dataService: DataServiceProtocol = FirebaseDataService()) {
         self.dataService = dataService
     }
     

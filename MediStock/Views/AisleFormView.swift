@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AisleFormView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var viewModel: AisleListViewModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     
@@ -269,7 +269,7 @@ struct AisleFormView: View {
     
     private func saveAisle() {
         isLoading = true
-        
+
         Task {
             let newAisle = Aisle(
                 id: aisle?.id ?? "",
@@ -278,15 +278,15 @@ struct AisleFormView: View {
                 colorHex: colorHex,
                 icon: icon
             )
-            
-            await appState.saveAisle(newAisle)
-            
-            if let error = appState.errorMessage {
+
+            await viewModel.saveAisle(newAisle)
+
+            if let error = viewModel.errorMessage {
                 await MainActor.run {
                     errorMessage = error
                     showingError = true
                     isLoading = false
-                    appState.clearError()
+                    viewModel.clearError()
                 }
             } else {
                 await MainActor.run {

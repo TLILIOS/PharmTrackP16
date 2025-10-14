@@ -105,12 +105,20 @@ struct StockHistory: Identifiable, Codable {
 
 enum StockStatus {
     case normal, warning, critical
-    
+
     var statusColor: Color {
         switch self {
         case .normal: return .green
         case .warning: return .orange
         case .critical: return .red
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .normal: return "Stock normal"
+        case .warning: return "Stock faible"
+        case .critical: return "Stock critique"
         }
     }
 }

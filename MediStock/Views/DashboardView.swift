@@ -3,6 +3,7 @@ import UIKit
 
 struct DashboardView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var dashboardViewModel: DashboardViewModel
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var showingExportSheet = false
     @State private var pdfURL: URL?
@@ -28,14 +29,14 @@ struct DashboardView: View {
                 HStack(spacing: 15) {
                     StatCard(
                         title: "Médicaments",
-                        value: "\(appState.medicines.count)",
+                        value: "\(dashboardViewModel.statistics.totalMedicines)",
                         icon: "pills",
                         color: Color.blue
                     )
-                    
+
                     StatCard(
                         title: "Rayons",
-                        value: "\(appState.aisles.count)",
+                        value: "\(dashboardViewModel.statistics.totalAisles)",
                         icon: "square.grid.2x2",
                         color: Color.green
                     )
@@ -43,7 +44,7 @@ struct DashboardView: View {
                 .padding(.horizontal)
                 
                 // Stocks critiques
-                if !appState.criticalMedicines.isEmpty {
+                if !dashboardViewModel.criticalMedicines.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Label("Stocks critiques", systemImage: "exclamationmark.triangle.fill")
@@ -54,10 +55,10 @@ struct DashboardView: View {
                             .font(.caption)
                         }
                         .padding(.horizontal)
-                        
+
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                ForEach(appState.criticalMedicines.prefix(5)) { medicine in
+                                ForEach(dashboardViewModel.topCriticalMedicines) { medicine in
                                     MedicineCard(medicine: medicine)
                                         .frame(width: 250)
                                 }
@@ -68,7 +69,7 @@ struct DashboardView: View {
                 }
                 
                 // Médicaments expirant bientôt
-                if !appState.expiringMedicines.isEmpty {
+                if !dashboardViewModel.expiringMedicines.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Label("Expirations proches", systemImage: "calendar.badge.exclamationmark")
@@ -79,10 +80,10 @@ struct DashboardView: View {
                             .font(.caption)
                         }
                         .padding(.horizontal)
-                        
+
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                ForEach(appState.expiringMedicines.prefix(5)) { medicine in
+                                ForEach(dashboardViewModel.topExpiringMedicines) { medicine in
                                     MedicineCard(medicine: medicine, showExpiry: true)
                                         .frame(width: 250)
                                 }
@@ -120,13 +121,20 @@ struct DashboardView: View {
             case .criticalStock:
                 CriticalStockListView()
                     .environmentObject(appState)
+                    .environmentObject(dashboardViewModel)
             case .expiringMedicines:
                 ExpiringMedicinesListView()
                     .environmentObject(appState)
+                    .environmentObject(dashboardViewModel)
             }
         }
         .refreshable {
-            await appState.loadData()
+            await dashboardViewModel.loadData()
+        }
+        .task {
+            if dashboardViewModel.medicines.isEmpty {
+                await dashboardViewModel.loadData()
+            }
         }
         .sheet(isPresented: $showingExportSheet) {
             if let pdfURL = pdfURL {
@@ -211,10 +219,10 @@ struct DashboardView: View {
                 ]
                 
                 let summaryItems = [
-                    "Nombre total de médicaments: \(appState.medicines.count)",
-                    "Nombre de rayons: \(appState.aisles.count)",
-                    "Médicaments en stock critique: \(appState.criticalMedicines.count)",
-                    "Médicaments expirant bientôt: \(appState.expiringMedicines.count)"
+                    "Nombre total de médicaments: \(dashboardViewModel.medicines.count)",
+                    "Nombre de rayons: \(dashboardViewModel.aisles.count)",
+                    "Médicaments en stock critique: \(dashboardViewModel.criticalMedicines.count)",
+                    "Médicaments expirant bientôt: \(dashboardViewModel.expiringMedicines.count)"
                 ]
                 
                 for item in summaryItems {
@@ -233,13 +241,13 @@ struct DashboardView: View {
                     .foregroundColor: UIColor.black
                 ]
                 
-                for aisle in appState.aisles.sorted(by: { $0.name < $1.name }) {
+                for aisle in dashboardViewModel.aisles.sorted(by: { $0.name < $1.name }) {
                     // Vérifier si on a besoin d'une nouvelle page
                     if currentY > pageHeight - 100 {
                         context.beginPage()
                         currentY = 50
                     }
-                    
+
                     // Nom du rayon
                     let aisleTitle = "• \(aisle.name)"
                     let aisleTitleAttributes: [NSAttributedString.Key: Any] = [
@@ -248,9 +256,9 @@ struct DashboardView: View {
                     ]
                     aisleTitle.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: aisleTitleAttributes)
                     currentY += 20
-                    
+
                     // Médicaments du rayon
-                    let medicinesInAisle = appState.medicines.filter { $0.aisleId == aisle.id }
+                    let medicinesInAisle = dashboardViewModel.medicines.filter { $0.aisleId == aisle.id }
                     if medicinesInAisle.isEmpty {
                         "  Aucun médicament".draw(at: CGPoint(x: leftMargin + 40, y: currentY), withAttributes: itemAttributes)
                         currentY += 20
@@ -268,34 +276,34 @@ struct DashboardView: View {
             }
             
             // Section: Stocks critiques
-            if !appState.criticalMedicines.isEmpty {
+            if !dashboardViewModel.criticalMedicines.isEmpty {
                 yPosition = drawSection(context: context, title: "Stocks critiques", yPosition: yPosition, pageRect: pageRect) { y in
                     var currentY = y
                     let criticalAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: 11),
                         .foregroundColor: UIColor.red
                     ]
-                    
-                    for medicine in appState.criticalMedicines.sorted(by: { $0.name < $1.name }) {
+
+                    for medicine in dashboardViewModel.criticalMedicines.sorted(by: { $0.name < $1.name }) {
                         let info = "• \(medicine.name): \(medicine.currentQuantity)/\(medicine.maxQuantity) \(medicine.unit) (Seuil critique: \(medicine.criticalThreshold))"
                         info.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: criticalAttributes)
                         currentY += 20
                     }
-                    
+
                     return currentY
                 }
             }
             
             // Section: Expirations proches
-            if !appState.expiringMedicines.isEmpty {
+            if !dashboardViewModel.expiringMedicines.isEmpty {
                 yPosition = drawSection(context: context, title: "Expirations proches", yPosition: yPosition, pageRect: pageRect) { y in
                     var currentY = y
                     let expiryAttributes: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: 11),
                         .foregroundColor: UIColor.orange
                     ]
-                    
-                    for medicine in appState.expiringMedicines.sorted(by: { $0.expiryDate ?? Date() < $1.expiryDate ?? Date() }) {
+
+                    for medicine in dashboardViewModel.expiringMedicines.sorted(by: { $0.expiryDate ?? Date() < $1.expiryDate ?? Date() }) {
                         if let expiryDate = medicine.expiryDate {
                             let status = medicine.isExpired ? "EXPIRÉ" : "Expire"
                             let info = "• \(medicine.name): \(status) le \(expiryDate.formatted(date: .abbreviated, time: .omitted))"
@@ -307,32 +315,36 @@ struct DashboardView: View {
                             currentY += 20
                         }
                     }
-                    
+
                     return currentY
                 }
             }
             
-            // Section: Historique récent
+            // TODO: Section: Historique récent
+            // Cette section nécessite l'injection d'un HistoryViewModel
+            // pour respecter l'architecture MVVM strict
+            /*
             yPosition = drawSection(context: context, title: "Historique récent", yPosition: yPosition, pageRect: pageRect) { y in
                 var currentY = y
                 let historyAttributes: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 10),
                     .foregroundColor: UIColor.darkGray
                 ]
-                
-                let recentHistory = appState.history.prefix(20)
+
+                let recentHistory = historyViewModel.history.prefix(20)
                 for entry in recentHistory {
                     let info = "• \(entry.timestamp.formatted(date: .abbreviated, time: .shortened)) - \(entry.action): \(entry.details)"
                     info.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: historyAttributes)
                     currentY += 18
                 }
-                
+
                 if recentHistory.isEmpty {
                     "Aucune activité récente".draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: historyAttributes)
                 }
-                
+
                 return currentY
             }
+            */
         }
         
         return data
@@ -403,9 +415,10 @@ struct QuickActionButton: View {
 
 struct CriticalStockListView: View {
     @EnvironmentObject var appState: AppState
-    
+    @EnvironmentObject var dashboardViewModel: DashboardViewModel
+
     var body: some View {
-        List(appState.criticalMedicines) { medicine in
+        List(dashboardViewModel.criticalMedicines) { medicine in
             NavigationLink(value: MedicineDestination.detail(medicine)) {
                 MedicineRow(medicine: medicine)
             }
@@ -433,9 +446,10 @@ struct CriticalStockListView: View {
 
 struct ExpiringMedicinesListView: View {
     @EnvironmentObject var appState: AppState
-    
+    @EnvironmentObject var dashboardViewModel: DashboardViewModel
+
     var body: some View {
-        List(appState.expiringMedicines) { medicine in
+        List(dashboardViewModel.expiringMedicines) { medicine in
             NavigationLink(value: MedicineDestination.detail(medicine)) {
                 MedicineRow(medicine: medicine, showExpiry: true)
             }
