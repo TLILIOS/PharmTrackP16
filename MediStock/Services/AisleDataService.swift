@@ -32,9 +32,9 @@ class AisleDataService {
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
             .getDocuments()
-        
+
         return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Aisle.self)
+            try? decodeAisle(from: doc)
         }
     }
     
@@ -78,9 +78,9 @@ class AisleDataService {
             print("📄 [AisleDataService] Données brutes: \(doc.data())")
 
             do {
-                let aisle = try doc.data(as: Aisle.self)
+                let aisle = try decodeAisle(from: doc)
                 aisles.append(aisle)
-                print("✅ [AisleDataService] Document décodé avec succès: \(aisle.name)")
+                print("✅ [AisleDataService] Document décodé avec succès: \(aisle.name) (ID: \(aisle.id ?? "nil"))")
             } catch {
                 print("❌ [AisleDataService] ERREUR DE DÉCODAGE pour document \(doc.documentID):")
                 print("   Type d'erreur: \(type(of: error))")
@@ -100,7 +100,8 @@ class AisleDataService {
     /// Récupère un rayon par son ID
     func getAisle(by id: String) async throws -> Aisle? {
         let doc = try await db.collection("aisles").document(id).getDocument()
-        return try? doc.data(as: Aisle.self)
+        guard doc.exists else { return nil }
+        return try? decodeAisle(from: doc)
     }
     
     /// Vérifie si un rayon existe
@@ -134,23 +135,40 @@ class AisleDataService {
     
     /// Supprime un rayon
     func deleteAisle(_ aisle: Aisle) async throws {
+        print("🗑️ [AisleDataService] deleteAisle() appelée pour: \(aisle.name)")
+
         guard let aisleId = aisle.id, !aisleId.isEmpty else {
+            print("❌ [AisleDataService] ID invalide, abandon de la suppression")
             throw ValidationError.invalidId
         }
 
+        print("🔍 [AisleDataService] ID du rayon: \(aisleId)")
+
         // Vérifier qu'aucun médicament n'est lié à ce rayon
+        print("🔍 [AisleDataService] Vérification des médicaments liés au rayon...")
         try await validateNoMedicinesInAisle(aisleId)
+        print("✅ [AisleDataService] Aucun médicament lié, suppression autorisée")
 
         // Supprimer le rayon
+        print("✅ [AisleDataService] Suppression du rayon dans Firestore...")
         try await db.collection("aisles").document(aisleId).delete()
+        print("✅ [AisleDataService] Rayon supprimé avec succès")
 
         // Enregistrer dans l'historique
-        try await historyService.recordDeletion(
-            itemType: "aisle",
-            itemId: aisleId,
-            itemName: aisle.name,
-            details: "Suppression du rayon \(aisle.name)"
-        )
+        print("📝 [AisleDataService] Enregistrement dans l'historique...")
+        do {
+            try await historyService.recordDeletion(
+                itemType: "aisle",
+                itemId: aisleId,
+                itemName: aisle.name,
+                details: "Suppression du rayon \(aisle.name)"
+            )
+            print("✅ [AisleDataService] Suppression enregistrée dans l'historique avec succès")
+        } catch {
+            print("❌ [AisleDataService] ERREUR lors de l'enregistrement dans l'historique: \(error.localizedDescription)")
+            print("   Détails de l'erreur: \(error)")
+            throw error
+        }
     }
     
     /// Compte le nombre de médicaments dans un rayon
@@ -165,7 +183,18 @@ class AisleDataService {
     }
     
     // MARK: - Méthodes Privées
-    
+
+    /// Helper pour décoder un rayon depuis Firestore et assigner l'ID manuellement
+    private func decodeAisle(from document: DocumentSnapshot) throws -> Aisle {
+        var aisle = try document.data(as: Aisle.self)
+
+        // 🔧 FIX: Assigner manuellement le documentID car @DocumentID ne fonctionne pas toujours
+        // avec doc.data(as:)
+        aisle.id = document.documentID
+
+        return aisle
+    }
+
     private func resetPagination() {
         lastDocument = nil
         hasMore = true
@@ -232,7 +261,7 @@ class AisleDataService {
 
         // Récupérer le document sauvegardé pour avoir l'ID correctement décodé
         let savedDoc = try await aisleRef.getDocument()
-        guard let savedAisle = try? savedDoc.data(as: Aisle.self) else {
+        guard let savedAisle = try? decodeAisle(from: savedDoc) else {
             // Fallback : créer manuellement si le décodage échoue
             var manualAisle = aisle
             manualAisle.id = docId
@@ -270,17 +299,19 @@ extension AisleDataService {
         return db.collection("aisles")
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+
                 guard let documents = snapshot?.documents else {
                     print("Erreur listener aisles: \(error?.localizedDescription ?? "Unknown")")
                     completion([])
                     return
                 }
-                
+
                 let aisles = documents.compactMap { doc in
-                    try? doc.data(as: Aisle.self)
+                    try? self.decodeAisle(from: doc)
                 }
-                
+
                 completion(aisles)
             }
     }

@@ -145,7 +145,7 @@ struct MedicineListView: View {
                 searchAndFilterBar
 
                 // Nombre de résultats avec transition
-                if !medicineViewModel.searchText.isEmpty || medicineViewModel.selectedAisleId != nil {
+                if !medicineViewModel.searchText.isEmpty || !medicineViewModel.selectedAisleId.isEmpty {
                     HStack {
                         Text("\(medicineViewModel.filteredMedicines.count) résultat(s)")
                             .font(.caption)
@@ -157,12 +157,15 @@ struct MedicineListView: View {
 
                 // Liste des médicaments
                 LazyVStack(spacing: 12) {
-                    ForEach(medicineViewModel.filteredMedicines) { medicine in
+                    ForEach(Array(medicineViewModel.filteredMedicines.enumerated()), id: \.element.id) { index, medicine in
                         NavigationLink(value: MedicineDestination.detail(medicine)) {
                             ModernMedicineCard(medicine: medicine)
                         }
                         .buttonStyle(.plain)
                         .onAppear {
+                            // DEBUG: Log pour voir quels médicaments apparaissent
+                            print("🎨 [MedicineView] Rendering medicine #\(index): \(medicine.name) (ID: \(medicine.id ?? "nil"), AisleID: \(medicine.aisleId))")
+
                             // Pagination
                             if medicine.id == medicineViewModel.filteredMedicines.last?.id {
                                 Task {
@@ -225,15 +228,19 @@ struct MedicineListView: View {
             // Filtre par rayon
             if !aisleViewModel.aisles.isEmpty {
                 Picker("Rayon", selection: $medicineViewModel.selectedAisleId) {
-                    Text("Tous les rayons").tag(nil as String?)
+                    Text("Tous les rayons").tag("")
                     ForEach(aisleViewModel.aisles) { aisle in
                         if let aisleId = aisle.id {
                             Label(aisle.name, systemImage: aisle.icon)
-                                .tag(aisleId as String?)
+                                .tag(aisleId)
                         }
                     }
                 }
                 .pickerStyle(.menu)
+                .onChange(of: medicineViewModel.selectedAisleId) { oldValue, newValue in
+                    print("🔄 [MedicineView] Picker changed - Old: '\(oldValue)', New: '\(newValue)'")
+                    print("📋 [MedicineView] Available aisles: \(aisleViewModel.aisles.map { "\($0.name) (\($0.id ?? "nil"))" }.joined(separator: ", "))")
+                }
             }
         }
         .padding()

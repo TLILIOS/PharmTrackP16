@@ -22,8 +22,8 @@ class MedicineListViewModel: ObservableObject {
     /// Texte de recherche (binding depuis la vue)
     @Published var searchText = ""
 
-    /// Filtre par rayon sélectionné
-    @Published var selectedAisleId: String?
+    /// Filtre par rayon sélectionné (chaîne vide = tous les rayons)
+    @Published var selectedAisleId: String = ""
 
     /// Indicateur pagination
     @Published private(set) var hasMoreMedicines = true
@@ -60,12 +60,35 @@ class MedicineListViewModel: ObservableObject {
             }
         }
 
-        // Filtre par rayon
-        if let aisleId = selectedAisleId {
-            result = result.filter { $0.aisleId == aisleId }
+        // Filtre par rayon (si non vide)
+        if !selectedAisleId.isEmpty {
+            result = result.filter { $0.aisleId == selectedAisleId }
         }
 
-        return result.sorted { $0.name < $1.name }
+        let sorted = result.sorted { $0.name < $1.name }
+
+        // DEBUG: Logs pour identifier le problème
+        print("🔍 [MedicineListViewModel] filteredMedicines:")
+        print("  - Total medicines: \(medicines.count)")
+        print("  - Filtered count: \(sorted.count)")
+        print("  - Search text: '\(searchText)'")
+        print("  - Selected aisle: '\(selectedAisleId)'")
+        print("  - Filtered IDs: \(sorted.compactMap { $0.id }.joined(separator: ", "))")
+
+        // Vérifier les IDs nil
+        let nilIdCount = sorted.filter { $0.id == nil }.count
+        if nilIdCount > 0 {
+            print("  ⚠️ WARNING: \(nilIdCount) medicine(s) with nil ID")
+        }
+
+        // Vérifier les IDs dupliqués
+        let ids = sorted.compactMap { $0.id }
+        let uniqueIds = Set(ids)
+        if ids.count != uniqueIds.count {
+            print("  ⚠️ WARNING: Duplicate IDs detected! \(ids.count) items but only \(uniqueIds.count) unique IDs")
+        }
+
+        return sorted
     }
 
     /// Médicaments avec stock critique
@@ -178,19 +201,11 @@ class MedicineListViewModel: ObservableObject {
                 medicines.insert(saved, at: 0) // Ajouter en tête
             }
 
-            // Créer l'entrée d'historique
-            let isNewMedicine = medicine.id?.isEmpty ?? true
-            let historyEntry = HistoryEntry(
-                id: UUID().uuidString,
-                medicineId: saved.id ?? "",
-                userId: "", // Sera complété par le repository
-                action: isNewMedicine ? "Ajout" : "Modification",
-                details: "Médicament: \(saved.name)",
-                timestamp: Date()
-            )
-            try await historyRepository.addHistoryEntry(historyEntry)
+            // NOTE: L'historique est déjà enregistré par FirebaseDataService.saveMedicine()
+            // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
+            let isNewMedicine = medicine.id?.isEmpty ?? true
             if isNewMedicine {
                 FirebaseService.shared.logMedicineAdded(medicine: saved)
             } else {
@@ -214,16 +229,8 @@ class MedicineListViewModel: ObservableObject {
             // Retirer de la liste locale
             medicines.removeAll { $0.id == medicine.id }
 
-            // Historique
-            let historyEntry = HistoryEntry(
-                id: UUID().uuidString,
-                medicineId: medicine.id ?? "",
-                userId: "",
-                action: "Suppression",
-                details: "Médicament supprimé: \(medicine.name)",
-                timestamp: Date()
-            )
-            try await historyRepository.addHistoryEntry(historyEntry)
+            // NOTE: L'historique est déjà enregistré par FirebaseDataService.deleteMedicine()
+            // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
             FirebaseService.shared.logMedicineDeleted(medicineId: medicine.id ?? "")
@@ -252,16 +259,8 @@ class MedicineListViewModel: ObservableObject {
                 medicines[index] = updated
             }
 
-            // Historique avec détails
-            let historyEntry = HistoryEntry(
-                id: UUID().uuidString,
-                medicineId: medicine.id ?? "",
-                userId: "",
-                action: adjustment > 0 ? "Ajout stock" : "Retrait stock",
-                details: "\(abs(adjustment)) \(medicine.unit) - \(reason) (Stock: \(medicine.currentQuantity) → \(newQuantity))",
-                timestamp: Date()
-            )
-            try await historyRepository.addHistoryEntry(historyEntry)
+            // NOTE: L'historique est déjà enregistré par FirebaseDataService.updateMedicineStock()
+            // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
             FirebaseService.shared.logStockAdjusted(
@@ -283,7 +282,7 @@ class MedicineListViewModel: ObservableObject {
     /// Réinitialiser les filtres
     func resetFilters() {
         searchText = ""
-        selectedAisleId = nil
+        selectedAisleId = ""
     }
 
     /// Effacer l'erreur

@@ -231,11 +231,14 @@ class FirebaseDataService: DataServiceProtocol {
             
             return medicineToSave
         }
-        
+
         guard let medicine = result as? Medicine else {
             throw NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Transaction failed"])
         }
-        
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
         return medicine
     }
     
@@ -311,36 +314,44 @@ class FirebaseDataService: DataServiceProtocol {
         guard let medicine = result as? Medicine else {
             throw NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Transaction failed"])
         }
-        
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
         return medicine
     }
-    
+
     func deleteMedicine(id: String) async throws {
+        print("🗑️ [FirebaseDataService] deleteMedicine() appelée pour ID: \(id)")
+
         _ = try await db.runTransaction { [weak self] transaction, errorPointer in
             guard let self = self else {
                 errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Service deallocated"])
                 return nil
             }
-            
+
             let docRef = self.db.collection("medicines").document(id)
-            
+
             // Vérifier que le document existe
             let document: DocumentSnapshot
             do {
                 document = try transaction.getDocument(docRef)
             } catch {
+                print("❌ [FirebaseDataService] Erreur lors de la récupération du document: \(error.localizedDescription)")
                 errorPointer?.pointee = error as NSError
                 return nil
             }
-            
+
             guard document.exists else {
+                print("❌ [FirebaseDataService] Document non trouvé")
                 errorPointer?.pointee = NSError(domain: "DataService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Médicament non trouvé"])
                 return nil
             }
-            
+
             // Supprimer le médicament
+            print("✅ [FirebaseDataService] Suppression du document")
             transaction.deleteDocument(docRef)
-            
+
             // Créer l'entrée d'historique
             if let medicine = try? document.data(as: Medicine.self) {
                 let historyEntry = HistoryEntry(
@@ -351,21 +362,34 @@ class FirebaseDataService: DataServiceProtocol {
                     details: "Médicament supprimé: \(medicine.name)",
                     timestamp: Date()
                 )
-                
+
+                print("📝 [FirebaseDataService] Création de l'entrée d'historique:")
+                print("   Action: \(historyEntry.action)")
+                print("   Details: \(historyEntry.details)")
+                print("   UserID: \(historyEntry.userId)")
+
                 do {
                     let historyData = try Firestore.Encoder().encode(historyEntry)
                     let historyRef = self.db.collection("history").document(historyEntry.id)
                     transaction.setData(historyData, forDocument: historyRef)
+                    print("✅ [FirebaseDataService] Historique ajouté à la transaction")
                 } catch {
+                    print("❌ [FirebaseDataService] Erreur d'encodage de l'historique: \(error.localizedDescription)")
                     errorPointer?.pointee = error as NSError
                     return nil
                 }
             }
-            
+
             return true
         }
+
+        print("✅ [FirebaseDataService] Transaction de suppression terminée")
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+        print("📢 [FirebaseDataService] Notification HistoryDidChange envoyée")
     }
-    
+
     // MARK: - Rayons (Version refactorisée)
     
     private var lastAisleDocument: DocumentSnapshot?
@@ -577,27 +601,9 @@ class FirebaseDataService: DataServiceProtocol {
     // MARK: - Historique
 
     func getHistory() async throws -> [HistoryEntry] {
-        // Essayer d'abord le cache
-        do {
-            let cacheSnapshot = try await db.collection("history")
-                .whereField("userId", isEqualTo: userId)
-                .order(by: "timestamp", descending: true)
-                .limit(to: 100)
-                .getDocuments(source: .cache)
-
-            let cachedHistory = cacheSnapshot.documents.compactMap { doc in
-                try? doc.data(as: HistoryEntry.self)
-            }
-
-            // Si le cache contient des données, les retourner
-            if !cachedHistory.isEmpty {
-                return cachedHistory
-            }
-        } catch {
-            print("⚠️ Cache d'historique vide : \(error.localizedDescription)")
-        }
-
-        // Charger depuis le serveur si le cache est vide
+        // 🔧 FIX: Toujours charger depuis le serveur pour avoir les données fraîches
+        // Le cache Firestore peut contenir des données obsolètes qui ne reflètent pas
+        // les suppressions ou modifications récentes
         print("📡 Chargement de l'historique depuis le serveur...")
         let serverSnapshot = try await db.collection("history")
             .whereField("userId", isEqualTo: userId)
@@ -605,9 +611,35 @@ class FirebaseDataService: DataServiceProtocol {
             .limit(to: 100)
             .getDocuments(source: .server)
 
-        return serverSnapshot.documents.compactMap { doc in
-            try? doc.data(as: HistoryEntry.self)
+        print("📦 Documents reçus de Firestore: \(serverSnapshot.documents.count)")
+
+        var history: [HistoryEntry] = []
+        var decodingErrors = 0
+
+        for (index, doc) in serverSnapshot.documents.enumerated() {
+            do {
+                let entry = try doc.data(as: HistoryEntry.self)
+                history.append(entry)
+                print("✅ [\(index + 1)/\(serverSnapshot.documents.count)] Décodé: \(entry.action) | \(entry.details)")
+            } catch {
+                decodingErrors += 1
+                print("❌ [\(index + 1)/\(serverSnapshot.documents.count)] ERREUR de décodage pour document \(doc.documentID)")
+                print("   Type d'erreur: \(type(of: error))")
+                print("   Message: \(error.localizedDescription)")
+                print("   Données brutes du document:")
+                let data = doc.data()
+                for (key, value) in data.sorted(by: { $0.key < $1.key }) {
+                    print("     - \(key): \(value) (type: \(type(of: value)))")
+                }
+            }
         }
+
+        print("✅ Historique chargé: \(history.count) entrées décodées avec succès")
+        if decodingErrors > 0 {
+            print("⚠️ ATTENTION: \(decodingErrors) entrée(s) ont échoué au décodage")
+        }
+
+        return history
     }
     
     func addHistoryEntry(_ entry: HistoryEntry) async throws {

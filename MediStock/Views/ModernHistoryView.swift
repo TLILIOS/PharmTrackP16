@@ -4,51 +4,14 @@ struct ModernHistoryView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var historyViewModel: HistoryViewModel
     @EnvironmentObject var medicineViewModel: MedicineListViewModel
-    @State private var filterType: FilterType = .all
     @State private var expandedEntries: Set<String> = []
     @State private var searchText = ""
     @Namespace private var animation
-    
+
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-    
-    enum FilterType: String, CaseIterable, Identifiable {
-        case all = "Tout"
-        case adjustments = "Ajustements"
-        case additions = "Ajouts"
-        case deletions = "Suppressions"
-        
-        var id: String { rawValue }
-        
-        var icon: String {
-            switch self {
-            case .all: return "clock.fill"
-            case .adjustments: return "arrow.up.arrow.down.circle.fill"
-            case .additions: return "plus.circle.fill"
-            case .deletions: return "trash.circle.fill"
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .all: return .accentColor
-            case .adjustments: return .blue
-            case .additions: return .green
-            case .deletions: return .red
-            }
-        }
-    }
-    
+
     var filteredHistory: [StockHistory] {
-        let filtered = switch filterType {
-        case .all:
-            historyViewModel.stockHistory
-        case .adjustments:
-            historyViewModel.stockHistory.filter { $0.type == .adjustment }
-        case .additions:
-            historyViewModel.stockHistory.filter { $0.type == .addition }
-        case .deletions:
-            historyViewModel.stockHistory.filter { $0.type == .deletion }
-        }
+        let filtered = historyViewModel.filteredHistory
 
         if searchText.isEmpty {
             return filtered
@@ -121,9 +84,14 @@ struct ModernHistoryView: View {
         .navigationTitle("Historique")
         .navigationBarTitleDisplayMode(.large)
         .task {
-            await loadHistoryIfNeeded()
+            // Toujours recharger l'historique pour avoir les données fraîches
+            await historyViewModel.loadHistory()
+            // Charger les médicaments seulement si nécessaire
+            if medicineViewModel.medicines.isEmpty {
+                await medicineViewModel.loadMedicines()
+            }
         }
-        .animation(.spring(response: 0.3), value: filterType)
+        .animation(.spring(response: 0.3), value: historyViewModel.filterType)
         .animation(.spring(response: 0.3), value: searchText)
     }
     
@@ -155,15 +123,15 @@ struct ModernHistoryView: View {
     private var filterSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(FilterType.allCases) { type in
+                ForEach(HistoryViewModel.FilterType.allCases) { type in
                     ModernFilterPill(
                         type: type,
-                        isSelected: filterType == type,
+                        isSelected: historyViewModel.filterType == type,
                         count: getCount(for: type),
                         namespace: animation
                     ) {
                         withAnimation(.spring(response: 0.3)) {
-                            filterType = type
+                            historyViewModel.filterType = type
                             impactFeedback.impactOccurred()
                         }
                     }
@@ -194,32 +162,22 @@ struct ModernHistoryView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
                 .symbolRenderingMode(.hierarchical)
-            
+
             VStack(spacing: 8) {
                 Text("Aucun historique")
                     .font(.title3)
                     .fontWeight(.semibold)
-                
+
                 Text("L'historique des mouvements de stock apparaîtra ici")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-            }
-            
-            NavigationLink(destination: MedicineListView()) {
-                Label("Gérer le stock", systemImage: "pills.fill")
-                    .font(.callout)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.accentColor)
-                    .cornerRadius(25)
+                    .padding(.horizontal)
             }
         }
         .padding()
@@ -268,7 +226,7 @@ struct ModernHistoryView: View {
         medicineViewModel.medicines.first { $0.id == entry.medicineId }?.name ?? "Médicament supprimé"
     }
 
-    private func getCount(for type: FilterType) -> Int {
+    private func getCount(for type: HistoryViewModel.FilterType) -> Int {
         switch type {
         case .all:
             return historyViewModel.stockHistory.count
@@ -292,12 +250,6 @@ struct ModernHistoryView: View {
         impactFeedback.impactOccurred()
     }
     
-    private func loadHistoryIfNeeded() async {
-        guard historyViewModel.stockHistory.isEmpty else { return }
-        await historyViewModel.loadHistory()
-        await medicineViewModel.loadMedicines()
-    }
-
     private func refreshHistory() async {
         await historyViewModel.loadHistory()
         await medicineViewModel.loadMedicines()
@@ -308,7 +260,7 @@ struct ModernHistoryView: View {
 // MARK: - Supporting Views
 
 struct ModernFilterPill: View {
-    let type: ModernHistoryView.FilterType
+    let type: HistoryViewModel.FilterType
     let isSelected: Bool
     let count: Int
     let namespace: Namespace.ID
@@ -392,10 +344,10 @@ struct ModernHistoryRow: View {
                             .lineLimit(1)
                         
                         HStack(spacing: 8) {
-                            Label(entry.type.label, systemImage: "")
+                            Text(entry.type.label)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            
+
                             if entry.type == .adjustment {
                                 HStack(spacing: 4) {
                                     Text("\(entry.previousQuantity)")

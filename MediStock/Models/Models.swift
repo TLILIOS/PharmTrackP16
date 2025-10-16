@@ -6,7 +6,7 @@ import FirebaseFirestore
 // MARK: - Modèles de domaine (pas de DTOs, direct mapping avec Firestore)
 
 struct Medicine: Identifiable, Codable, Equatable, Hashable {
-    @DocumentID var id: String?
+    var id: String?  // Changé de @DocumentID à var simple car @DocumentID ne fonctionne pas avec doc.data(as:)
     let name: String
     let description: String?
     let dosage: String?
@@ -149,7 +149,7 @@ struct Medicine: Identifiable, Codable, Equatable, Hashable {
 }
 
 struct Aisle: Identifiable, Codable, Equatable, Hashable {
-    @DocumentID var id: String?
+    var id: String?  // Changé de @DocumentID à var simple car @DocumentID ne fonctionne pas avec doc.data(as:)
     let name: String
     let description: String?
     let colorHex: String

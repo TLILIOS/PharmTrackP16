@@ -32,9 +32,9 @@ class MedicineDataService {
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
             .getDocuments()
-        
+
         return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Medicine.self)
+            try? decodeMedicine(from: doc)
         }
     }
     
@@ -43,33 +43,34 @@ class MedicineDataService {
         if refresh {
             resetPagination()
         }
-        
+
         guard hasMore else { return [] }
-        
+
         var query = db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
             .limit(to: limit)
-        
+
         if let lastDoc = lastDocument {
             query = query.start(afterDocument: lastDoc)
         }
-        
+
         let snapshot = try await query.getDocuments()
-        
+
         // Mise à jour de l'état de pagination
         hasMore = snapshot.documents.count >= limit
         lastDocument = snapshot.documents.last
-        
+
         return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Medicine.self)
+            try? decodeMedicine(from: doc)
         }
     }
     
     /// Récupère un médicament par son ID
     func getMedicine(by id: String) async throws -> Medicine? {
         let doc = try await db.collection("medicines").document(id).getDocument()
-        return try? doc.data(as: Medicine.self)
+        guard doc.exists else { return nil }
+        return try? decodeMedicine(from: doc)
     }
     
     /// Sauvegarde ou met à jour un médicament
@@ -88,32 +89,42 @@ class MedicineDataService {
         
         // 5. Enregistrer dans l'historique
         try await recordMedicineHistory(savedMedicine, isNew: medicine.id?.isEmpty ?? true)
-        
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
         return savedMedicine
     }
     
     /// Supprime un médicament
     func deleteMedicine(_ medicine: Medicine) async throws {
+        print("🗑️ [MedicineDataService] deleteMedicine() appelée pour: \(medicine.name)")
+
         guard let medicineId = medicine.id, !medicineId.isEmpty else {
+            print("❌ [MedicineDataService] ID invalide, abandon de la suppression")
             throw ValidationError.invalidId
         }
-        
+
+        print("🔍 [MedicineDataService] ID du médicament: \(medicineId)")
+
         // Transaction pour supprimer et enregistrer l'historique
         _ = try await db.runTransaction { [weak self] transaction, errorPointer in
             guard let self = self else { return nil }
-            
+
             let medicineRef = self.db.collection("medicines").document(medicineId)
-            
+
             // Vérifier que le médicament existe
             let doc: DocumentSnapshot
             do {
                 doc = try transaction.getDocument(medicineRef)
             } catch {
+                print("❌ [MedicineDataService] Erreur lors de la récupération du document: \(error.localizedDescription)")
                 errorPointer?.pointee = error as NSError
                 return nil
             }
-            
+
             guard doc.exists else {
+                print("❌ [MedicineDataService] Médicament introuvable dans Firestore")
                 errorPointer?.pointee = NSError(
                     domain: "MedicineDataService",
                     code: -1,
@@ -121,20 +132,36 @@ class MedicineDataService {
                 )
                 return nil
             }
-            
+
             // Supprimer le médicament
+            print("✅ [MedicineDataService] Suppression du document dans la transaction")
             transaction.deleteDocument(medicineRef)
-            
+
             return nil
         }
-        
+
+        print("✅ [MedicineDataService] Transaction de suppression terminée avec succès")
+
         // Enregistrer dans l'historique (hors transaction pour éviter les blocages)
-        try await historyService.recordDeletion(
-            itemType: "medicine",
-            itemId: medicineId,
-            itemName: medicine.name,
-            details: "Suppression du médicament \(medicine.name)"
-        )
+        print("📝 [MedicineDataService] Enregistrement dans l'historique...")
+        do {
+            try await historyService.recordDeletion(
+                itemType: "medicine",
+                itemId: medicineId,
+                itemName: medicine.name,
+                details: "Suppression du médicament \(medicine.name)"
+            )
+            print("✅ [MedicineDataService] Suppression enregistrée dans l'historique avec succès")
+        } catch {
+            print("❌ [MedicineDataService] ERREUR lors de l'enregistrement dans l'historique: \(error.localizedDescription)")
+            print("   Détails de l'erreur: \(error)")
+            throw error
+        }
+
+        print("📢 [MedicineDataService] Envoi de la notification HistoryDidChange...")
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+        print("✅ [MedicineDataService] Notification HistoryDidChange envoyée")
     }
     
     /// Met à jour le stock d'un médicament
@@ -158,7 +185,10 @@ class MedicineDataService {
                 )
                 return nil
             }
-            
+
+            // 🔧 FIX: Assigner l'ID manuellement
+            medicine.id = doc.documentID
+
             // Mettre à jour le stock
             medicine.currentQuantity = newStock
             
@@ -188,7 +218,10 @@ class MedicineDataService {
             action: "Mise à jour stock",
             details: "Stock mis à jour: \(updatedMedicine.currentQuantity)"
         )
-        
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
         return updatedMedicine
     }
     
@@ -253,7 +286,10 @@ class MedicineDataService {
                 )
                 return nil
             }
-            
+
+            // 🔧 FIX: Assigner l'ID manuellement
+            medicine.id = doc.documentID
+
             // Calculer le nouveau stock
             let newStock = max(0, medicine.currentQuantity + adjustment)
             medicine.currentQuantity = newStock
@@ -288,12 +324,26 @@ class MedicineDataService {
             newStock: updatedMedicine.currentQuantity,
             details: details
         )
-        
+
+        // Notifier que l'historique a changé
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
         return updatedMedicine
     }
     
     // MARK: - Méthodes Privées
-    
+
+    /// Helper pour décoder un médicament depuis Firestore et assigner l'ID manuellement
+    private func decodeMedicine(from document: DocumentSnapshot) throws -> Medicine {
+        var medicine = try document.data(as: Medicine.self)
+
+        // 🔧 FIX: Assigner manuellement le documentID car @DocumentID ne fonctionne pas toujours
+        // avec doc.data(as:)
+        medicine.id = document.documentID
+
+        return medicine
+    }
+
     private func resetPagination() {
         lastDocument = nil
         hasMore = true
@@ -439,9 +489,9 @@ extension MedicineDataService {
                 var medicines: [Medicine] = []
                 for (index, doc) in documents.enumerated() {
                     do {
-                        let medicine = try doc.data(as: Medicine.self)
+                        let medicine = try self.decodeMedicine(from: doc)
                         medicines.append(medicine)
-                        print("✅ [MedicineDataService] Document \(index + 1) décodé: \(medicine.name)")
+                        print("✅ [MedicineDataService] Document \(index + 1) décodé: \(medicine.name) (ID: \(medicine.id ?? "nil"))")
                     } catch {
                         print("❌ [MedicineDataService] Erreur décodage document \(doc.documentID):")
                         print("   Type d'erreur: \(type(of: error))")
