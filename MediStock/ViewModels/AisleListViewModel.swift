@@ -31,6 +31,20 @@ class AisleListViewModel: ObservableObject {
 
     private let repository: AisleRepositoryProtocol
 
+    // MARK: - Private State (Protection anti-redondance)
+
+    /// Indicateur si le listener temps réel est actif
+    private var isListenerActive = false
+
+    /// Timestamp du dernier chargement pour debouncing
+    private var lastLoadTimestamp: Date?
+
+    /// Tâche de chargement en cours (pour annulation)
+    private var loadTask: Task<Void, Never>?
+
+    /// Intervalle minimum entre deux chargements (en secondes)
+    private let minimumLoadInterval: TimeInterval = 2.0
+
     // MARK: - Init
 
     init(repository: AisleRepositoryProtocol) {
@@ -61,29 +75,101 @@ class AisleListViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    /// Charger les rayons (première page)
-    func loadAisles() async {
-        guard !isLoading else { return }
+    /// Démarrer l'écoute en temps réel des rayons
+    func startListening() {
+        print("🎧 [AisleListViewModel] Démarrage du listener temps réel...")
+        isListenerActive = true
 
-        isLoading = true
-        errorMessage = nil
+        repository.startListeningToAisles { [weak self] aisles in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
 
-        do {
-            aisles = try await repository.fetchAislesPaginated(
-                limit: AppConstants.Pagination.defaultLimit,
-                refresh: true
-            )
-            hasMoreAisles = aisles.count >= AppConstants.Pagination.defaultLimit
+                print("🔄 [AisleListViewModel] Listener reçu \(aisles.count) rayon(s)")
+                self.aisles = aisles
+                self.isLoading = false
 
-        } catch {
-            errorMessage = error.localizedDescription
-            FirebaseService.shared.logError(error, userInfo: [
-                "action": "loadAisles",
-                "viewModel": "AisleListViewModel"
-            ])
+                // Mettre à jour le timestamp pour éviter les chargements redondants
+                self.lastLoadTimestamp = Date()
+            }
+        }
+    }
+
+    /// Arrêter l'écoute en temps réel
+    func stopListening() {
+        repository.stopListening()
+        isListenerActive = false
+        print("🛑 [AisleListViewModel] Listener temps réel arrêté")
+    }
+
+    /// Charger les rayons (première page) - Méthode de fallback
+    /// - Parameter forceRefresh: Force le rechargement même si le listener est actif
+    func loadAisles(forceRefresh: Bool = false) async {
+        print("🔄 [AisleListViewModel] loadAisles() appelé (forceRefresh: \(forceRefresh))")
+
+        // 1. Protection : Si le listener est actif et ce n'est pas un refresh forcé, ignorer
+        if isListenerActive && !forceRefresh {
+            print("⚠️ [AisleListViewModel] Listener actif, chargement ignoré")
+            return
         }
 
-        isLoading = false
+        // 2. Protection : Vérifier si un chargement est déjà en cours
+        guard !isLoading else {
+            print("⚠️ [AisleListViewModel] Chargement déjà en cours, annulation")
+            return
+        }
+
+        // 3. Protection : Debouncing - vérifier le délai minimum depuis le dernier chargement
+        if let lastLoad = lastLoadTimestamp,
+           Date().timeIntervalSince(lastLoad) < minimumLoadInterval && !forceRefresh {
+            print("⚠️ [AisleListViewModel] Debouncing - Dernier chargement il y a \(Date().timeIntervalSince(lastLoad))s, minimum: \(minimumLoadInterval)s")
+            return
+        }
+
+        // 4. Annuler la tâche précédente si elle existe
+        loadTask?.cancel()
+
+        // 5. Créer et stocker la nouvelle tâche
+        loadTask = Task { @MainActor in
+            isLoading = true
+            errorMessage = nil
+
+            do {
+                // Vérifier si la tâche a été annulée
+                try Task.checkCancellation()
+
+                print("📡 [AisleListViewModel] Requête Firestore en cours...")
+                aisles = try await repository.fetchAislesPaginated(
+                    limit: AppConstants.Pagination.defaultLimit,
+                    refresh: true
+                )
+
+                // Vérifier à nouveau si la tâche a été annulée
+                try Task.checkCancellation()
+
+                print("✅ [AisleListViewModel] \(aisles.count) rayon(s) récupéré(s)")
+                print("📝 [AisleListViewModel] Liste des rayons: \(aisles.map { $0.name })")
+                hasMoreAisles = aisles.count >= AppConstants.Pagination.defaultLimit
+
+                // Mettre à jour le timestamp
+                lastLoadTimestamp = Date()
+
+            } catch is CancellationError {
+                print("⚠️ [AisleListViewModel] Chargement annulé")
+            } catch {
+                print("❌ [AisleListViewModel] Erreur lors du chargement: \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+                FirebaseService.shared.logError(error, userInfo: [
+                    "action": "loadAisles",
+                    "viewModel": "AisleListViewModel"
+                ])
+            }
+
+            isLoading = false
+            print("🏁 [AisleListViewModel] loadAisles() terminé, isLoading=\(isLoading)")
+        }
+
+        // Attendre la fin de la tâche
+        await loadTask?.value
     }
 
     /// Charger plus de rayons (pagination)
@@ -112,26 +198,31 @@ class AisleListViewModel: ObservableObject {
 
     /// Sauvegarder un rayon (création ou modification)
     func saveAisle(_ aisle: Aisle) async {
+        print("💾 [AisleListViewModel] saveAisle() appelé pour '\(aisle.name)'")
         do {
             let saved = try await repository.saveAisle(aisle)
+            print("✅ [AisleListViewModel] Rayon sauvegardé avec ID: \(saved.id)")
 
-            // Mettre à jour la liste locale
-            if let index = aisles.firstIndex(where: { $0.id == saved.id }) {
-                aisles[index] = saved
+            // Recharger la liste seulement si le listener n'est pas actif
+            // Si le listener est actif, il mettra à jour automatiquement
+            if !isListenerActive {
+                print("🔄 [AisleListViewModel] Rechargement de la liste après sauvegarde (listener inactif)...")
+                await loadAisles()
             } else {
-                aisles.insert(saved, at: 0) // Ajouter en tête
+                print("✅ [AisleListViewModel] Listener actif, pas besoin de recharger manuellement")
             }
 
             // Analytics
             FirebaseService.shared.logEvent(AnalyticsEvent(
-                name: aisle.id.isEmpty ? "aisle_created" : "aisle_updated",
+                name: (aisle.id?.isEmpty ?? true) ? "aisle_created" : "aisle_updated",
                 parameters: [
-                    "aisle_id": saved.id,
+                    "aisle_id": saved.id ?? "",
                     "aisle_name": saved.name
                 ]
             ))
 
         } catch {
+            print("❌ [AisleListViewModel] Erreur lors de la sauvegarde: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "saveAisle",
@@ -142,17 +233,28 @@ class AisleListViewModel: ObservableObject {
 
     /// Supprimer un rayon
     func deleteAisle(_ aisle: Aisle) async {
-        do {
-            try await repository.deleteAisle(id: aisle.id)
+        guard let aisleId = aisle.id else {
+            errorMessage = "Impossible de supprimer le rayon : ID manquant"
+            return
+        }
 
-            // Retirer de la liste locale
-            aisles.removeAll { $0.id == aisle.id }
+        do {
+            try await repository.deleteAisle(id: aisleId)
+
+            // Recharger la liste seulement si le listener n'est pas actif
+            // Si le listener est actif, il mettra à jour automatiquement
+            if !isListenerActive {
+                print("🔄 [AisleListViewModel] Rechargement de la liste après suppression (listener inactif)...")
+                await loadAisles()
+            } else {
+                print("✅ [AisleListViewModel] Listener actif, pas besoin de recharger manuellement")
+            }
 
             // Analytics
             FirebaseService.shared.logEvent(AnalyticsEvent(
                 name: "aisle_deleted",
                 parameters: [
-                    "aisle_id": aisle.id
+                    "aisle_id": aisleId
                 ]
             ))
 
@@ -160,7 +262,7 @@ class AisleListViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "deleteAisle",
-                "aisleId": aisle.id
+                "aisleId": aisleId
             ])
         }
     }

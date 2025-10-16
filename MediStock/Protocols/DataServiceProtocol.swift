@@ -57,6 +57,9 @@ protocol DataServiceProtocol {
     /// Démarre l'écoute en temps réel des médicaments
     func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void)
 
+    /// Démarre l'écoute en temps réel des rayons
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void)
+
     /// Arrête tous les listeners actifs
     func stopListening()
 }

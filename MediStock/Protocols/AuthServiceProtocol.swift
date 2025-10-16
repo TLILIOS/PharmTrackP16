@@ -10,6 +10,9 @@ protocol AuthServiceProtocol: ObservableObject {
     /// Utilisateur actuellement connecté
     var currentUser: User? { get set }
 
+    /// Publisher pour observer les changements de l'utilisateur courant
+    var currentUserPublisher: AnyPublisher<User?, Never> { get }
+
     /// Connexion avec email et mot de passe
     /// - Parameters:
     ///   - email: Email de l'utilisateur

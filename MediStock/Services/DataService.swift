@@ -18,22 +18,46 @@ class FirebaseDataService: DataServiceProtocol {
     func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {
         let listener = db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
+            .order(by: "name")
             .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else {
                     print("Error fetching medicines: \(error?.localizedDescription ?? "Unknown error")")
                     return
                 }
-                
+
                 let medicines = documents.compactMap { doc in
                     try? doc.data(as: Medicine.self)
                 }
-                
+
                 completion(medicines)
             }
-        
+
         listeners.append(listener)
     }
-    
+
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
+        let listener = db.collection("aisles")
+            .whereField("userId", isEqualTo: userId)
+            .order(by: "name")
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else {
+                    print("Error fetching aisles: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+
+                let aisles = documents.compactMap { doc in
+                    if let aisleWithTimestamps = try? doc.data(as: AisleWithTimestamps.self) {
+                        return aisleWithTimestamps.toAisle
+                    }
+                    return try? doc.data(as: Aisle.self)
+                }
+
+                completion(aisles)
+            }
+
+        listeners.append(listener)
+    }
+
     func stopListening() {
         listeners.forEach { $0.remove() }
         listeners.removeAll()
@@ -49,11 +73,32 @@ class FirebaseDataService: DataServiceProtocol {
     private var hasMoreMedicines = true
     
     func getMedicines() async throws -> [Medicine] {
-        let snapshot = try await db.collection("medicines")
+        // Essayer d'abord le cache, puis le serveur si le cache est vide
+        do {
+            let cacheSnapshot = try await db.collection("medicines")
+                .whereField("userId", isEqualTo: userId)
+                .getDocuments(source: .cache)
+
+            let cachedMedicines = cacheSnapshot.documents.compactMap { doc in
+                try? doc.data(as: Medicine.self)
+            }
+
+            // Si le cache contient des données, les retourner
+            if !cachedMedicines.isEmpty {
+                return cachedMedicines
+            }
+        } catch {
+            // Le cache est vide ou une erreur s'est produite, continuer avec le serveur
+            print("⚠️ Cache vide ou erreur cache : \(error.localizedDescription)")
+        }
+
+        // Charger depuis le serveur si le cache est vide
+        print("📡 Chargement des médicaments depuis le serveur...")
+        let serverSnapshot = try await db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
-            .getDocuments()
-        
-        return snapshot.documents.compactMap { doc in
+            .getDocuments(source: .server)
+
+        return serverSnapshot.documents.compactMap { doc in
             try? doc.data(as: Medicine.self)
         }
     }
@@ -63,29 +108,38 @@ class FirebaseDataService: DataServiceProtocol {
             lastMedicineDocument = nil
             hasMoreMedicines = true
         }
-        
+
         guard hasMoreMedicines else { return [] }
-        
+
         var query = db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
             .limit(to: limit)
-        
+
         if let lastDoc = lastMedicineDocument {
             query = query.start(afterDocument: lastDoc)
         }
-        
-        let snapshot = try await query.getDocuments()
-        
+
+        // Si c'est un refresh (chargement initial), forcer le serveur
+        // Sinon, utiliser le comportement par défaut (cache + serveur)
+        let source: FirestoreSource = refresh ? .server : .default
+        let snapshot = try await query.getDocuments(source: source)
+
         if snapshot.documents.count < limit {
             hasMoreMedicines = false
         }
-        
+
         lastMedicineDocument = snapshot.documents.last
-        
-        return snapshot.documents.compactMap { doc in
+
+        let medicines = snapshot.documents.compactMap { doc in
             try? doc.data(as: Medicine.self)
         }
+
+        if refresh {
+            print("📡 Chargement initial : \(medicines.count) médicaments depuis le serveur")
+        }
+
+        return medicines
     }
     
     // MARK: - Fonction saveMedicine refactorisée avec validation complète
@@ -101,16 +155,16 @@ class FirebaseDataService: DataServiceProtocol {
         }
         
         // 3. Vérifier les limites utilisateur
-        if medicine.id.isEmpty {
+        if medicine.id?.isEmpty ?? true {
             let medicineCount = try await getUserMedicineCount()
             guard medicineCount < ValidationRules.maxMedicinesPerUser else {
                 throw ValidationError.tooManyAisles(max: ValidationRules.maxMedicinesPerUser)
             }
         }
-        
+
         // 4. Préparer le médicament avec les bonnes données
         let medicineToSave: Medicine
-        let isNewMedicine = medicine.id.isEmpty
+        let isNewMedicine = medicine.id?.isEmpty ?? true
         
         if isNewMedicine {
             // Création : générer un nouvel ID et les timestamps
@@ -136,7 +190,12 @@ class FirebaseDataService: DataServiceProtocol {
                 return nil
             }
             
-            let docRef = self.db.collection("medicines").document(medicineToSave.id)
+            guard let medicineId = medicineToSave.id else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Medicine ID is missing"])
+                return nil
+            }
+
+            let docRef = self.db.collection("medicines").document(medicineId)
             
             // Encoder les données
             var data: [String: Any]
@@ -154,7 +213,7 @@ class FirebaseDataService: DataServiceProtocol {
             // Créer l'entrée d'historique dans la même transaction
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
-                medicineId: medicineToSave.id,
+                medicineId: medicineId,
                 userId: self.userId,
                 action: isNewMedicine ? "Création" : "Modification",
                 details: "Médicament: \(medicineToSave.name)",
@@ -222,10 +281,15 @@ class FirebaseDataService: DataServiceProtocol {
             ], forDocument: docRef)
             
             // Créer l'entrée d'historique avec le format cohérent
+            guard let medicineId = medicine.id else {
+                errorPointer?.pointee = NSError(domain: "DataService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Medicine ID is missing"])
+                return nil
+            }
+
             let change = newStock - oldQuantity
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
-                medicineId: medicine.id,
+                medicineId: medicineId,
                 userId: self.userId,
                 action: change > 0 ? "Ajout stock" : (change < 0 ? "Retrait stock" : "Ajustement de stock"),
                 details: "\(abs(change)) \(medicine.unit) - Ajustement manuel (Stock: \(oldQuantity) → \(newStock))",
@@ -325,32 +389,40 @@ class FirebaseDataService: DataServiceProtocol {
             lastAisleDocument = nil
             hasMoreAisles = true
         }
-        
+
         guard hasMoreAisles else { return [] }
-        
+
         var query = db.collection("aisles")
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
             .limit(to: limit)
-        
+
         if let lastDoc = lastAisleDocument {
             query = query.start(afterDocument: lastDoc)
         }
-        
-        let snapshot = try await query.getDocuments()
-        
+
+        // Si c'est un refresh (chargement initial), forcer le serveur
+        let source: FirestoreSource = refresh ? .server : .default
+        let snapshot = try await query.getDocuments(source: source)
+
         if snapshot.documents.count < limit {
             hasMoreAisles = false
         }
-        
+
         lastAisleDocument = snapshot.documents.last
-        
-        return snapshot.documents.compactMap { doc in
+
+        let aisles = snapshot.documents.compactMap { doc in
             if let aisleWithTimestamps = try? doc.data(as: AisleWithTimestamps.self) {
                 return aisleWithTimestamps.toAisle
             }
             return try? doc.data(as: Aisle.self)
         }
+
+        if refresh {
+            print("📡 Chargement initial : \(aisles.count) rayons depuis le serveur")
+        }
+
+        return aisles
     }
     
     // MARK: - Fonction saveAisle refactorisée avec validation complète
@@ -365,18 +437,20 @@ class FirebaseDataService: DataServiceProtocol {
             throw ValidationError.nameAlreadyExists(name: aisle.name)
         }
         
-        // 3. Vérifier les limites utilisateur
-        if aisle.id.isEmpty {
+        // 3. Déterminer si c'est un nouveau rayon
+        let isNewAisle = aisle.id == nil || aisle.id?.isEmpty == true
+
+        // 4. Vérifier les limites utilisateur pour les nouveaux rayons
+        if isNewAisle {
             let aisleCount = try await getUserAisleCount()
             guard aisleCount < ValidationRules.maxAislesPerUser else {
                 throw ValidationError.tooManyAisles(max: ValidationRules.maxAislesPerUser)
             }
         }
-        
-        // 4. Préparer le rayon avec timestamps
+
+        // 5. Préparer le rayon avec timestamps
         let aisleWithTimestamps: AisleWithTimestamps
-        let isNewAisle = aisle.id.isEmpty
-        
+
         if isNewAisle {
             // Création
             let docRef = db.collection("aisles").document()
@@ -388,9 +462,12 @@ class FirebaseDataService: DataServiceProtocol {
             )
         } else {
             // Mise à jour : récupérer createdAt existant
-            let existingDoc = try await db.collection("aisles").document(aisle.id).getDocument()
+            guard let aisleId = aisle.id else {
+                throw ValidationError.invalidId
+            }
+            let existingDoc = try await db.collection("aisles").document(aisleId).getDocument()
             let createdAt = existingDoc.data()?["createdAt"] as? Timestamp ?? Timestamp(date: Date())
-            
+
             aisleWithTimestamps = aisle.copyWith(
                 name: ValidationHelper.sanitizeName(aisle.name),
                 createdAt: createdAt.dateValue(),
@@ -498,15 +575,37 @@ class FirebaseDataService: DataServiceProtocol {
     }
     
     // MARK: - Historique
-    
+
     func getHistory() async throws -> [HistoryEntry] {
-        let snapshot = try await db.collection("history")
+        // Essayer d'abord le cache
+        do {
+            let cacheSnapshot = try await db.collection("history")
+                .whereField("userId", isEqualTo: userId)
+                .order(by: "timestamp", descending: true)
+                .limit(to: 100)
+                .getDocuments(source: .cache)
+
+            let cachedHistory = cacheSnapshot.documents.compactMap { doc in
+                try? doc.data(as: HistoryEntry.self)
+            }
+
+            // Si le cache contient des données, les retourner
+            if !cachedHistory.isEmpty {
+                return cachedHistory
+            }
+        } catch {
+            print("⚠️ Cache d'historique vide : \(error.localizedDescription)")
+        }
+
+        // Charger depuis le serveur si le cache est vide
+        print("📡 Chargement de l'historique depuis le serveur...")
+        let serverSnapshot = try await db.collection("history")
             .whereField("userId", isEqualTo: userId)
             .order(by: "timestamp", descending: true)
             .limit(to: 100)
-            .getDocuments()
-        
-        return snapshot.documents.compactMap { doc in
+            .getDocuments(source: .server)
+
+        return serverSnapshot.documents.compactMap { doc in
             try? doc.data(as: HistoryEntry.self)
         }
     }
@@ -527,9 +626,13 @@ class FirebaseDataService: DataServiceProtocol {
         }
         
         let batch = db.batch()
-        
+
         for medicine in medicines {
-            let ref = db.collection("medicines").document(medicine.id)
+            guard let medicineId = medicine.id else {
+                throw ValidationError.invalidId
+            }
+
+            let ref = db.collection("medicines").document(medicineId)
             let data: [String: Any] = [
                 "currentQuantity": medicine.currentQuantity,
                 "updatedAt": FieldValue.serverTimestamp()

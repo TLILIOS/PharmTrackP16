@@ -7,7 +7,11 @@ import Combine
 @MainActor
 class FirebaseAuthService: AuthServiceProtocol {
     @Published var currentUser: User?
-    
+
+    var currentUserPublisher: AnyPublisher<User?, Never> {
+        $currentUser.eraseToAnyPublisher()
+    }
+
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private let keychain = KeychainService.shared
     

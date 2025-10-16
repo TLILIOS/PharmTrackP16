@@ -258,7 +258,7 @@ struct DashboardView: View {
                     currentY += 20
 
                     // Médicaments du rayon
-                    let medicinesInAisle = dashboardViewModel.medicines.filter { $0.aisleId == aisle.id }
+                    let medicinesInAisle = dashboardViewModel.medicines.filter { $0.aisleId == (aisle.id ?? "") }
                     if medicinesInAisle.isEmpty {
                         "  Aucun médicament".draw(at: CGPoint(x: leftMargin + 40, y: currentY), withAttributes: itemAttributes)
                         currentY += 20

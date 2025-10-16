@@ -6,7 +6,7 @@ import FirebaseFirestore
 
 /// Facade qui maintient l'interface de l'ancien DataService
 /// tout en utilisant les nouveaux services modulaires en interne
-class DataServiceAdapter {
+class DataServiceAdapter: DataServiceProtocol {
     // Services modulaires
     private let medicineService: MedicineDataService
     private let aisleService: AisleDataService
@@ -44,7 +44,7 @@ class DataServiceAdapter {
         return try await medicineService.getAllMedicines()
     }
     
-    func getMedicinesPaginated(limit: Int = 20, refresh: Bool = false) async throws -> [Medicine] {
+    func getMedicinesPaginated(limit: Int, refresh: Bool) async throws -> [Medicine] {
         return try await medicineService.getMedicinesPaginated(limit: limit, refresh: refresh)
     }
     
@@ -94,7 +94,7 @@ class DataServiceAdapter {
         return try await aisleService.getAllAisles()
     }
     
-    func getAislesPaginated(limit: Int = 20, refresh: Bool = false) async throws -> [Aisle] {
+    func getAislesPaginated(limit: Int, refresh: Bool) async throws -> [Aisle] {
         return try await aisleService.getAislesPaginated(limit: limit, refresh: refresh)
     }
     
@@ -129,7 +129,12 @@ class DataServiceAdapter {
     
     // MARK: - API de Compatibilité Historique
     
-    func getHistory(for medicineId: String? = nil) async throws -> [HistoryEntry] {
+    func getHistory() async throws -> [HistoryEntry] {
+        return try await historyService.getHistory(medicineId: nil)
+    }
+
+    // Méthode étendue pour compatibilité avec le code existant
+    func getHistory(for medicineId: String?) async throws -> [HistoryEntry] {
         return try await historyService.getHistory(medicineId: medicineId)
     }
     

@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
-
-// MARK: - MedicineListViewModel Refactorisé (MVVM Strict)
-// Responsabilité : Gestion de la liste des médicaments + filtres/recherche
+import FirebaseFirestore
 
 @MainActor
 class MedicineListViewModel: ObservableObject {
@@ -92,7 +90,31 @@ class MedicineListViewModel: ObservableObject {
 
     // MARK: - Actions (Business Logic)
 
-    /// Charger les médicaments (première page)
+    /// Démarrer l'écoute en temps réel des médicaments
+    func startListening() {
+        print("🎧 [MedicineListViewModel] Démarrage du listener temps réel...")
+
+        medicineRepository.startListeningToMedicines { [weak self] medicines in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+
+                print("🔄 [MedicineListViewModel] Listener reçu \(medicines.count) médicament(s)")
+                self.medicines = medicines
+                self.isLoading = false
+
+                // Vérifier les expirations pour notifications
+                await self.notificationService.checkExpirations(medicines: medicines)
+            }
+        }
+    }
+
+    /// Arrêter l'écoute en temps réel
+    func stopListening() {
+        medicineRepository.stopListening()
+        print("🛑 [MedicineListViewModel] Listener temps réel arrêté")
+    }
+
+    /// Charger les médicaments (première page) - Méthode de fallback
     func loadMedicines() async {
         guard !isLoading else { return }
 
@@ -157,12 +179,12 @@ class MedicineListViewModel: ObservableObject {
             }
 
             // Créer l'entrée d'historique
-            let isNewMedicine = medicine.id.isEmpty
+            let isNewMedicine = medicine.id?.isEmpty ?? true
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
-                medicineId: saved.id,
+                medicineId: saved.id ?? "",
                 userId: "", // Sera complété par le repository
-                action: isNewMedicine ? "Création" : "Modification",
+                action: isNewMedicine ? "Ajout" : "Modification",
                 details: "Médicament: \(saved.name)",
                 timestamp: Date()
             )
@@ -179,7 +201,7 @@ class MedicineListViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "saveMedicine",
-                "medicineId": medicine.id
+                "medicineId": medicine.id ?? ""
             ])
         }
     }
@@ -187,7 +209,7 @@ class MedicineListViewModel: ObservableObject {
     /// Supprimer un médicament
     func deleteMedicine(_ medicine: Medicine) async {
         do {
-            try await medicineRepository.deleteMedicine(id: medicine.id)
+            try await medicineRepository.deleteMedicine(id: medicine.id ?? "")
 
             // Retirer de la liste locale
             medicines.removeAll { $0.id == medicine.id }
@@ -195,7 +217,7 @@ class MedicineListViewModel: ObservableObject {
             // Historique
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
-                medicineId: medicine.id,
+                medicineId: medicine.id ?? "",
                 userId: "",
                 action: "Suppression",
                 details: "Médicament supprimé: \(medicine.name)",
@@ -204,13 +226,13 @@ class MedicineListViewModel: ObservableObject {
             try await historyRepository.addHistoryEntry(historyEntry)
 
             // Analytics
-            FirebaseService.shared.logMedicineDeleted(medicineId: medicine.id)
+            FirebaseService.shared.logMedicineDeleted(medicineId: medicine.id ?? "")
 
         } catch {
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "deleteMedicine",
-                "medicineId": medicine.id
+                "medicineId": medicine.id ?? ""
             ])
         }
     }
@@ -221,7 +243,7 @@ class MedicineListViewModel: ObservableObject {
 
         do {
             let updated = try await medicineRepository.updateMedicineStock(
-                id: medicine.id,
+                id: medicine.id ?? "",
                 newStock: newQuantity
             )
 
@@ -233,7 +255,7 @@ class MedicineListViewModel: ObservableObject {
             // Historique avec détails
             let historyEntry = HistoryEntry(
                 id: UUID().uuidString,
-                medicineId: medicine.id,
+                medicineId: medicine.id ?? "",
                 userId: "",
                 action: adjustment > 0 ? "Ajout stock" : "Retrait stock",
                 details: "\(abs(adjustment)) \(medicine.unit) - \(reason) (Stock: \(medicine.currentQuantity) → \(newQuantity))",
@@ -252,7 +274,7 @@ class MedicineListViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "adjustStock",
-                "medicineId": medicine.id,
+                "medicineId": medicine.id ?? "",
                 "adjustment": adjustment
             ])
         }

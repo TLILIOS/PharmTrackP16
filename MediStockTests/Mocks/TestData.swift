@@ -72,13 +72,14 @@ extension Aisle {
         colorHex: String = "#0000FF",
         icon: String = "pills"
     ) -> Aisle {
-        Aisle(
-            id: id,
+        var aisle = Aisle(
             name: name,
             description: description,
             colorHex: colorHex,
             icon: icon
         )
+        aisle.id = id
+        return aisle
     }
 }
 

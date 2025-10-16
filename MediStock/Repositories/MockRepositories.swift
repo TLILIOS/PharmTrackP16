@@ -25,7 +25,7 @@ class MockMedicineRepository: MedicineRepositoryProtocol {
         if shouldThrowError { throw MockError.simulatedError }
 
         var saved = medicine
-        if saved.id.isEmpty {
+        if saved.id?.isEmpty ?? true {
             saved = Medicine(
                 id: UUID().uuidString,
                 name: medicine.name,
@@ -95,7 +95,21 @@ class MockMedicineRepository: MedicineRepositoryProtocol {
 
     func deleteMultipleMedicines(ids: [String]) async throws {
         if shouldThrowError { throw MockError.simulatedError }
-        medicines.removeAll { ids.contains($0.id) }
+        medicines.removeAll { medicine in
+            guard let medicineId = medicine.id else { return false }
+            return ids.contains(medicineId)
+        }
+    }
+
+    // MARK: - Real-time Listeners (Mock)
+
+    func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {
+        // Mock: call completion immediately with current medicines
+        completion(medicines)
+    }
+
+    func stopListening() {
+        // Mock: nothing to stop
     }
 }
 
@@ -119,14 +133,8 @@ class MockAisleRepository: AisleRepositoryProtocol {
         if shouldThrowError { throw MockError.simulatedError }
 
         var saved = aisle
-        if saved.id.isEmpty {
-            saved = Aisle(
-                id: UUID().uuidString,
-                name: aisle.name,
-                description: aisle.description,
-                colorHex: aisle.colorHex,
-                icon: aisle.icon
-            )
+        if saved.id == nil || saved.id?.isEmpty == true {
+            saved.id = UUID().uuidString
             aisles.append(saved)
         } else {
             if let index = aisles.firstIndex(where: { $0.id == saved.id }) {
@@ -139,6 +147,17 @@ class MockAisleRepository: AisleRepositoryProtocol {
     func deleteAisle(id: String) async throws {
         if shouldThrowError { throw MockError.simulatedError }
         aisles.removeAll { $0.id == id }
+    }
+
+    // MARK: - Real-time Listeners (Mock)
+
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
+        // Mock: call completion immediately with current aisles
+        completion(aisles)
+    }
+
+    func stopListening() {
+        // Mock: nothing to stop
     }
 }
 
@@ -228,22 +247,24 @@ extension MockMedicineRepository {
 extension MockAisleRepository {
     static func withSampleData() -> MockAisleRepository {
         let repo = MockAisleRepository()
-        repo.aisles = [
-            Aisle(
-                id: "aisle1",
-                name: "Antalgiques",
-                description: "Médicaments contre la douleur",
-                colorHex: "#FF6B6B",
-                icon: "pills.fill"
-            ),
-            Aisle(
-                id: "aisle2",
-                name: "Antibiotiques",
-                description: "Médicaments antibactériens",
-                colorHex: "#4ECDC4",
-                icon: "cross.case.fill"
-            )
-        ]
+
+        var aisle1 = Aisle(
+            name: "Antalgiques",
+            description: "Médicaments contre la douleur",
+            colorHex: "#FF6B6B",
+            icon: "pills.fill"
+        )
+        aisle1.id = "aisle1"
+
+        var aisle2 = Aisle(
+            name: "Antibiotiques",
+            description: "Médicaments antibactériens",
+            colorHex: "#4ECDC4",
+            icon: "cross.case.fill"
+        )
+        aisle2.id = "aisle2"
+
+        repo.aisles = [aisle1, aisle2]
         return repo
     }
 }

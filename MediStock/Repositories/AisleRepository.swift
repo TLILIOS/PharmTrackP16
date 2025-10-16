@@ -8,20 +8,30 @@ class AisleRepository: AisleRepositoryProtocol {
     init(dataService: DataServiceProtocol = FirebaseDataService()) {
         self.dataService = dataService
     }
-    
+
     func fetchAisles() async throws -> [Aisle] {
         return try await dataService.getAisles()
     }
-    
+
     func fetchAislesPaginated(limit: Int = 20, refresh: Bool = false) async throws -> [Aisle] {
         return try await dataService.getAislesPaginated(limit: limit, refresh: refresh)
     }
-    
+
     func saveAisle(_ aisle: Aisle) async throws -> Aisle {
         return try await dataService.saveAisle(aisle)
     }
-    
+
     func deleteAisle(id: String) async throws {
         try await dataService.deleteAisle(id: id)
+    }
+
+    // MARK: - Real-time Listeners
+
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
+        dataService.startListeningToAisles(completion: completion)
+    }
+
+    func stopListening() {
+        dataService.stopListening()
     }
 }

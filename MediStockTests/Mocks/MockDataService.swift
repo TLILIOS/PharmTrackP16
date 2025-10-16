@@ -237,14 +237,13 @@ final class MockDataService: DataServiceProtocol {
             aisles[index] = savedAisle
         } else {
             // Create new
-            savedAisle = aisle.id.isEmpty ?
-                Aisle(
-                    id: UUID().uuidString,
-                    name: aisle.name,
-                    description: aisle.description,
-                    colorHex: aisle.colorHex,
-                    icon: aisle.icon
-                ) : aisle
+            if aisle.id == nil || aisle.id?.isEmpty == true {
+                var newAisle = aisle
+                newAisle.id = UUID().uuidString
+                savedAisle = newAisle
+            } else {
+                savedAisle = aisle
+            }
             aisles.append(savedAisle)
         }
 
@@ -370,10 +369,13 @@ final class MockDataService: DataServiceProtocol {
     /// Ajoute des données de test
     func seedTestData() {
         // Ajouter des rayons de test
-        aisles = [
-            Aisle(id: "aisle-1", name: "Pharmacie", description: "Rayons généraux", colorHex: "#4CAF50", icon: "pills"),
-            Aisle(id: "aisle-2", name: "Spécialités", description: "Médicaments spécialisés", colorHex: "#2196F3", icon: "cross.case")
-        ]
+        var aisle1 = Aisle(name: "Pharmacie", description: "Rayons généraux", colorHex: "#4CAF50", icon: "pills")
+        aisle1.id = "aisle-1"
+
+        var aisle2 = Aisle(name: "Spécialités", description: "Médicaments spécialisés", colorHex: "#2196F3", icon: "cross.case")
+        aisle2.id = "aisle-2"
+
+        aisles = [aisle1, aisle2]
 
         // Ajouter des médicaments de test
         medicines = [

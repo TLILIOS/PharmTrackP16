@@ -69,8 +69,9 @@ class DashboardViewModel: ObservableObject {
 
     /// Distribution des médicaments par rayon
     var medicinesByAisle: [AisleDistribution] {
-        aisles.map { aisle in
-            let medicinesInAisle = medicines.filter { $0.aisleId == aisle.id }
+        aisles.compactMap { aisle in
+            guard let aisleId = aisle.id else { return nil }
+            let medicinesInAisle = medicines.filter { $0.aisleId == aisleId }
             return AisleDistribution(
                 aisle: aisle,
                 medicineCount: medicinesInAisle.count,
@@ -182,7 +183,7 @@ struct AisleDistribution: Identifiable {
     let criticalCount: Int
     let warningCount: Int
 
-    var id: String { aisle.id }
+    var id: String { aisle.id ?? "" }
 
     var hasIssues: Bool {
         criticalCount > 0 || warningCount > 0

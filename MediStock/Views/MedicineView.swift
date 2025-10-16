@@ -225,10 +225,12 @@ struct MedicineListView: View {
             // Filtre par rayon
             if !aisleViewModel.aisles.isEmpty {
                 Picker("Rayon", selection: $medicineViewModel.selectedAisleId) {
-                    Text("Tous les rayons").tag(String?.none)
+                    Text("Tous les rayons").tag(nil as String?)
                     ForEach(aisleViewModel.aisles) { aisle in
-                        Label(aisle.name, systemImage: aisle.icon)
-                            .tag(String?.some(aisle.id))
+                        if let aisleId = aisle.id {
+                            Label(aisle.name, systemImage: aisle.icon)
+                                .tag(aisleId as String?)
+                        }
                     }
                 }
                 .pickerStyle(.menu)

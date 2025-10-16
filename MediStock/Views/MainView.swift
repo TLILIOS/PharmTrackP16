@@ -2,6 +2,9 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineListViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleListViewModel: AisleListViewModel
+    @EnvironmentObject var historyViewModel: HistoryViewModel
     @State private var dashboardPath = NavigationPath()
     @State private var medicinesPath = NavigationPath()
     @State private var aislesPath = NavigationPath()
@@ -120,7 +123,34 @@ struct MainView: View {
             profilePath = NavigationPath()
         }
         .task {
-            // Les données seront chargées par les ViewModels individuels
+            // Démarrer les listeners en temps réel pour une synchronisation automatique
+            // au démarrage de MainView (après authentification)
+            startAllListeners()
         }
+        .onDisappear {
+            // Arrêter les listeners quand MainView disparaît pour économiser les ressources
+            stopAllListeners()
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Démarre tous les listeners en temps réel pour synchronisation automatique
+    private func startAllListeners() {
+        print("🎧 [MainView] Démarrage de tous les listeners temps réel...")
+        medicineListViewModel.startListening()
+        aisleListViewModel.startListening()
+
+        // Charger l'historique une seule fois (pas besoin de listener temps réel)
+        Task {
+            await historyViewModel.loadHistory()
+        }
+    }
+
+    /// Arrête tous les listeners en temps réel
+    private func stopAllListeners() {
+        print("🛑 [MainView] Arrêt de tous les listeners temps réel...")
+        medicineListViewModel.stopListening()
+        aisleListViewModel.stopListening()
     }
 }

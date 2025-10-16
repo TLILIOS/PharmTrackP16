@@ -80,14 +80,13 @@ struct AisleListView: View {
                 // Liste des rayons avec cards modernes
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(Array(viewModel.aisles.enumerated()), id: \.element.id) { index, aisle in
+                        ForEach(viewModel.aisles.sorted { $0.name < $1.name }) { aisle in
                             NavigationLink(destination: AisleDetailView(aisle: aisle)) {
                                 ModernAisleCard(aisle: aisle)
                                     .transition(.asymmetric(
                                         insertion: .scale.combined(with: .opacity),
                                         removal: .scale.combined(with: .opacity)
                                     ))
-                                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05), value: cardAppearAnimation)
                             }
                             .onAppear {
                                 // Pagination
@@ -109,7 +108,9 @@ struct AisleListView: View {
                     .padding(.vertical, 12)
                 }
                 .refreshable {
-                    await viewModel.loadAisles()
+                    // Force le rechargement même si le listener est actif
+                    // Utile pour un refresh manuel de l'utilisateur
+                    await viewModel.loadAisles(forceRefresh: true)
                 }
                 .onAppear {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -138,7 +139,7 @@ struct AisleListView: View {
                             .fill(Color.accentColor)
                             .frame(width: 40, height: 40)
                             .shadow(color: Color.accentColor.opacity(0.3), radius: 6, x: 0, y: 3)
-                        
+
                         Image(systemName: "plus")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.white)
@@ -161,7 +162,7 @@ struct AisleListView: View {
                 .frame(height: 10)
                 .blur(radius: 2)
                 .offset(y: 100)
-                
+
                 Spacer()
             }
             .allowsHitTesting(false)
@@ -170,14 +171,6 @@ struct AisleListView: View {
             NavigationStack {
                 AisleFormView(aisle: nil)
                     .environmentObject(viewModel)
-            }
-        }
-        .onAppear {
-            // S'assurer que les données sont chargées
-            if viewModel.isEmpty && !viewModel.isLoading {
-                Task {
-                    await viewModel.loadAisles()
-                }
             }
         }
     }
@@ -191,12 +184,14 @@ struct ModernAisleCard: View {
     @Environment(\.colorScheme) var colorScheme
 
     private var medicineCount: Int {
-        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }.count
+        guard let aisleId = aisle.id else { return 0 }
+        return medicineViewModel.medicines.filter { $0.aisleId == aisleId }.count
     }
 
     private var criticalCount: Int {
-        medicineViewModel.medicines
-            .filter { $0.aisleId == aisle.id && $0.stockStatus == .critical }
+        guard let aisleId = aisle.id else { return 0 }
+        return medicineViewModel.medicines
+            .filter { $0.aisleId == aisleId && $0.stockStatus == .critical }
             .count
     }
     
@@ -306,12 +301,14 @@ struct AisleRow: View {
     @EnvironmentObject var medicineViewModel: MedicineListViewModel
 
     private var medicineCount: Int {
-        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }.count
+        guard let aisleId = aisle.id else { return 0 }
+        return medicineViewModel.medicines.filter { $0.aisleId == aisleId }.count
     }
 
     private var criticalCount: Int {
-        medicineViewModel.medicines
-            .filter { $0.aisleId == aisle.id && $0.stockStatus == .critical }
+        guard let aisleId = aisle.id else { return 0 }
+        return medicineViewModel.medicines
+            .filter { $0.aisleId == aisleId && $0.stockStatus == .critical }
             .count
     }
     
@@ -375,7 +372,8 @@ struct AisleDetailView: View {
     @Environment(\.dismiss) var dismiss
 
     private var medicines: [Medicine] {
-        medicineViewModel.medicines.filter { $0.aisleId == aisle.id }
+        guard let aisleId = aisle.id else { return [] }
+        return medicineViewModel.medicines.filter { $0.aisleId == aisleId }
     }
     
     var body: some View {

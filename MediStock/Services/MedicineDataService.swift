@@ -87,14 +87,14 @@ class MedicineDataService {
         let savedMedicine = try await performSaveTransaction(medicine, docId: docId, data: medicineData)
         
         // 5. Enregistrer dans l'historique
-        try await recordMedicineHistory(savedMedicine, isNew: medicine.id.isEmpty)
+        try await recordMedicineHistory(savedMedicine, isNew: medicine.id?.isEmpty ?? true)
         
         return savedMedicine
     }
     
     /// Supprime un médicament
     func deleteMedicine(_ medicine: Medicine) async throws {
-        guard !medicine.id.isEmpty else {
+        guard let medicineId = medicine.id, !medicineId.isEmpty else {
             throw ValidationError.invalidId
         }
         
@@ -102,7 +102,7 @@ class MedicineDataService {
         _ = try await db.runTransaction { [weak self] transaction, errorPointer in
             guard let self = self else { return nil }
             
-            let medicineRef = self.db.collection("medicines").document(medicine.id)
+            let medicineRef = self.db.collection("medicines").document(medicineId)
             
             // Vérifier que le médicament existe
             let doc: DocumentSnapshot
@@ -131,7 +131,7 @@ class MedicineDataService {
         // Enregistrer dans l'historique (hors transaction pour éviter les blocages)
         try await historyService.recordDeletion(
             itemType: "medicine",
-            itemId: medicine.id,
+            itemId: medicineId,
             itemName: medicine.name,
             details: "Suppression du médicament \(medicine.name)"
         )
@@ -178,8 +178,12 @@ class MedicineDataService {
         }
         
         // Enregistrer dans l'historique
+        guard let medicineId = updatedMedicine.id else {
+            throw ValidationError.invalidId
+        }
+
         try await historyService.recordMedicineAction(
-            medicineId: updatedMedicine.id,
+            medicineId: medicineId,
             medicineName: updatedMedicine.name,
             action: "Mise à jour stock",
             details: "Stock mis à jour: \(updatedMedicine.currentQuantity)"
@@ -191,9 +195,13 @@ class MedicineDataService {
     /// Met à jour plusieurs médicaments
     func updateMultipleMedicines(_ medicines: [Medicine]) async throws {
         let batch = db.batch()
-        
+
         for medicine in medicines {
-            let medicineRef = db.collection("medicines").document(medicine.id)
+            guard let medicineId = medicine.id else {
+                throw ValidationError.invalidId
+            }
+
+            let medicineRef = db.collection("medicines").document(medicineId)
             let data: [String: Any] = [
                 "name": medicine.name,
                 "currentQuantity": medicine.currentQuantity,
@@ -204,13 +212,15 @@ class MedicineDataService {
             ]
             batch.updateData(data, forDocument: medicineRef)
         }
-        
+
         try await batch.commit()
-        
+
         // Enregistrer dans l'historique
         for medicine in medicines {
+            guard let medicineId = medicine.id else { continue }
+
             try await historyService.recordMedicineAction(
-                medicineId: medicine.id,
+                medicineId: medicineId,
                 medicineName: medicine.name,
                 action: "Mise à jour",
                 details: "Médicament mis à jour en batch"
@@ -264,11 +274,15 @@ class MedicineDataService {
         }
         
         // Enregistrer l'ajustement dans l'historique
+        guard let medicineId = updatedMedicine.id else {
+            throw ValidationError.invalidId
+        }
+
         let action = adjustment > 0 ? "Ajout" : "Retrait"
         let details = "\(action) de \(abs(adjustment)) unité(s). Nouveau stock: \(updatedMedicine.currentQuantity)"
-        
+
         try await historyService.recordStockAdjustment(
-            medicineId: updatedMedicine.id,
+            medicineId: medicineId,
             medicineName: updatedMedicine.name,
             adjustment: adjustment,
             newStock: updatedMedicine.currentQuantity,
@@ -293,7 +307,7 @@ class MedicineDataService {
     }
     
     private func prepareMedicineForSave(_ medicine: Medicine) -> (id: String, data: [String: Any]) {
-        let docId = medicine.id.isEmpty ? db.collection("medicines").document().documentID : medicine.id
+        let docId = (medicine.id?.isEmpty ?? true) ? db.collection("medicines").document().documentID : (medicine.id ?? "")
         
         var data: [String: Any] = [
             "name": ValidationHelper.sanitizeName(medicine.name),
@@ -325,7 +339,7 @@ class MedicineDataService {
         }
         
         // Add createdAt for new medicines
-        if medicine.id.isEmpty {
+        if medicine.id?.isEmpty ?? true {
             data["createdAt"] = Date()
         } else {
             data["createdAt"] = medicine.createdAt
@@ -358,19 +372,23 @@ class MedicineDataService {
             criticalThreshold: medicine.criticalThreshold,
             expiryDate: medicine.expiryDate,
             aisleId: medicine.aisleId,
-            createdAt: medicine.id.isEmpty ? Date() : medicine.createdAt,
+            createdAt: (medicine.id?.isEmpty ?? true) ? Date() : medicine.createdAt,
             updatedAt: Date()
         )
     }
     
     private func recordMedicineHistory(_ medicine: Medicine, isNew: Bool) async throws {
+        guard let medicineId = medicine.id else {
+            throw ValidationError.invalidId
+        }
+
         let action = isNew ? "Création" : "Modification"
-        let details = isNew 
+        let details = isNew
             ? "Ajout du médicament \(medicine.name) avec un stock initial de \(medicine.currentQuantity)"
             : "Mise à jour du médicament \(medicine.name)"
-        
+
         try await historyService.recordMedicineAction(
-            medicineId: medicine.id,
+            medicineId: medicineId,
             medicineName: medicine.name,
             action: action,
             details: details
@@ -383,20 +401,55 @@ class MedicineDataService {
 extension MedicineDataService {
     /// Crée un listener pour les mises à jour temps réel des médicaments
     func createMedicinesListener(completion: @escaping ([Medicine]) -> Void) -> ListenerRegistration {
+        // 🔍 DIAGNOSTIC LOGS
+        print("🎧 [MedicineDataService] Démarrage du listener temps réel")
+        print("👤 [MedicineDataService] UserID utilisé pour le filtre: \(userId)")
+
         return db.collection("medicines")
             .whereField("userId", isEqualTo: userId)
             .order(by: "name")
-            .addSnapshotListener { snapshot, error in
-                guard let documents = snapshot?.documents else {
-                    print("Erreur listener medicines: \(error?.localizedDescription ?? "Unknown")")
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self else { return }
+
+                // 🔍 Vérifier les erreurs
+                if let error = error {
+                    print("❌ [MedicineDataService] Erreur listener medicines: \(error.localizedDescription)")
+                    print("   Détails: \(error)")
                     completion([])
                     return
                 }
-                
-                let medicines = documents.compactMap { doc in
-                    try? doc.data(as: Medicine.self)
+
+                guard let documents = snapshot?.documents else {
+                    print("⚠️ [MedicineDataService] Aucun document reçu du snapshot")
+                    completion([])
+                    return
                 }
-                
+
+                print("📦 [MedicineDataService] Listener reçu \(documents.count) document(s)")
+
+                // 🔍 Afficher les détails COMPLETS de chaque document
+                for (index, doc) in documents.enumerated() {
+                    print("📄 [MedicineDataService] Document \(index + 1)/\(documents.count):")
+                    print("   ID: \(doc.documentID)")
+                    let data = doc.data()
+                    print("   📦 Données brutes COMPLÈTES: \(data)")
+                }
+
+                // Décoder les médicaments
+                var medicines: [Medicine] = []
+                for (index, doc) in documents.enumerated() {
+                    do {
+                        let medicine = try doc.data(as: Medicine.self)
+                        medicines.append(medicine)
+                        print("✅ [MedicineDataService] Document \(index + 1) décodé: \(medicine.name)")
+                    } catch {
+                        print("❌ [MedicineDataService] Erreur décodage document \(doc.documentID):")
+                        print("   Type d'erreur: \(type(of: error))")
+                        print("   Message: \(error.localizedDescription)")
+                    }
+                }
+
+                print("🏁 [MedicineDataService] Callback avec \(medicines.count) médicament(s) décodé(s)")
                 completion(medicines)
             }
     }

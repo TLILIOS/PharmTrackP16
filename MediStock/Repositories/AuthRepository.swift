@@ -12,17 +12,17 @@ class AuthRepository: AuthRepositoryProtocol {
         $currentUser
     }
 
-    nonisolated init(authService: AuthServiceProtocol = FirebaseAuthService()) {
+    init(authService: AuthServiceProtocol) {
         self.authService = authService
-        
-        // Observer l'état d'authentification
-        Task { @MainActor [weak self] in
-            self?.setupObservers()
-        }
+        setupObservers()
+    }
+
+    convenience init() {
+        self.init(authService: FirebaseAuthService())
     }
     
     private func setupObservers() {
-        authService.$currentUser
+        authService.currentUserPublisher
             .assign(to: &$currentUser)
     }
     

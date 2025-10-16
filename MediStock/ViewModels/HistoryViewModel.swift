@@ -66,11 +66,13 @@ class HistoryViewModel: ObservableObject {
     private func convertToStockHistory(_ entry: HistoryEntry) -> StockHistory {
         // Parser l'action pour déterminer le type
         let type: StockHistory.HistoryType
+        let actionLowercased = entry.action.lowercased()
+
         if entry.action.contains("Ajout stock") || entry.action.contains("Retrait stock") || entry.action.contains("Ajustement") {
             type = .adjustment
-        } else if entry.action == "Ajout" {
+        } else if actionLowercased.contains("ajout") || actionLowercased.contains("création") {
             type = .addition
-        } else if entry.action.contains("supprim") {
+        } else if actionLowercased.contains("supprim") {
             type = .deletion
         } else if entry.action == "Modification" {
             type = .adjustment

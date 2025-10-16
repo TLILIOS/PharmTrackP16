@@ -271,13 +271,14 @@ struct AisleFormView: View {
         isLoading = true
 
         Task {
-            let newAisle = Aisle(
-                id: aisle?.id ?? "",
+            var newAisle = Aisle(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 description: description.isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
                 colorHex: colorHex,
                 icon: icon
             )
+            // Conserver l'ID si on modifie un rayon existant
+            newAisle.id = aisle?.id
 
             await viewModel.saveAisle(newAisle)
 

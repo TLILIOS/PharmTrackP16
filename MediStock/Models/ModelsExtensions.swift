@@ -37,7 +37,7 @@ extension Aisle: Validatable {
         updatedAt: Date? = nil
     ) -> AisleWithTimestamps {
         return AisleWithTimestamps(
-            id: id ?? self.id,
+            id: id ?? self.id ?? "",
             name: name ?? self.name,
             description: description ?? self.description,
             colorHex: colorHex ?? self.colorHex,
@@ -49,6 +49,11 @@ extension Aisle: Validatable {
 }
 
 extension Medicine: Validatable {
+    // Helper pour récupérer l'ID de manière sécurisée
+    var safeId: String {
+        id ?? ""
+    }
+
     func validate() throws {
         // Validation du nom
         let sanitizedName = ValidationHelper.sanitizeName(name)
@@ -154,12 +159,13 @@ struct AisleWithTimestamps: Identifiable, Codable, Equatable, Hashable {
     
     // Conversion vers l'ancien modèle pour compatibilité
     var toAisle: Aisle {
-        Aisle(
-            id: id,
+        var aisle = Aisle(
             name: name,
             description: description,
             colorHex: colorHex,
             icon: icon
         )
+        aisle.id = id
+        return aisle
     }
 }

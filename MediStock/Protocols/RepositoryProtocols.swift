@@ -11,6 +11,10 @@ protocol MedicineRepositoryProtocol {
     func deleteMedicine(id: String) async throws
     func updateMultipleMedicines(_ medicines: [Medicine]) async throws
     func deleteMultipleMedicines(ids: [String]) async throws
+
+    // Real-time listeners
+    func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void)
+    func stopListening()
 }
 
 protocol AisleRepositoryProtocol {
@@ -18,6 +22,10 @@ protocol AisleRepositoryProtocol {
     func fetchAislesPaginated(limit: Int, refresh: Bool) async throws -> [Aisle]
     func saveAisle(_ aisle: Aisle) async throws -> Aisle
     func deleteAisle(id: String) async throws
+
+    // Real-time listeners
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void)
+    func stopListening()
 }
 
 protocol HistoryRepositoryProtocol {

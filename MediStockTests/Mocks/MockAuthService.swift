@@ -10,6 +10,10 @@ final class MockAuthService: AuthServiceProtocol {
 
     @Published var currentUser: User?
 
+    var currentUserPublisher: AnyPublisher<User?, Never> {
+        $currentUser.eraseToAnyPublisher()
+    }
+
     // MARK: - Test Configuration
 
     var shouldFailSignIn = false

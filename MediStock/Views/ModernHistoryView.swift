@@ -2,21 +2,12 @@ import SwiftUI
 
 struct ModernHistoryView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var historyViewModel = HistoryViewModel()
-    @StateObject private var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var historyViewModel: HistoryViewModel
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @State private var filterType: FilterType = .all
     @State private var expandedEntries: Set<String> = []
     @State private var searchText = ""
     @Namespace private var animation
-
-    init() {
-        let container = DependencyContainer.shared
-        _medicineViewModel = StateObject(wrappedValue: MedicineListViewModel(
-            medicineRepository: container.medicineRepository,
-            historyRepository: container.historyRepository,
-            notificationService: container.notificationService
-        ))
-    }
     
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     

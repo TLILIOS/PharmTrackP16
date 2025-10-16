@@ -16,11 +16,7 @@ class FirebaseService: ObservableObject {
 
     func configure() {
         // Configuration Firebase sécurisée avec FirebaseConfigLoader
-        #if DEBUG
-        FirebaseConfigLoader.configureForTesting()
-        #else
         FirebaseConfigLoader.configure(for: .production)
-        #endif
 
         // Activer Analytics
         Analytics.setAnalyticsCollectionEnabled(true)
