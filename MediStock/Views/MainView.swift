@@ -14,7 +14,7 @@ struct MainView: View {
     var body: some View {
         TabView(selection: $appState.selectedTab) {
             NavigationStack(path: $dashboardPath) {
-                DashboardView()
+                DashboardView(pdfExportService: DependencyContainer.shared.pdfExportService)
                     .navigationDestination(for: MedicineDestination.self) { destination in
                         switch destination {
                         case .add:

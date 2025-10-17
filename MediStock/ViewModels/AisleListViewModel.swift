@@ -201,7 +201,6 @@ class AisleListViewModel: ObservableObject {
         print("💾 [AisleListViewModel] saveAisle() appelé pour '\(aisle.name)'")
         do {
             let saved = try await repository.saveAisle(aisle)
-            print("✅ [AisleListViewModel] Rayon sauvegardé avec ID: \(saved.id)")
 
             // Recharger la liste seulement si le listener n'est pas actif
             // Si le listener est actif, il mettra à jour automatiquement
@@ -226,7 +225,7 @@ class AisleListViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "saveAisle",
-                "aisleId": aisle.id
+                "aisleId": aisle.id as Any
             ])
         }
     }

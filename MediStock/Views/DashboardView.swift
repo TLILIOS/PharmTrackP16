@@ -5,9 +5,11 @@ struct DashboardView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var dashboardViewModel: DashboardViewModel
     @EnvironmentObject var authViewModel: AuthViewModel
-    @State private var showingExportSheet = false
-    @State private var pdfURL: URL?
-    
+    let pdfExportService: PDFExportServiceProtocol
+    @State private var pdfExportItem: PDFExportItem?
+    @State private var showingExportError = false
+    @State private var exportErrorMessage: String?
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -136,251 +138,64 @@ struct DashboardView: View {
                 await dashboardViewModel.loadData()
             }
         }
-        .sheet(isPresented: $showingExportSheet) {
-            if let pdfURL = pdfURL {
-                ShareSheet(activityItems: [pdfURL])
+        .sheet(item: $pdfExportItem) { item in
+            if let url = item.url {
+                ShareSheet(activityItems: [url])
+            } else {
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    Text("Génération du PDF en cours...")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
             }
+        }
+        .alert("Erreur d'export", isPresented: $showingExportError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "Une erreur inconnue s'est produite lors de l'export du rapport.")
         }
     }
     
     private func exportToPDF() {
-        Task {
+        Task { @MainActor in
             do {
-                let pdfData = await generatePDFReport()
+                // Ouvrir la sheet avec indicateur de chargement
+                self.pdfExportItem = PDFExportItem(url: nil)
+
+                // Capture des données sur MainActor
+                let authorName = authViewModel.currentUser?.displayName ??
+                                authViewModel.currentUser?.email ??
+                                "Utilisateur"
+                let medicines = dashboardViewModel.medicines
+                let aisles = dashboardViewModel.aisles
+
+                // Génération PDF en arrière-plan (Priorité 3)
+                let pdfData = try await Task.detached {
+                    try await pdfExportService.generateInventoryReport(
+                        medicines: medicines,
+                        aisles: aisles,
+                        authorName: authorName
+                    )
+                }.value
+
                 let fileName = "MediStock_Export_\(Date().formatted(date: .abbreviated, time: .omitted)).pdf"
                 let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-                
+
                 try pdfData.write(to: tempURL)
-                
-                await MainActor.run {
-                    self.pdfURL = tempURL
-                    self.showingExportSheet = true
-                }
+
+                // Mise à jour de l'UI sur MainActor avec le PDF généré
+                self.pdfExportItem = PDFExportItem(url: tempURL)
             } catch {
-                print("Erreur lors de l'export PDF: \(error)")
+                // Fermer la sheet et afficher l'erreur
+                self.pdfExportItem = nil
+                self.exportErrorMessage = "Impossible d'exporter le rapport : \(error.localizedDescription)"
+                self.showingExportError = true
             }
         }
-    }
-    
-    @MainActor
-    private func generatePDFReport() async -> Data {
-        let pdfMetaData = [
-            kCGPDFContextCreator: "MediStock",
-            kCGPDFContextAuthor: authViewModel.currentUser?.displayName ?? "Utilisateur",
-            kCGPDFContextTitle: "Rapport d'inventaire MediStock"
-        ]
-        
-        let format = UIGraphicsPDFRendererFormat()
-        format.documentInfo = pdfMetaData as [String: Any]
-        
-        let pageWidth = 8.5 * 72.0
-        let pageHeight = 11 * 72.0
-        let pageRect = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
-        
-        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
-        
-        let data = renderer.pdfData { (context) in
-            context.beginPage()
-            
-            var yPosition: CGFloat = 50
-            let leftMargin: CGFloat = 50
-            let rightMargin: CGFloat = 50
-            _ = pageWidth - leftMargin - rightMargin
-            
-            // Titre principal
-            let titleAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.boldSystemFont(ofSize: 24),
-                .foregroundColor: UIColor.black
-            ]
-            let title = "Rapport d'inventaire MediStock"
-            title.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: titleAttributes)
-            yPosition += 40
-            
-            // Date du rapport
-            let dateAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 14),
-                .foregroundColor: UIColor.gray
-            ]
-            let dateString = "Généré le \(Date().formatted(date: .complete, time: .shortened))"
-            dateString.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: dateAttributes)
-            yPosition += 30
-            
-            // Informations utilisateur
-            let userInfo = "Utilisateur: \(authViewModel.currentUser?.displayName ?? authViewModel.currentUser?.email ?? "Non identifié")"
-            userInfo.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: dateAttributes)
-            yPosition += 40
-            
-            // Section: Résumé
-            yPosition = drawSection(context: context, title: "Résumé", yPosition: yPosition, pageRect: pageRect) { y in
-                var currentY = y
-                let summaryAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 12),
-                    .foregroundColor: UIColor.black
-                ]
-                
-                let summaryItems = [
-                    "Nombre total de médicaments: \(dashboardViewModel.medicines.count)",
-                    "Nombre de rayons: \(dashboardViewModel.aisles.count)",
-                    "Médicaments en stock critique: \(dashboardViewModel.criticalMedicines.count)",
-                    "Médicaments expirant bientôt: \(dashboardViewModel.expiringMedicines.count)"
-                ]
-                
-                for item in summaryItems {
-                    item.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: summaryAttributes)
-                    currentY += 20
-                }
-                
-                return currentY
-            }
-            
-            // Section: Inventaire par rayon
-            yPosition = drawSection(context: context, title: "Inventaire par rayon", yPosition: yPosition, pageRect: pageRect) { y in
-                var currentY = y
-                let itemAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 11),
-                    .foregroundColor: UIColor.black
-                ]
-                
-                for aisle in dashboardViewModel.aisles.sorted(by: { $0.name < $1.name }) {
-                    // Vérifier si on a besoin d'une nouvelle page
-                    if currentY > pageHeight - 100 {
-                        context.beginPage()
-                        currentY = 50
-                    }
-
-                    // Nom du rayon
-                    let aisleTitle = "• \(aisle.name)"
-                    let aisleTitleAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.boldSystemFont(ofSize: 13),
-                        .foregroundColor: UIColor.black
-                    ]
-                    aisleTitle.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: aisleTitleAttributes)
-                    currentY += 20
-
-                    // Médicaments du rayon
-                    let medicinesInAisle = dashboardViewModel.medicines.filter { $0.aisleId == (aisle.id ?? "") }
-                    if medicinesInAisle.isEmpty {
-                        "  Aucun médicament".draw(at: CGPoint(x: leftMargin + 40, y: currentY), withAttributes: itemAttributes)
-                        currentY += 20
-                    } else {
-                        for medicine in medicinesInAisle.sorted(by: { $0.name < $1.name }) {
-                            let medicineInfo = "  - \(medicine.name): \(medicine.currentQuantity)/\(medicine.maxQuantity) \(medicine.unit)"
-                            medicineInfo.draw(at: CGPoint(x: leftMargin + 40, y: currentY), withAttributes: itemAttributes)
-                            currentY += 18
-                        }
-                    }
-                    currentY += 10
-                }
-                
-                return currentY
-            }
-            
-            // Section: Stocks critiques
-            if !dashboardViewModel.criticalMedicines.isEmpty {
-                yPosition = drawSection(context: context, title: "Stocks critiques", yPosition: yPosition, pageRect: pageRect) { y in
-                    var currentY = y
-                    let criticalAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 11),
-                        .foregroundColor: UIColor.red
-                    ]
-
-                    for medicine in dashboardViewModel.criticalMedicines.sorted(by: { $0.name < $1.name }) {
-                        let info = "• \(medicine.name): \(medicine.currentQuantity)/\(medicine.maxQuantity) \(medicine.unit) (Seuil critique: \(medicine.criticalThreshold))"
-                        info.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: criticalAttributes)
-                        currentY += 20
-                    }
-
-                    return currentY
-                }
-            }
-            
-            // Section: Expirations proches
-            if !dashboardViewModel.expiringMedicines.isEmpty {
-                yPosition = drawSection(context: context, title: "Expirations proches", yPosition: yPosition, pageRect: pageRect) { y in
-                    var currentY = y
-                    let expiryAttributes: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 11),
-                        .foregroundColor: UIColor.orange
-                    ]
-
-                    for medicine in dashboardViewModel.expiringMedicines.sorted(by: { $0.expiryDate ?? Date() < $1.expiryDate ?? Date() }) {
-                        if let expiryDate = medicine.expiryDate {
-                            let status = medicine.isExpired ? "EXPIRÉ" : "Expire"
-                            let info = "• \(medicine.name): \(status) le \(expiryDate.formatted(date: .abbreviated, time: .omitted))"
-                            let attributes = medicine.isExpired ? [
-                                NSAttributedString.Key.font: UIFont.systemFont(ofSize: 11),
-                                .foregroundColor: UIColor.red
-                            ] : expiryAttributes
-                            info.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: attributes)
-                            currentY += 20
-                        }
-                    }
-
-                    return currentY
-                }
-            }
-            
-            // TODO: Section: Historique récent
-            // Cette section nécessite l'injection d'un HistoryViewModel
-            // pour respecter l'architecture MVVM strict
-            /*
-            yPosition = drawSection(context: context, title: "Historique récent", yPosition: yPosition, pageRect: pageRect) { y in
-                var currentY = y
-                let historyAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 10),
-                    .foregroundColor: UIColor.darkGray
-                ]
-
-                let recentHistory = historyViewModel.history.prefix(20)
-                for entry in recentHistory {
-                    let info = "• \(entry.timestamp.formatted(date: .abbreviated, time: .shortened)) - \(entry.action): \(entry.details)"
-                    info.draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: historyAttributes)
-                    currentY += 18
-                }
-
-                if recentHistory.isEmpty {
-                    "Aucune activité récente".draw(at: CGPoint(x: leftMargin + 20, y: currentY), withAttributes: historyAttributes)
-                }
-
-                return currentY
-            }
-            */
-        }
-        
-        return data
-    }
-    
-    private func drawSection(context: UIGraphicsPDFRendererContext, title: String, yPosition: CGFloat, pageRect: CGRect, drawContent: (CGFloat) -> CGFloat) -> CGFloat {
-        var currentY = yPosition
-        
-        // Vérifier si on a besoin d'une nouvelle page
-        if currentY > pageRect.height - 150 {
-            context.beginPage()
-            currentY = 50
-        }
-        
-        // Titre de section
-        let sectionTitleAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: 16),
-            .foregroundColor: UIColor.black
-        ]
-        title.draw(at: CGPoint(x: 50, y: currentY), withAttributes: sectionTitleAttributes)
-        currentY += 25
-        
-        // Ligne de séparation
-        let linePath = UIBezierPath()
-        linePath.move(to: CGPoint(x: 50, y: currentY))
-        linePath.addLine(to: CGPoint(x: pageRect.width - 50, y: currentY))
-        UIColor.lightGray.setStroke()
-        linePath.lineWidth = 0.5
-        linePath.stroke()
-        currentY += 15
-        
-        // Contenu de la section
-        currentY = drawContent(currentY)
-        currentY += 30
-        
-        return currentY
     }
 }
 
@@ -477,3 +292,12 @@ struct ExpiringMedicinesListView: View {
 
 // MARK: - Navigation
 // MedicineDestination is defined in NavigationDestinations.swift
+
+// MARK: - PDF Export Item
+
+/// Wrapper Identifiable pour gérer l'état de l'export PDF
+/// Permet l'utilisation de .sheet(item:) pour afficher la sheet d'export
+struct PDFExportItem: Identifiable {
+    let id = UUID()
+    let url: URL?
+}

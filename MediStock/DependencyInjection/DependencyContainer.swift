@@ -12,6 +12,7 @@ class DependencyContainer {
     lazy var dataService = DataServiceAdapter()
     lazy var authService = AuthService()
     lazy var notificationService = NotificationService()
+    lazy var pdfExportService: PDFExportServiceProtocol = PDFExportService()
     
     // Repositories
     lazy var medicineRepository: MedicineRepositoryProtocol = MedicineRepository(dataService: dataService)

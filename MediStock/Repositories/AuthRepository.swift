@@ -5,14 +5,14 @@ import Combine
 
 @MainActor
 class AuthRepository: AuthRepositoryProtocol {
-    private let authService: AuthServiceProtocol
+    private let authService: any AuthServiceProtocol
     @Published private var currentUser: User?
 
     var currentUserPublisher: Published<User?>.Publisher {
         $currentUser
     }
 
-    init(authService: AuthServiceProtocol) {
+    init(authService: any AuthServiceProtocol) {
         self.authService = authService
         setupObservers()
     }

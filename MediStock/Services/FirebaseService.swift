@@ -64,9 +64,9 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "medicine_added",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id as Any,
                 "medicine_name": medicine.name,
-                "aisle_id": medicine.aisleId,
+                "aisle_id": medicine.aisleId as Any,
                 "initial_quantity": medicine.currentQuantity
             ]
         ))
@@ -76,7 +76,7 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "medicine_updated",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id as Any,
                 "medicine_name": medicine.name,
                 "current_quantity": medicine.currentQuantity
             ]
