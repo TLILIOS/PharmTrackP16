@@ -201,7 +201,7 @@ class MedicineListViewModel: ObservableObject {
                 medicines.insert(saved, at: 0) // Ajouter en tête
             }
 
-            // NOTE: L'historique est déjà enregistré par FirebaseDataService.saveMedicine()
+            // NOTE: L'historique est déjà enregistré par MedicineDataService.saveMedicine()
             // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
@@ -229,7 +229,7 @@ class MedicineListViewModel: ObservableObject {
             // Retirer de la liste locale
             medicines.removeAll { $0.id == medicine.id }
 
-            // NOTE: L'historique est déjà enregistré par FirebaseDataService.deleteMedicine()
+            // NOTE: L'historique est déjà enregistré par MedicineDataService.deleteMedicine()
             // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
@@ -259,7 +259,7 @@ class MedicineListViewModel: ObservableObject {
                 medicines[index] = updated
             }
 
-            // NOTE: L'historique est déjà enregistré par FirebaseDataService.updateMedicineStock()
+            // NOTE: L'historique est déjà enregistré par MedicineDataService.updateMedicineStock()
             // Pas besoin de créer une entrée dupliquée ici
 
             // Analytics
