@@ -317,3 +317,98 @@ class MockAuthServiceStandalone: ObservableObject {
         return currentUser
     }
 }
+
+// MARK: - Sample Data for Previews and Tests
+
+extension MockMedicineRepository {
+    static func withSampleData() -> MockMedicineRepository {
+        let repo = MockMedicineRepository()
+        repo.medicines = [
+            Medicine(
+                id: "1",
+                name: "Paracétamol",
+                description: "Antalgique et antipyrétique",
+                dosage: "500mg",
+                form: "Comprimé",
+                reference: "PAR-500",
+                unit: "comprimés",
+                currentQuantity: 100,
+                maxQuantity: 200,
+                warningThreshold: 50,
+                criticalThreshold: 20,
+                expiryDate: Calendar.current.date(byAdding: .month, value: 6, to: Date()),
+                aisleId: "aisle1",
+                createdAt: Date(),
+                updatedAt: Date()
+            ),
+            Medicine(
+                id: "2",
+                name: "Ibuprofène",
+                description: "Anti-inflammatoire",
+                dosage: "400mg",
+                form: "Comprimé",
+                reference: "IBU-400",
+                unit: "comprimés",
+                currentQuantity: 15,
+                maxQuantity: 150,
+                warningThreshold: 30,
+                criticalThreshold: 10,
+                expiryDate: Calendar.current.date(byAdding: .day, value: 15, to: Date()),
+                aisleId: "aisle1",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        ]
+        return repo
+    }
+}
+
+extension MockAisleRepository {
+    static func withSampleData() -> MockAisleRepository {
+        let repo = MockAisleRepository()
+
+        var aisle1 = Aisle(
+            name: "Antalgiques",
+            description: "Médicaments contre la douleur",
+            colorHex: "#FF6B6B",
+            icon: "pills.fill"
+        )
+        aisle1.id = "aisle1"
+
+        var aisle2 = Aisle(
+            name: "Antibiotiques",
+            description: "Médicaments antibactériens",
+            colorHex: "#4ECDC4",
+            icon: "cross.case.fill"
+        )
+        aisle2.id = "aisle2"
+
+        repo.aisles = [aisle1, aisle2]
+        return repo
+    }
+}
+
+extension MockHistoryRepository {
+    static func withSampleData() -> MockHistoryRepository {
+        let repo = MockHistoryRepository()
+        repo.history = [
+            HistoryEntry(
+                id: "h1",
+                medicineId: "1",
+                userId: "user1",
+                action: "Ajout stock",
+                details: "Ajout de 50 comprimés",
+                timestamp: Date()
+            ),
+            HistoryEntry(
+                id: "h2",
+                medicineId: "2",
+                userId: "user1",
+                action: "Modification",
+                details: "Mise à jour des seuils d'alerte",
+                timestamp: Calendar.current.date(byAdding: .hour, value: -2, to: Date()) ?? Date()
+            )
+        ]
+        return repo
+    }
+}

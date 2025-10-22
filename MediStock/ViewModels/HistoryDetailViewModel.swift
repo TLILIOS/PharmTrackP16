@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 // MARK: - HistoryDetailViewModel
 
@@ -20,13 +21,16 @@ class HistoryDetailViewModel: ObservableObject {
     
     private let historyRepository: HistoryRepositoryProtocol
     private let medicineRepository: MedicineRepositoryProtocol
-    
+    private let pdfExportService: PDFExportServiceProtocol
+
     init(
         historyRepository: HistoryRepositoryProtocol = HistoryRepository(),
-        medicineRepository: MedicineRepositoryProtocol = MedicineRepository()
+        medicineRepository: MedicineRepositoryProtocol = MedicineRepository(),
+        pdfExportService: PDFExportServiceProtocol = PDFExportService()
     ) {
         self.historyRepository = historyRepository
         self.medicineRepository = medicineRepository
+        self.pdfExportService = pdfExportService
     }
     
     // MARK: - Load History
@@ -189,8 +193,39 @@ class HistoryDetailViewModel: ObservableObject {
     }
     
     private func exportToPDF() async throws -> URL {
-        // TODO: Implémenter l'export PDF
-        throw ExportError.formatNotSupported
+        // Récupérer l'utilisateur actuel
+        let firebaseUser = Auth.auth().currentUser
+        let authorName = firebaseUser?.displayName ??
+                        firebaseUser?.email ??
+                        "Utilisateur"
+
+        // Récupérer le libellé de la plage de dates
+        let dateRangeLabel = selectedDateRange.rawValue
+
+        // Générer le PDF via le service
+        let pdfData = try await pdfExportService.generateHistoryReport(
+            entries: filteredEntries,
+            statistics: statistics,
+            dateRange: dateRangeLabel,
+            authorName: authorName
+        )
+
+        // Sauvegarder le fichier temporaire
+        let fileName = "historique_\(Date().timeIntervalSince1970).pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        try pdfData.write(to: tempURL)
+
+        // Logger l'export
+        FirebaseService.shared.logEvent(AnalyticsEvent(
+            name: "history_export",
+            parameters: [
+                "format": "pdf",
+                "entry_count": filteredEntries.count
+            ]
+        ))
+
+        return tempURL
     }
 }
 

@@ -6,6 +6,11 @@ struct ModernHistoryView: View {
     @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @State private var expandedEntries: Set<String> = []
     @State private var searchText = ""
+    @State private var showingExportOptions = false
+    @State private var exportedFileURL: URL?
+    @State private var showingShareSheet = false
+    @State private var showingExportError = false
+    @State private var exportErrorMessage: String?
     @Namespace private var animation
 
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -83,6 +88,44 @@ struct ModernHistoryView: View {
         }
         .navigationTitle("Historique")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingExportOptions = true }) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(filteredHistory.isEmpty)
+            }
+        }
+        .sheet(isPresented: $showingExportOptions) {
+            ExportOptionsView(
+                onExport: { format in
+                    await exportHistory(format: format)
+                }
+            )
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let url = exportedFileURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .onChange(of: showingExportOptions) { oldValue, newValue in
+            if newValue {
+                // La sheet d'export s'ouvre - réinitialiser l'état
+                exportedFileURL = nil
+            } else if exportedFileURL != nil {
+                // La sheet d'export se ferme et un fichier est prêt - afficher la sheet de partage
+                Task {
+                    // Attendre que la sheet d'export soit complètement fermée
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+                    showingShareSheet = true
+                }
+            }
+        }
+        .alert("Erreur d'export", isPresented: $showingExportError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "Une erreur s'est produite lors de l'export.")
+        }
         .task {
             // Toujours recharger l'historique pour avoir les données fraîches
             await historyViewModel.loadHistory()
@@ -254,6 +297,98 @@ struct ModernHistoryView: View {
         await historyViewModel.loadHistory()
         await medicineViewModel.loadMedicines()
         impactFeedback.impactOccurred()
+    }
+
+    private func exportHistory(format: HistoryViewModel.ExportFormat) async {
+        do {
+            // Créer le dictionnaire des médicaments
+            let medicinesDict: [String: String] = Dictionary(
+                uniqueKeysWithValues: medicineViewModel.medicines.compactMap { medicine -> (String, String)? in
+                    guard let id = medicine.id else { return nil }
+                    return (id, medicine.name)
+                }
+            )
+
+            // Exporter
+            let url = try await historyViewModel.exportHistory(
+                format: format,
+                medicines: medicinesDict
+            )
+
+            exportedFileURL = url
+            // Ne pas afficher la sheet de partage ici - sera géré par onChange
+        } catch {
+            exportErrorMessage = error.localizedDescription
+            showingExportError = true
+        }
+    }
+}
+
+// MARK: - Export Options View
+
+struct ExportOptionsView: View {
+    let onExport: (HistoryViewModel.ExportFormat) async -> Void
+    @Environment(\.dismiss) var dismiss
+    @State private var isExporting = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                List {
+                    Button(action: {
+                        Task {
+                            isExporting = true
+                            await onExport(.csv)
+                            isExporting = false
+                            dismiss()
+                        }
+                    }) {
+                        Label("Exporter en CSV", systemImage: "doc.text")
+                    }
+                    .disabled(isExporting)
+
+                    Button(action: {
+                        Task {
+                            isExporting = true
+                            await onExport(.pdf)
+                            isExporting = false
+                            dismiss()
+                        }
+                    }) {
+                        Label("Exporter en PDF", systemImage: "doc.richtext")
+                    }
+                    .disabled(isExporting)
+                }
+
+                if isExporting {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Export en cours...")
+                            .font(.headline)
+                    }
+                    .padding(32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.systemBackground))
+                            .shadow(radius: 10)
+                    )
+                }
+            }
+            .navigationTitle("Format d'export")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Annuler") {
+                        dismiss()
+                    }
+                    .disabled(isExporting)
+                }
+            }
+        }
     }
 }
 

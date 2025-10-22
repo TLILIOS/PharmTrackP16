@@ -305,21 +305,40 @@ extension MedicineListViewModel {
     }
 
     /// Créer une instance pour les tests avec mocks
+    #if DEBUG
     static func makeMock(
         medicines: [Medicine] = [],
         repository: MedicineRepositoryProtocol? = nil
     ) -> MedicineListViewModel {
-        let mockRepo = repository ?? MockMedicineRepository()
-        let mockHistory = MockHistoryRepository()
-        let mockNotif = NotificationService()
+        // Mini-mocks inline pour previews
+        class PreviewMedicineRepository: MedicineRepositoryProtocol {
+            var medicines: [Medicine]
+            init(_ medicines: [Medicine]) { self.medicines = medicines }
+            func fetchMedicines() async throws -> [Medicine] { medicines }
+            func fetchMedicinesPaginated(limit: Int, refresh: Bool) async throws -> [Medicine] { medicines }
+            func saveMedicine(_ medicine: Medicine) async throws -> Medicine { medicine }
+            func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine { medicines.first! }
+            func deleteMedicine(id: String) async throws {}
+            func updateMultipleMedicines(_ medicines: [Medicine]) async throws {}
+            func deleteMultipleMedicines(ids: [String]) async throws {}
+            func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {}
+            func stopListening() {}
+        }
+
+        class PreviewHistoryRepository: HistoryRepositoryProtocol {
+            func fetchHistory() async throws -> [HistoryEntry] { [] }
+            func addHistoryEntry(_ entry: HistoryEntry) async throws {}
+            func fetchHistoryForMedicine(_ medicineId: String) async throws -> [HistoryEntry] { [] }
+        }
 
         let viewModel = MedicineListViewModel(
-            medicineRepository: mockRepo,
-            historyRepository: mockHistory,
-            notificationService: mockNotif
+            medicineRepository: repository ?? PreviewMedicineRepository(medicines),
+            historyRepository: PreviewHistoryRepository(),
+            notificationService: NotificationService()
         )
 
         viewModel.medicines = medicines
         return viewModel
     }
+    #endif
 }

@@ -212,18 +212,41 @@ extension DashboardViewModel {
         )
     }
 
+    #if DEBUG
     static func makeMock(
         medicines: [Medicine] = [],
         aisles: [Aisle] = []
     ) -> DashboardViewModel {
-        let mockMedicineRepo = MockMedicineRepository()
-        let mockAisleRepo = MockAisleRepository()
-        let mockNotif = NotificationService()
+        // Mini-mocks inline pour previews
+        class PreviewMedicineRepository: MedicineRepositoryProtocol {
+            var medicines: [Medicine]
+            init(_ medicines: [Medicine]) { self.medicines = medicines }
+            func fetchMedicines() async throws -> [Medicine] { medicines }
+            func fetchMedicinesPaginated(limit: Int, refresh: Bool) async throws -> [Medicine] { medicines }
+            func saveMedicine(_ medicine: Medicine) async throws -> Medicine { medicine }
+            func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine { medicines.first! }
+            func deleteMedicine(id: String) async throws {}
+            func updateMultipleMedicines(_ medicines: [Medicine]) async throws {}
+            func deleteMultipleMedicines(ids: [String]) async throws {}
+            func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {}
+            func stopListening() {}
+        }
+
+        class PreviewAisleRepository: AisleRepositoryProtocol {
+            var aisles: [Aisle]
+            init(_ aisles: [Aisle]) { self.aisles = aisles }
+            func fetchAisles() async throws -> [Aisle] { aisles }
+            func fetchAislesPaginated(limit: Int, refresh: Bool) async throws -> [Aisle] { aisles }
+            func saveAisle(_ aisle: Aisle) async throws -> Aisle { aisle }
+            func deleteAisle(id: String) async throws {}
+            func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {}
+            func stopListening() {}
+        }
 
         let viewModel = DashboardViewModel(
-            medicineRepository: mockMedicineRepo,
-            aisleRepository: mockAisleRepo,
-            notificationService: mockNotif
+            medicineRepository: PreviewMedicineRepository(medicines),
+            aisleRepository: PreviewAisleRepository(aisles),
+            notificationService: NotificationService()
         )
 
         viewModel.medicines = medicines
@@ -231,4 +254,5 @@ extension DashboardViewModel {
 
         return viewModel
     }
+    #endif
 }

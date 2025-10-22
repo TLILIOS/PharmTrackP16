@@ -14,7 +14,7 @@ class FirebaseAuthService: AuthServiceProtocol {
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private let keychain = KeychainService.shared
-    
+
     init() {
         // Observer les changements d'état d'authentification
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, firebaseUser in
@@ -25,7 +25,7 @@ class FirebaseAuthService: AuthServiceProtocol {
                     displayName: user.displayName
                 )
             }
-            
+
             // Gérer le token d'authentification
             if let firebaseUser = firebaseUser {
                 Task {
@@ -41,15 +41,15 @@ class FirebaseAuthService: AuthServiceProtocol {
             }
         }
     }
-    
+
     deinit {
         if let handle = authStateHandle {
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
-    
+
     // MARK: - Méthodes d'authentification
-    
+
     func signIn(email: String, password: String) async throws {
         let result = try await Auth.auth().signIn(withEmail: email, password: password)
         currentUser = User(
@@ -58,27 +58,27 @@ class FirebaseAuthService: AuthServiceProtocol {
             displayName: result.user.displayName
         )
     }
-    
+
     func signUp(email: String, password: String, displayName: String) async throws {
         let result = try await Auth.auth().createUser(withEmail: email, password: password)
-        
+
         // Mettre à jour le profil
         let changeRequest = result.user.createProfileChangeRequest()
         changeRequest.displayName = displayName
         try await changeRequest.commitChanges()
-        
+
         currentUser = User(
             id: result.user.uid,
             email: result.user.email,
             displayName: displayName
         )
     }
-    
+
     func signOut() async throws {
         try Auth.auth().signOut()
         currentUser = nil
     }
-    
+
     func resetPassword(email: String) async throws {
         try await Auth.auth().sendPasswordReset(withEmail: email)
     }

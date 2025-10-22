@@ -96,12 +96,12 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "stock_adjusted",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id ?? "unknown",
                 "medicine_name": medicine.name,
                 "adjustment": adjustment,
                 "new_quantity": medicine.currentQuantity + adjustment,
                 "reason": reason,
-                "stock_status": medicine.stockStatus == .critical ? "critical" : 
+                "stock_status": medicine.stockStatus == .critical ? "critical" :
                               medicine.stockStatus == .warning ? "warning" : "normal"
             ]
         ))

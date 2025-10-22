@@ -3,7 +3,10 @@ import FirebaseFirestore
 import FirebaseAuth
 
 // MARK: - Service de données Firebase unifié avec validation et transactions
+// ⚠️ DEPRECATED: Ce service monolithique est en cours de remplacement par des services modulaires
+// Utilisez DataServiceAdapter qui wrappe MedicineDataService, AisleDataService, et HistoryDataService
 
+@available(*, deprecated, message: "Use DataServiceAdapter with modular services (MedicineDataService, AisleDataService, HistoryDataService) instead. This monolithic service will be removed in a future version.")
 class FirebaseDataService: DataServiceProtocol {
     private let db = Firestore.firestore()
     private var listeners: [ListenerRegistration] = []
@@ -690,4 +693,5 @@ class FirebaseDataService: DataServiceProtocol {
 // MARK: - Rétrocompatibilité
 
 /// Typealias pour maintenir la compatibilité avec le code existant
+@available(*, deprecated, message: "Use DataServiceAdapter instead. Direct usage of DataService will be removed in a future version.")
 typealias DataService = FirebaseDataService

@@ -88,26 +88,7 @@ struct MainView: View {
             .tag(3)
             
             NavigationStack(path: $profilePath) {
-                ProfileView()
-                    .navigationDestination(for: ProfileDestination.self) { destination in
-                        switch destination {
-                        case .settings:
-                            SettingsView()
-                                .environmentObject(appState)
-                        case .appearance:
-                            AppearanceView()
-                                .environmentObject(appState)
-                        case .notifications:
-                            NotificationsSettingsView()
-                                .environmentObject(appState)
-                        case .about:
-                            AboutView()
-                                .environmentObject(appState)
-                        case .help:
-                            HelpView()
-                                .environmentObject(appState)
-                        }
-                    }
+                ModernProfileView()
             }
             .tabItem {
                 Label("Profil", systemImage: "person.circle.fill")

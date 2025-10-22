@@ -129,7 +129,8 @@ class AisleListViewModel: ObservableObject {
         loadTask?.cancel()
 
         // 5. Créer et stocker la nouvelle tâche
-        loadTask = Task { @MainActor in
+        loadTask = Task { @MainActor [weak self]  in
+            guard let self else {return}
             isLoading = true
             errorMessage = nil
 
@@ -282,13 +283,26 @@ extension AisleListViewModel {
     }
 
     /// Créer une instance pour les tests avec mocks
+    #if DEBUG
     static func makeMock(
         aisles: [Aisle] = [],
         repository: AisleRepositoryProtocol? = nil
     ) -> AisleListViewModel {
-        let mockRepo = repository ?? MockAisleRepository()
-        let viewModel = AisleListViewModel(repository: mockRepo)
+        // Mini-mock inline pour previews
+        class PreviewAisleRepository: AisleRepositoryProtocol {
+            var aisles: [Aisle]
+            init(_ aisles: [Aisle]) { self.aisles = aisles }
+            func fetchAisles() async throws -> [Aisle] { aisles }
+            func fetchAislesPaginated(limit: Int, refresh: Bool) async throws -> [Aisle] { aisles }
+            func saveAisle(_ aisle: Aisle) async throws -> Aisle { aisle }
+            func deleteAisle(id: String) async throws {}
+            func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {}
+            func stopListening() {}
+        }
+
+        let viewModel = AisleListViewModel(repository: repository ?? PreviewAisleRepository(aisles))
         viewModel.aisles = aisles
         return viewModel
     }
+    #endif
 }

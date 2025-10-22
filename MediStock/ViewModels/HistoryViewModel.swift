@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 // MARK: - History ViewModel
 
@@ -48,9 +49,14 @@ class HistoryViewModel: ObservableObject {
     }
 
     private let repository: HistoryRepositoryProtocol
+    private let pdfExportService: PDFExportServiceProtocol
 
-    init(repository: HistoryRepositoryProtocol = HistoryRepository()) {
+    init(
+        repository: HistoryRepositoryProtocol = HistoryRepository(),
+        pdfExportService: PDFExportServiceProtocol = PDFExportService()
+    ) {
         self.repository = repository
+        self.pdfExportService = pdfExportService
 
         print("🎧 [HistoryViewModel] Initialisation et configuration du listener de notification")
 
@@ -209,5 +215,99 @@ class HistoryViewModel: ObservableObject {
     
     func clearError() {
         errorMessage = nil
+    }
+
+    // MARK: - Export
+
+    enum ExportFormat {
+        case csv
+        case pdf
+    }
+
+    func exportHistory(format: ExportFormat, medicines: [String: String]) async throws -> URL {
+        switch format {
+        case .csv:
+            return try await exportToCSV(medicines: medicines)
+        case .pdf:
+            return try await exportToPDF(medicines: medicines)
+        }
+    }
+
+    private func exportToCSV(medicines: [String: String]) async throws -> URL {
+        var csvContent = "Date,Heure,Type,Médicament,Changement,Quantité Avant,Quantité Après,Raison\n"
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        dateFormatter.locale = Locale(identifier: "fr_FR")
+
+        for entry in filteredHistory {
+            let date = dateFormatter.string(from: entry.date)
+            let typeLabel: String
+            switch entry.type {
+            case .adjustment: typeLabel = "Ajustement"
+            case .addition: typeLabel = "Ajout"
+            case .deletion: typeLabel = "Suppression"
+            }
+
+            let medicineName = medicines[entry.medicineId] ?? "Médicament supprimé"
+            let changeSign = entry.change >= 0 ? "+" : ""
+            let reason = entry.reason?.replacingOccurrences(of: ",", with: ";") ?? ""
+
+            csvContent += "\(date),\(typeLabel),\(medicineName),\(changeSign)\(entry.change),\(entry.previousQuantity),\(entry.newQuantity),\(reason)\n"
+        }
+
+        // Sauvegarder le fichier
+        let fileName = "mouvements_stock_\(Date().timeIntervalSince1970).csv"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        try csvContent.write(to: tempURL, atomically: true, encoding: .utf8)
+
+        // Logger l'export
+        FirebaseService.shared.logEvent(AnalyticsEvent(
+            name: "stock_history_export",
+            parameters: [
+                "format": "csv",
+                "entry_count": filteredHistory.count
+            ]
+        ))
+
+        return tempURL
+    }
+
+    private func exportToPDF(medicines: [String: String]) async throws -> URL {
+        // Récupérer l'utilisateur actuel
+        let firebaseUser = Auth.auth().currentUser
+        let authorName = firebaseUser?.displayName ??
+                        firebaseUser?.email ??
+                        "Utilisateur"
+
+        // Récupérer le libellé du filtre
+        let filterLabel = filterType.rawValue
+
+        // Générer le PDF via le service
+        let pdfData = try await pdfExportService.generateStockHistoryReport(
+            entries: filteredHistory,
+            medicines: medicines,
+            filterType: filterLabel,
+            authorName: authorName
+        )
+
+        // Sauvegarder le fichier temporaire
+        let fileName = "mouvements_stock_\(Date().timeIntervalSince1970).pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        try pdfData.write(to: tempURL)
+
+        // Logger l'export
+        FirebaseService.shared.logEvent(AnalyticsEvent(
+            name: "stock_history_export",
+            parameters: [
+                "format": "pdf",
+                "entry_count": filteredHistory.count
+            ]
+        ))
+
+        return tempURL
     }
 }
