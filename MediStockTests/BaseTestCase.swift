@@ -6,53 +6,53 @@ import Combine
 /// Fournit une configuration commune et des utilitaires pour les tests
 @MainActor
 class BaseTestCase: XCTestCase {
-    
+
     /// Set pour stocker les subscriptions Combine
     var cancellables: Set<AnyCancellable>!
-    
+
     /// Configuration globale exécutée une seule fois avant tous les tests
     override class func setUp() {
         super.setUp()
-        
+
         // Configurer l'environnement de test
         TestConfiguration.configureTestEnvironment()
-        
+
         // Configurer Firebase seulement si nécessaire
         if !TestConfiguration.isUnitTestMode {
             TestConfiguration.setupFirebaseForTesting()
         }
     }
-    
+
     /// Configuration exécutée avant chaque test
     override func setUp() {
         super.setUp()
-        
+
         // Initialiser le set de cancellables
         cancellables = Set<AnyCancellable>()
-        
+
         // Nettoyer UserDefaults pour avoir un état propre
         clearUserDefaults()
-        
+
         // Configurer les timeouts par défaut
         continueAfterFailure = false
     }
-    
+
     /// Nettoyage exécuté après chaque test
     override func tearDown() {
         // Annuler toutes les subscriptions Combine
         cancellables?.forEach { $0.cancel() }
         cancellables = nil
-        
+
         // Nettoyer UserDefaults
         clearUserDefaults()
-        
+
         super.tearDown()
     }
-    
+
     /// Nettoyage global après tous les tests
     override class func tearDown() {
         super.tearDown()
-        
+
         // Nettoyer Firebase si configuré
         if !TestConfiguration.isUnitTestMode {
             Task {
@@ -60,15 +60,15 @@ class BaseTestCase: XCTestCase {
             }
         }
     }
-    
+
     // MARK: - Utilitaires de Test
-    
+
     /// Timeout par défaut pour les tests unitaires
     var defaultTimeout: TimeInterval { 5.0 }
-    
+
     /// Timeout pour les opérations réseau
     var networkTimeout: TimeInterval { 10.0 }
-    
+
     /// Attend qu'une expectation soit remplie avec le timeout par défaut
     func waitForExpectation(
         _ expectation: XCTestExpectation,
@@ -76,7 +76,7 @@ class BaseTestCase: XCTestCase {
     ) {
         wait(for: [expectation], timeout: timeout ?? defaultTimeout)
     }
-    
+
     /// Attend plusieurs expectations avec options personnalisées
     func waitForMultipleExpectations(
         _ expectations: [XCTestExpectation],
@@ -89,14 +89,14 @@ class BaseTestCase: XCTestCase {
             wait(for: expectations, timeout: timeout ?? defaultTimeout)
         }
     }
-    
+
     /// Utilitaire pour attendre une opération async
     func waitForAsync(
         timeout: TimeInterval? = nil,
         operation: @escaping () async throws -> Void
     ) async throws {
         let expectation = expectation(description: "Async operation")
-        
+
         Task {
             do {
                 try await operation()
@@ -106,10 +106,10 @@ class BaseTestCase: XCTestCase {
                 expectation.fulfill()
             }
         }
-        
+
         await fulfillment(of: [expectation], timeout: timeout ?? defaultTimeout)
     }
-    
+
     /// Vérifie qu'une closure throws une erreur spécifique
     func assertThrows<T, E: Error>(
         _ expression: @autoclosure () throws -> T,
@@ -126,7 +126,7 @@ class BaseTestCase: XCTestCase {
             XCTFail("Expected error \(expectedError) but got \(error)", file: file, line: line)
         }
     }
-    
+
     /// Vérifie qu'une closure async throws une erreur
     func assertAsyncThrows<T>(
         _ expression: @escaping () async throws -> T,
@@ -140,16 +140,16 @@ class BaseTestCase: XCTestCase {
             // Success - an error was thrown
         }
     }
-    
+
     /// Nettoie UserDefaults pour les tests
     private func clearUserDefaults() {
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
     }
-    
+
     // MARK: - Mock Helpers
-    
+
     /// Crée un mock repository avec des données par défaut
     func createMockMedicineRepository(
         medicines: [Medicine] = TestData.mockMedicines
@@ -158,7 +158,7 @@ class BaseTestCase: XCTestCase {
         repo.medicines = medicines
         return repo
     }
-    
+
     /// Crée un mock aisle repository
     func createMockAisleRepository(
         aisles: [Aisle] = TestData.mockAisles
@@ -167,7 +167,7 @@ class BaseTestCase: XCTestCase {
         repo.aisles = aisles
         return repo
     }
-    
+
     /// Crée un mock history repository
     func createMockHistoryRepository(
         history: [HistoryEntry] = []
@@ -176,9 +176,9 @@ class BaseTestCase: XCTestCase {
         repo.history = history
         return repo
     }
-    
+
     // MARK: - Performance Testing
-    
+
     /// Mesure le temps d'exécution d'un bloc de code
     func measureTime(
         description: String,
@@ -190,7 +190,7 @@ class BaseTestCase: XCTestCase {
         let elapsed = end - start
         print("⏱ \(description) took \(String(format: "%.3f", elapsed))s")
     }
-    
+
     /// Mesure le temps d'exécution d'un bloc async
     func measureAsyncTime(
         description: String,

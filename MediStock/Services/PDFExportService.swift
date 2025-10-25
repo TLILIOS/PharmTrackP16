@@ -833,10 +833,6 @@ final class PDFExportService: PDFExportServiceProtocol {
             pageRect: pageRect
         ) { y in
             var currentY = y
-            let entryAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 11),
-                .foregroundColor: UIColor.black
-            ]
             let detailsAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 10),
                 .foregroundColor: UIColor.darkGray
