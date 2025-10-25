@@ -1,9 +1,10 @@
 import SwiftUI
 
-// MARK: - Vue Médicaments corrigée utilisant AppState
+// MARK: - Vue Médicaments corrigée utilisant MVVM
 
 struct MedicineListView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleViewModel: AisleListViewModel
     @State private var showingAddForm = false
     @State private var showingSearchView = false
     @State private var addButtonRotation: Double = 0
@@ -41,30 +42,35 @@ struct MedicineListView: View {
                 .sheet(isPresented: $showingAddForm) {
                     NavigationStack {
                         MedicineFormView(medicine: nil)
-                            .environmentObject(appState)
+                            .environmentObject(medicineViewModel)
+                            .environmentObject(aisleViewModel)
                     }
                 }
                 .navigationDestination(for: MedicineDestination.self) { destination in
                     switch destination {
                     case .add:
                         MedicineFormView(medicine: nil)
-                            .environmentObject(appState)
+                            .environmentObject(medicineViewModel)
+                            .environmentObject(aisleViewModel)
                     case .detail(let medicine):
                         MedicineDetailView(medicine: medicine)
-                            .environmentObject(appState)
+                            .environmentObject(medicineViewModel)
+                            .environmentObject(aisleViewModel)
                     case .edit(let medicine):
                         MedicineFormView(medicine: medicine)
-                            .environmentObject(appState)
+                            .environmentObject(medicineViewModel)
+                            .environmentObject(aisleViewModel)
                     case .adjustStock(let medicine):
                         StockAdjustmentView(medicine: medicine)
-                            .environmentObject(appState)
+                            .environmentObject(medicineViewModel)
                     }
                 }
                 .onAppear {
                     // S'assurer que les données sont chargées
-                    if appState.medicines.isEmpty && !appState.isLoading {
+                    if medicineViewModel.isEmpty && !medicineViewModel.isLoading {
                         Task {
-                            await appState.loadData()
+                            await medicineViewModel.loadMedicines()
+                            await aisleViewModel.loadAisles()
                         }
                     }
                 }
@@ -73,9 +79,9 @@ struct MedicineListView: View {
     
     @ViewBuilder
     private var content: some View {
-        if appState.isLoading && appState.medicines.isEmpty {
+        if medicineViewModel.isLoading && medicineViewModel.isEmpty {
             loadingView
-        } else if appState.medicines.isEmpty {
+        } else if medicineViewModel.isEmpty {
             emptyView
         } else {
             medicinesList
@@ -137,37 +143,40 @@ struct MedicineListView: View {
         ScrollView {
             VStack(spacing: 0) {
                 searchAndFilterBar
-                
+
                 // Nombre de résultats avec transition
-                if !appState.searchText.isEmpty || appState.selectedAisleId != nil {
+                if !medicineViewModel.searchText.isEmpty || !medicineViewModel.selectedAisleId.isEmpty {
                     HStack {
-                        Text("\(appState.filteredMedicines.count) résultat(s)")
+                        Text("\(medicineViewModel.filteredMedicines.count) résultat(s)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
                     }
                     .padding(.horizontal)
                 }
-                
+
                 // Liste des médicaments
                 LazyVStack(spacing: 12) {
-                    ForEach(appState.filteredMedicines) { medicine in
+                    ForEach(Array(medicineViewModel.filteredMedicines.enumerated()), id: \.element.id) { index, medicine in
                         NavigationLink(value: MedicineDestination.detail(medicine)) {
                             ModernMedicineCard(medicine: medicine)
                         }
                         .buttonStyle(.plain)
                         .onAppear {
+                            // DEBUG: Log pour voir quels médicaments apparaissent
+                            print("🎨 [MedicineView] Rendering medicine #\(index): \(medicine.name) (ID: \(medicine.id ?? "nil"), AisleID: \(medicine.aisleId))")
+
                             // Pagination
-                            if medicine.id == appState.filteredMedicines.last?.id {
+                            if medicine.id == medicineViewModel.filteredMedicines.last?.id {
                                 Task {
-                                    await appState.loadMoreMedicines()
+                                    await medicineViewModel.loadMoreMedicines()
                                 }
                             }
                         }
                     }
-                    
+
                     // Indicateur de chargement pour pagination
-                    if appState.isLoadingMore {
+                    if medicineViewModel.isLoadingMore {
                         ProgressView()
                             .padding()
                     }
@@ -175,7 +184,7 @@ struct MedicineListView: View {
             }
         }
         .refreshable {
-            await appState.loadData()
+            await medicineViewModel.loadMedicines()
         }
     }
     
@@ -187,14 +196,14 @@ struct MedicineListView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color(.systemGray))
                 
-                TextField("Rechercher un médicament...", text: $appState.searchText)
+                TextField("Rechercher un médicament...", text: $medicineViewModel.searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 16))
-                
-                if !appState.searchText.isEmpty {
+
+                if !medicineViewModel.searchText.isEmpty {
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.2)) {
-                            appState.searchText = ""
+                            medicineViewModel.searchText = ""
                         }
                     }) {
                         Image(systemName: "xmark.circle.fill")
@@ -217,15 +226,21 @@ struct MedicineListView: View {
             )
             
             // Filtre par rayon
-            if !appState.aisles.isEmpty {
-                Picker("Rayon", selection: $appState.selectedAisleId) {
-                    Text("Tous les rayons").tag(String?.none)
-                    ForEach(appState.aisles) { aisle in
-                        Label(aisle.name, systemImage: aisle.icon)
-                            .tag(String?.some(aisle.id))
+            if !aisleViewModel.aisles.isEmpty {
+                Picker("Rayon", selection: $medicineViewModel.selectedAisleId) {
+                    Text("Tous les rayons").tag("")
+                    ForEach(aisleViewModel.aisles) { aisle in
+                        if let aisleId = aisle.id {
+                            Label(aisle.name, systemImage: aisle.icon)
+                                .tag(aisleId)
+                        }
                     }
                 }
                 .pickerStyle(.menu)
+                .onChange(of: medicineViewModel.selectedAisleId) { oldValue, newValue in
+                    print("🔄 [MedicineView] Picker changed - Old: '\(oldValue)', New: '\(newValue)'")
+                    print("📋 [MedicineView] Available aisles: \(aisleViewModel.aisles.map { "\($0.name) (\($0.id ?? "nil"))" }.joined(separator: ", "))")
+                }
             }
         }
         .padding()
@@ -257,7 +272,7 @@ struct MedicineListView: View {
 
 struct ModernMedicineCard: View {
     let medicine: Medicine
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var aisleViewModel: AisleListViewModel
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -280,7 +295,7 @@ struct ModernMedicineCard: View {
                 }
                 
                 // Rayon
-                if let aisle = appState.aisles.first(where: { $0.id == medicine.aisleId }) {
+                if let aisle = aisleViewModel.aisles.first(where: { $0.id == medicine.aisleId }) {
                     HStack(spacing: 4) {
                         Image(systemName: aisle.icon)
                             .font(.system(size: 12))

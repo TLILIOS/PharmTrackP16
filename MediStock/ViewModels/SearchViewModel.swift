@@ -24,20 +24,17 @@ class SearchViewModel: ObservableObject {
     @Published var showingFilterSheet = false
     
     // MARK: - Private Properties
-    
+
     private let medicineRepository: MedicineRepositoryProtocol
-    private let dataService: DataServiceAdapter
     private var cancellables = Set<AnyCancellable>()
     private let searchTextSubject = PassthroughSubject<String, Never>()
-    
+
     // MARK: - Initialization
-    
+
     init(
-        medicineRepository: MedicineRepositoryProtocol = MedicineRepository(),
-        dataService: DataServiceAdapter = DataServiceAdapter()
+        medicineRepository: MedicineRepositoryProtocol = MedicineRepository()
     ) {
         self.medicineRepository = medicineRepository
-        self.dataService = dataService
         
         setupSearchDebounce()
         loadRecentSearches()

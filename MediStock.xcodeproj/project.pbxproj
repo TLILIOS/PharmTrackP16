@@ -50,6 +50,16 @@
 		D0F409EA2E37E25200EC8B27 /* MediStockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediStockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D06FFC3D2E9A1F25004FEE0A /* Exceptions for "MediStockTests" folder in "MediStockTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				TestCompilationFlags.xcconfig,
+			);
+			target = D0F409DF2E37E25200EC8B27 /* MediStockTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D0F409D52E37E25100EC8B27 /* MediStock */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -58,6 +68,9 @@
 		};
 		D0F409E32E37E25200EC8B27 /* MediStockTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D06FFC3D2E9A1F25004FEE0A /* Exceptions for "MediStockTests" folder in "MediStockTests" target */,
+			);
 			path = MediStockTests;
 			sourceTree = "<group>";
 		};
@@ -219,7 +232,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					D0F409D22E37E25100EC8B27 = {
 						CreatedOnToolsVersion = 16.4;
@@ -379,6 +392,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -436,6 +450,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};

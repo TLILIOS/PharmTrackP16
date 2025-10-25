@@ -1,0 +1,30 @@
+// Configuration pour optimiser la compilation des tests
+// Désactive certaines fonctionnalités pour accélérer les tests
+
+// Désactiver Thread Sanitizer pour les tests
+ENABLE_THREAD_SANITIZER = NO
+
+// Optimisations de compilation
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+SWIFT_COMPILATION_MODE = singlefile
+
+// Flags Swift personnalisés
+OTHER_SWIFT_FLAGS = -D UNIT_TESTS_ONLY
+
+// Désactiver certains avertissements
+WARNING_CFLAGS = -Wno-serialized-diagnostics
+
+// Configuration de build
+ONLY_ACTIVE_ARCH = YES
+DEBUG_INFORMATION_FORMAT = dwarf
+
+// Accélérer le linking
+OTHER_LDFLAGS = -ObjC
+
+// Désactiver la génération de dSYM pour les tests
+DEBUG_INFORMATION_FORMAT = dwarf
+DWARF_DSYM_FOLDER_PATH = 
+DWARF_DSYM_FILE_NAME = 
+
+// Réduire la verbosité
+CLANG_WARN_DOCUMENTATION_COMMENTS = NO

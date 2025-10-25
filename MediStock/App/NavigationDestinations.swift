@@ -17,7 +17,7 @@ enum AisleDestination: Hashable {
 }
 
 enum HistoryDestination: Hashable {
-    case detail(HistoryEntry)
+    case detail  // HistoryDetailView n'a pas besoin de paramètre (utilise son propre @StateObject)
     case medicineHistory(Medicine)
 }
 

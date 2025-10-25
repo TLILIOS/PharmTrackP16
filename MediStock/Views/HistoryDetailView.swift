@@ -482,7 +482,6 @@ struct HistoryExportOptionsView: View {
                 }) {
                     Label("Exporter en PDF", systemImage: "doc.richtext")
                 }
-                .disabled(true) // TODO: Implémenter l'export PDF
             }
             .navigationTitle("Format d'export")
             .navigationBarTitleDisplayMode(.inline)

@@ -294,8 +294,10 @@ struct SearchFiltersView: View {
                     Picker("Sélectionner un rayon", selection: $tempFilters.aisleId) {
                         Text("Tous les rayons").tag(String?.none)
                         ForEach(aisles) { aisle in
-                            Label(aisle.name, systemImage: aisle.icon)
-                                .tag(String?.some(aisle.id))
+                            if let aisleId = aisle.id {
+                                Label(aisle.name, systemImage: aisle.icon)
+                                    .tag(String?.some(aisleId))
+                            }
                         }
                     }
                 }
@@ -382,6 +384,7 @@ struct SearchFiltersView: View {
 struct SearchView_Previews: PreviewProvider {
     static var previews: some View {
         SearchView()
-            .environmentObject(AisleListViewModel())
+            .environmentObject(AisleListViewModel.makeDefault())
+            .environmentObject(AppState())
     }
 }

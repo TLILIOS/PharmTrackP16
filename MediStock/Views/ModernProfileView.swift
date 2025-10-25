@@ -2,14 +2,11 @@ import SwiftUI
 
 struct ModernProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
-    @EnvironmentObject var appState: AppState
+    @StateObject private var dashboardViewModel = DashboardViewModel.makeDefault()
     @State private var showingSignOutAlert = false
     @State private var showingNotificationSettings = false
-    @State private var selectedStat: StatType? = nil
     @Environment(\.colorScheme) var colorScheme
-    
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-    
+
     enum StatType: String, CaseIterable, Identifiable {
         case medicines = "Médicaments"
         case aisles = "Rayons"
@@ -75,8 +72,8 @@ struct ModernProfileView: View {
         .sheet(isPresented: $showingNotificationSettings) {
             ModernNotificationSettingsView()
         }
-        .sheet(item: $selectedStat) { stat in
-            StatDetailView(stat: stat)
+        .task {
+            await dashboardViewModel.loadData()
         }
     }
     
@@ -140,45 +137,29 @@ struct ModernProfileView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
             ProfileStatCard(
                 type: StatType.medicines,
-                value: "\(appState.medicines.count)",
+                value: "\(dashboardViewModel.statistics.totalMedicines)",
                 trend: calculateTrend(for: .medicines)
             )
-            .onTapGesture {
-                impactFeedback.impactOccurred()
-                selectedStat = .medicines
-            }
-            
+
             ProfileStatCard(
                 type: StatType.aisles,
-                value: "\(appState.aisles.count)",
+                value: "\(dashboardViewModel.statistics.totalAisles)",
                 trend: nil
             )
-            .onTapGesture {
-                impactFeedback.impactOccurred()
-                selectedStat = .aisles
-            }
-            
+
             ProfileStatCard(
                 type: StatType.critical,
-                value: "\(appState.criticalMedicines.count)",
+                value: "\(dashboardViewModel.statistics.criticalStockCount)",
                 trend: calculateTrend(for: .critical),
-                isAlert: appState.criticalMedicines.count > 0
+                isAlert: dashboardViewModel.statistics.criticalStockCount > 0
             )
-            .onTapGesture {
-                impactFeedback.impactOccurred()
-                selectedStat = .critical
-            }
-            
+
             ProfileStatCard(
                 type: StatType.expiring,
-                value: "\(appState.expiringMedicines.count)",
+                value: "\(dashboardViewModel.statistics.expiringMedicinesCount)",
                 trend: calculateTrend(for: .expiring),
-                isAlert: appState.expiringMedicines.count > 0
+                isAlert: dashboardViewModel.statistics.expiringMedicinesCount > 0
             )
-            .onTapGesture {
-                impactFeedback.impactOccurred()
-                selectedStat = .expiring
-            }
         }
     }
     
@@ -192,24 +173,39 @@ struct ModernProfileView: View {
             ) {
                 showingNotificationSettings = true
             }
-            
+
             NavigationLink {
                 ModernAboutView()
             } label: {
-                SettingRow(
-                    icon: "info.circle.fill",
-                    title: "À propos",
-                    color: .blue,
-                    showChevron: true
-                ) {}
+                HStack(spacing: 16) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.blue)
+                        .cornerRadius(8)
+
+                    Text("À propos")
+                        .font(.body)
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.secondarySystemGroupedBackground))
+                )
             }
-            .buttonStyle(PlainButtonStyle())
         }
     }
     
     private var signOutButton: some View {
         Button(action: {
-            impactFeedback.impactOccurred()
             showingSignOutAlert = true
         }) {
             HStack {
@@ -254,8 +250,8 @@ struct ModernProfileView: View {
     }
     
     private func getNotificationBadge() -> Int? {
-        let criticalCount = appState.criticalMedicines.count
-        let expiringCount = appState.expiringMedicines.count
+        let criticalCount = dashboardViewModel.statistics.criticalStockCount
+        let expiringCount = dashboardViewModel.statistics.expiringMedicinesCount
         let total = criticalCount + expiringCount
         return total > 0 ? total : nil
     }
@@ -268,10 +264,9 @@ struct ProfileStatCard: View {
     let value: String
     let trend: String?
     var isAlert: Bool = false
-    
-    @State private var isPressed = false
+
     @Environment(\.colorScheme) var colorScheme
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -315,10 +310,8 @@ struct ProfileStatCard: View {
                     y: 2
                 )
         )
-        .scaleEffect(isPressed ? 0.95 : 1)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(type.rawValue): \(value)" + (trend != nil ? ", variation \(trend!)" : ""))
+        .accessibilityLabel("\(type.rawValue): \(value)")
     }
 }
 
@@ -382,27 +375,6 @@ struct ScaleButtonStyle: ButtonStyle {
 }
 
 // MARK: - Detail Views
-
-struct StatDetailView: View {
-    let stat: ModernProfileView.StatType
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            VStack {
-                // Implementation based on stat type
-                Text("Détails pour \(stat.rawValue)")
-            }
-            .navigationTitle(stat.rawValue)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Fermer") { dismiss() }
-                }
-            }
-        }
-    }
-}
 
 struct ModernNotificationSettingsView: View {
     @Environment(\.dismiss) var dismiss
@@ -525,10 +497,16 @@ struct ModernNotificationSettingsView: View {
 
 struct ModernAboutView: View {
     @Environment(\.colorScheme) var colorScheme
-    
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "Version \(version) (\(build))"
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // App Icon and Info
                 VStack(spacing: 20) {
                     ZStack {
@@ -541,72 +519,34 @@ struct ModernAboutView: View {
                                 )
                             )
                             .frame(width: 120, height: 120)
-                        
+
                         Image(systemName: "pills.circle.fill")
                             .font(.system(size: 60))
                             .foregroundColor(.white)
                     }
                     .shadow(color: Color.accentColor.opacity(0.3), radius: 20, y: 10)
-                    
+
                     VStack(spacing: 8) {
                         Text("MediStock")
                             .font(.largeTitle)
                             .fontWeight(.bold)
-                        
-                        Text("Version 1.0.0")
+
+                        Text(appVersion)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        
-                        Text("Build 2024.1")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
                     }
                 }
                 .padding(.top, 20)
-                
-                // Info Cards
-                VStack(spacing: 16) {
-                    InfoCard(
-                        icon: "person.fill",
-                        title: "Développeur",
-                        value: "Vincent Saluzzo",
-                        color: .blue
-                    )
-                    
-                    InfoCard(
-                        icon: "envelope.fill",
-                        title: "Support",
-                        value: "support@medistock.com",
-                        color: .green,
-                        isLink: true
-                    )
-                    
-                    InfoCard(
-                        icon: "doc.text.fill",
-                        title: "Licence",
-                        value: "MIT License",
-                        color: .orange
-                    )
-                    
-                    InfoCard(
-                        icon: "globe",
-                        title: "Site web",
-                        value: "medistock.com",
-                        color: .purple,
-                        isLink: true
-                    )
-                }
-                .padding(.horizontal)
-                
+
                 // Technologies
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Text("Développé avec")
                         .font(.headline)
-                    
+                        .foregroundStyle(.secondary)
+
                     HStack(spacing: 20) {
                         TechBadge(name: "SwiftUI", icon: "swift")
                         TechBadge(name: "Firebase", icon: "flame.fill")
-                        TechBadge(name: "Core Data", icon: "externaldrive.fill")
                     }
                 }
                 .padding()
@@ -615,59 +555,26 @@ struct ModernAboutView: View {
                         .fill(Color(.secondarySystemGroupedBackground))
                 )
                 .padding(.horizontal)
-                
-                // Footer
-                Text("Made with ❤️ in France")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 20)
+
+                // Description
+                VStack(spacing: 12) {
+                    Text("Application de gestion de stock pharmaceutique")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Text("Suivez vos médicaments, gérez les stocks critiques et recevez des alertes d'expiration.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 32)
+                .padding(.bottom, 20)
             }
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("À propos")
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct InfoCard: View {
-    let icon: String
-    let title: String
-    let value: String
-    let color: Color
-    var isLink: Bool = false
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(.white)
-                .frame(width: 40, height: 40)
-                .background(color)
-                .cornerRadius(10)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
-                Text(value)
-                    .font(.body)
-                    .foregroundColor(isLink ? color : .primary)
-            }
-            
-            Spacer()
-            
-            if isLink {
-                Image(systemName: "arrow.up.forward")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemGroupedBackground))
-        )
     }
 }
 

@@ -43,7 +43,27 @@
       "Bash(./final_cleanup.sh)",
       "Bash(./check_redeclarations.sh:*)",
       "Bash(./run_specific_tests.sh:*)",
-      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/test_fixes_summary.sh)"
+      "Bash(/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/test_fixes_summary.sh)",
+      "Bash(UNIT_TESTS_ONLY=1 ./Scripts/run_unit_tests.sh)",
+      "Bash(UNIT_TESTS_ONLY=1 xcodebuild test -scheme MediStock-UnitTests -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:MediStockTests/UnitTests/SmokeTest -quiet)",
+      "Bash(open:*)",
+      "Bash(for dir in App Core DependencyInjection Extensions Models Protocols Repositories Services Utilities ViewModels Views)",
+      "Bash(do echo \"=== $dir ===\" find \"/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/$dir\" -type f -name \"*.swift\")",
+      "Bash(wc -l find \"/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStock/$dir\" -type f -name \"*.swift\")",
+      "Bash(for dir in Mocks ViewModels Repositories Services Core UnitTests IntegrationTests)",
+      "Bash(do echo \"=== MediStockTests/$dir ===\" find \"/Users/macbookair/Desktop/Desk/OC_Projects_24/P16/Rebonnte_P16DAIOS-main/MediStockTests/$dir\" -type f -name \"*.swift\")",
+      "Bash(xargs:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(if [ -f \"$file\" ])",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }

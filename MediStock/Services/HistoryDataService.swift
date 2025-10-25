@@ -26,56 +26,70 @@ class HistoryDataService {
         endDate: Date? = nil,
         limit: Int = 100
     ) async throws -> [HistoryEntry] {
-        // Créer une clé de cache basée sur les paramètres
-        let cacheKey = "\(userId)_\(medicineId ?? "all")_\(startDate?.timeIntervalSince1970 ?? 0)_\(endDate?.timeIntervalSince1970 ?? 0)_\(limit)"
-        
-        // Vérifier le cache
-        if let cached = historyCache[cacheKey],
-           Date().timeIntervalSince(cached.timestamp) < cacheValidityDuration {
-            return cached.entries
-        }
-        
+        print("📡 [HistoryDataService] getHistory() appelée")
+        print("   MedicineId: \(medicineId ?? "nil")")
+        print("   UserID: \(userId)")
+
+        // 🔧 FIX: Cache désactivé car il cause des problèmes de synchronisation
+        // L'historique doit toujours afficher les données les plus récentes
+        print("🚫 [HistoryDataService] Cache désactivé - Chargement direct depuis Firestore")
+
         var query = db.collection("history")
             .whereField("userId", isEqualTo: userId)
-        
+
         // Appliquer les filtres
         if let medicineId = medicineId {
             query = query.whereField("medicineId", isEqualTo: medicineId)
         }
-        
+
         if let startDate = startDate {
             query = query.whereField("timestamp", isGreaterThanOrEqualTo: startDate)
         }
-        
+
         if let endDate = endDate {
             query = query.whereField("timestamp", isLessThanOrEqualTo: endDate)
         }
-        
+
         // Ordonner par date décroissante et limiter
         query = query.order(by: "timestamp", descending: true).limit(to: limit)
-        
-        // Essayer d'abord le cache local Firestore
-        let snapshot: QuerySnapshot
-        do {
-            snapshot = try await query.getDocuments(source: .cache)
-        } catch {
-            // Si le cache échoue, utiliser le serveur
-            snapshot = try await query.getDocuments()
-        }
+
+        // 🔧 FIX: Toujours charger depuis le serveur pour avoir les données fraîches
+        // Ne PAS utiliser le cache Firestore car il peut contenir des données obsolètes
+        print("📡 [HistoryDataService] Chargement depuis le SERVEUR (pas de cache)...")
+        let snapshot = try await query.getDocuments(source: .server)
+        print("📦 [HistoryDataService] Reçu \(snapshot.documents.count) documents du serveur")
         
         // Optimisation: pré-allouer l'array
         var entries = [HistoryEntry]()
         entries.reserveCapacity(snapshot.documents.count)
-        
-        for doc in snapshot.documents {
-            if let entry = try? doc.data(as: HistoryEntry.self) {
+
+        var decodingErrors = 0
+
+        for (index, doc) in snapshot.documents.enumerated() {
+            do {
+                let entry = try doc.data(as: HistoryEntry.self)
                 entries.append(entry)
+            } catch {
+                decodingErrors += 1
+                print("❌ [HistoryDataService] [\(index + 1)/\(snapshot.documents.count)] ERREUR de décodage pour document \(doc.documentID)")
+                print("   Type d'erreur: \(type(of: error))")
+                print("   Message: \(error.localizedDescription)")
+                print("   Données brutes du document:")
+                let data = doc.data()
+                for (key, value) in data.sorted(by: { $0.key < $1.key }) {
+                    print("     - \(key): \(value) (type: \(type(of: value)))")
+                }
             }
         }
-        
-        // Mettre en cache le résultat
-        historyCache[cacheKey] = (entries: entries, timestamp: Date())
-        
+
+        if decodingErrors > 0 {
+            print("⚠️ [HistoryDataService] ATTENTION: \(decodingErrors) entrée(s) ont échoué au décodage sur \(snapshot.documents.count) documents")
+        }
+
+        // 🔧 FIX: Ne PAS mettre en cache pour éviter les problèmes de synchronisation
+        // Le cache a été désactivé pour garantir des données toujours fraîches
+
+        print("✅ [HistoryDataService] Retour de \(entries.count) entrées (sans mise en cache)")
         return entries
     }
     
@@ -159,6 +173,13 @@ class HistoryDataService {
         itemName: String,
         details: String
     ) async throws {
+        print("📝 [HistoryDataService] recordDeletion() appelée")
+        print("   Type: \(itemType)")
+        print("   ID: \(itemId)")
+        print("   Nom: \(itemName)")
+        print("   Détails: \(details)")
+        print("   UserID utilisé: \(userId)")
+
         let entry = HistoryEntryExtended(
             id: UUID().uuidString,
             medicineId: itemType == "medicine" ? itemId : "",
@@ -172,8 +193,17 @@ class HistoryDataService {
                 "itemName": itemName
             ]
         )
-        
-        try await saveHistoryEntry(entry)
+
+        print("✅ [HistoryDataService] Entrée d'historique créée, sauvegarde...")
+
+        do {
+            try await saveHistoryEntry(entry)
+            print("✅ [HistoryDataService] Suppression enregistrée avec succès dans Firestore")
+        } catch {
+            print("❌ [HistoryDataService] ERREUR lors de la sauvegarde: \(error.localizedDescription)")
+            print("   Détails: \(error)")
+            throw error
+        }
     }
     
     /// Supprime les entrées d'historique plus anciennes qu'une date donnée
@@ -201,22 +231,45 @@ class HistoryDataService {
     
     private func saveHistoryEntry(_ entry: HistoryEntryExtended) async throws {
         let docRef = db.collection("history").document(entry.id)
-        
+
+        print("💾 [HistoryDataService] saveHistoryEntry()")
+        print("   Document ID: \(entry.id)")
+        print("   Collection: history")
+        print("   Action: \(entry.action)")
+        print("   Details: \(entry.details)")
+        print("   MedicineID: \(entry.medicineId)")
+        print("   UserID: \(entry.userId)")
+        print("   Timestamp: \(entry.timestamp)")
+
         _ = try await db.runTransaction { transaction, errorPointer in
             do {
                 // Sauvegarder uniquement le HistoryEntry de base (sans metadata)
                 // pour maintenir la compatibilité avec le modèle existant
-                try transaction.setData(from: entry.baseEntry, forDocument: docRef)
+                print("💾 [HistoryDataService] Encodage de l'entrée...")
+
+                let baseEntry = entry.baseEntry
+                print("   BaseEntry - Action: '\(baseEntry.action)' | Details: '\(baseEntry.details)'")
+
+                try transaction.setData(from: baseEntry, forDocument: docRef)
+                print("✅ [HistoryDataService] Données encodées et enregistrées dans la transaction")
+                print("   DocumentPath: history/\(entry.id)")
             } catch {
+                print("❌ [HistoryDataService] Erreur d'encodage/enregistrement: \(error.localizedDescription)")
+                print("   Type d'erreur: \(type(of: error))")
+                print("   Détails complets: \(error)")
                 errorPointer?.pointee = error as NSError
                 return nil
             }
-            
+
             return nil
         }
-        
+
+        print("✅ [HistoryDataService] Transaction terminée avec succès")
+        print("   ✓ Entrée '\(entry.action)' enregistrée dans Firestore à history/\(entry.id)")
+
         // Invalider le cache après l'ajout d'une nouvelle entrée
         clearCache()
+        print("🔄 [HistoryDataService] Cache invalidé")
     }
     
     private func clearCache() {

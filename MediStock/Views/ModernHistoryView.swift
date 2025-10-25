@@ -2,53 +2,22 @@ import SwiftUI
 
 struct ModernHistoryView: View {
     @EnvironmentObject var appState: AppState
-    @State private var filterType: FilterType = .all
+    @EnvironmentObject var historyViewModel: HistoryViewModel
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @State private var expandedEntries: Set<String> = []
     @State private var searchText = ""
-    @State private var isLoading = false
+    @State private var showingExportOptions = false
+    @State private var exportedFileURL: URL?
+    @State private var showingShareSheet = false
+    @State private var showingExportError = false
+    @State private var exportErrorMessage: String?
     @Namespace private var animation
-    
+
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-    
-    enum FilterType: String, CaseIterable, Identifiable {
-        case all = "Tout"
-        case adjustments = "Ajustements"
-        case additions = "Ajouts"
-        case deletions = "Suppressions"
-        
-        var id: String { rawValue }
-        
-        var icon: String {
-            switch self {
-            case .all: return "clock.fill"
-            case .adjustments: return "arrow.up.arrow.down.circle.fill"
-            case .additions: return "plus.circle.fill"
-            case .deletions: return "trash.circle.fill"
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .all: return .accentColor
-            case .adjustments: return .blue
-            case .additions: return .green
-            case .deletions: return .red
-            }
-        }
-    }
-    
+
     var filteredHistory: [StockHistory] {
-        let filtered = switch filterType {
-        case .all:
-            appState.stockHistory
-        case .adjustments:
-            appState.stockHistory.filter { $0.type == .adjustment }
-        case .additions:
-            appState.stockHistory.filter { $0.type == .addition }
-        case .deletions:
-            appState.stockHistory.filter { $0.type == .deletion }
-        }
-        
+        let filtered = historyViewModel.filteredHistory
+
         if searchText.isEmpty {
             return filtered
         } else {
@@ -64,7 +33,7 @@ struct ModernHistoryView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
             
-            if isLoading && appState.stockHistory.isEmpty {
+            if historyViewModel.isLoading && historyViewModel.stockHistory.isEmpty {
                 ProgressView()
                     .scaleEffect(1.2)
             } else if filteredHistory.isEmpty && !searchText.isEmpty {
@@ -75,7 +44,7 @@ struct ModernHistoryView: View {
                 ScrollView {
                     LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                         // Search Bar
-                        if !appState.stockHistory.isEmpty {
+                        if !historyViewModel.stockHistory.isEmpty {
                             searchBar
                                 .padding(.horizontal)
                                 .padding(.vertical, 10)
@@ -119,10 +88,53 @@ struct ModernHistoryView: View {
         }
         .navigationTitle("Historique")
         .navigationBarTitleDisplayMode(.large)
-        .task {
-            await loadHistoryIfNeeded()
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingExportOptions = true }) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(filteredHistory.isEmpty)
+            }
         }
-        .animation(.spring(response: 0.3), value: filterType)
+        .sheet(isPresented: $showingExportOptions) {
+            ExportOptionsView(
+                onExport: { format in
+                    await exportHistory(format: format)
+                }
+            )
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let url = exportedFileURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .onChange(of: showingExportOptions) { oldValue, newValue in
+            if newValue {
+                // La sheet d'export s'ouvre - réinitialiser l'état
+                exportedFileURL = nil
+            } else if exportedFileURL != nil {
+                // La sheet d'export se ferme et un fichier est prêt - afficher la sheet de partage
+                Task {
+                    // Attendre que la sheet d'export soit complètement fermée
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+                    showingShareSheet = true
+                }
+            }
+        }
+        .alert("Erreur d'export", isPresented: $showingExportError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "Une erreur s'est produite lors de l'export.")
+        }
+        .task {
+            // Toujours recharger l'historique pour avoir les données fraîches
+            await historyViewModel.loadHistory()
+            // Charger les médicaments seulement si nécessaire
+            if medicineViewModel.medicines.isEmpty {
+                await medicineViewModel.loadMedicines()
+            }
+        }
+        .animation(.spring(response: 0.3), value: historyViewModel.filterType)
         .animation(.spring(response: 0.3), value: searchText)
     }
     
@@ -154,15 +166,15 @@ struct ModernHistoryView: View {
     private var filterSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(FilterType.allCases) { type in
+                ForEach(HistoryViewModel.FilterType.allCases) { type in
                     ModernFilterPill(
                         type: type,
-                        isSelected: filterType == type,
+                        isSelected: historyViewModel.filterType == type,
                         count: getCount(for: type),
                         namespace: animation
                     ) {
                         withAnimation(.spring(response: 0.3)) {
-                            filterType = type
+                            historyViewModel.filterType = type
                             impactFeedback.impactOccurred()
                         }
                     }
@@ -193,32 +205,22 @@ struct ModernHistoryView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
                 .symbolRenderingMode(.hierarchical)
-            
+
             VStack(spacing: 8) {
                 Text("Aucun historique")
                     .font(.title3)
                     .fontWeight(.semibold)
-                
+
                 Text("L'historique des mouvements de stock apparaîtra ici")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-            }
-            
-            NavigationLink(destination: MedicineListView()) {
-                Label("Gérer le stock", systemImage: "pills.fill")
-                    .font(.callout)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.accentColor)
-                    .cornerRadius(25)
+                    .padding(.horizontal)
             }
         }
         .padding()
@@ -264,19 +266,19 @@ struct ModernHistoryView: View {
     }
     
     private func getMedicineName(for entry: StockHistory) -> String {
-        appState.medicines.first { $0.id == entry.medicineId }?.name ?? "Médicament supprimé"
+        medicineViewModel.medicines.first { $0.id == entry.medicineId }?.name ?? "Médicament supprimé"
     }
-    
-    private func getCount(for type: FilterType) -> Int {
+
+    private func getCount(for type: HistoryViewModel.FilterType) -> Int {
         switch type {
         case .all:
-            return appState.stockHistory.count
+            return historyViewModel.stockHistory.count
         case .adjustments:
-            return appState.stockHistory.filter { $0.type == .adjustment }.count
+            return historyViewModel.stockHistory.filter { $0.type == .adjustment }.count
         case .additions:
-            return appState.stockHistory.filter { $0.type == .addition }.count
+            return historyViewModel.stockHistory.filter { $0.type == .addition }.count
         case .deletions:
-            return appState.stockHistory.filter { $0.type == .deletion }.count
+            return historyViewModel.stockHistory.filter { $0.type == .deletion }.count
         }
     }
     
@@ -291,23 +293,109 @@ struct ModernHistoryView: View {
         impactFeedback.impactOccurred()
     }
     
-    private func loadHistoryIfNeeded() async {
-        guard appState.stockHistory.isEmpty else { return }
-        isLoading = true
-        await appState.loadHistory()
-        isLoading = false
-    }
-    
     private func refreshHistory() async {
-        await appState.loadHistory()
+        await historyViewModel.loadHistory()
+        await medicineViewModel.loadMedicines()
         impactFeedback.impactOccurred()
+    }
+
+    private func exportHistory(format: HistoryViewModel.ExportFormat) async {
+        do {
+            // Créer le dictionnaire des médicaments
+            let medicinesDict: [String: String] = Dictionary(
+                uniqueKeysWithValues: medicineViewModel.medicines.compactMap { medicine -> (String, String)? in
+                    guard let id = medicine.id else { return nil }
+                    return (id, medicine.name)
+                }
+            )
+
+            // Exporter
+            let url = try await historyViewModel.exportHistory(
+                format: format,
+                medicines: medicinesDict
+            )
+
+            exportedFileURL = url
+            // Ne pas afficher la sheet de partage ici - sera géré par onChange
+        } catch {
+            exportErrorMessage = error.localizedDescription
+            showingExportError = true
+        }
+    }
+}
+
+// MARK: - Export Options View
+
+struct ExportOptionsView: View {
+    let onExport: (HistoryViewModel.ExportFormat) async -> Void
+    @Environment(\.dismiss) var dismiss
+    @State private var isExporting = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                List {
+                    Button(action: {
+                        Task {
+                            isExporting = true
+                            await onExport(.csv)
+                            isExporting = false
+                            dismiss()
+                        }
+                    }) {
+                        Label("Exporter en CSV", systemImage: "doc.text")
+                    }
+                    .disabled(isExporting)
+
+                    Button(action: {
+                        Task {
+                            isExporting = true
+                            await onExport(.pdf)
+                            isExporting = false
+                            dismiss()
+                        }
+                    }) {
+                        Label("Exporter en PDF", systemImage: "doc.richtext")
+                    }
+                    .disabled(isExporting)
+                }
+
+                if isExporting {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Export en cours...")
+                            .font(.headline)
+                    }
+                    .padding(32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.systemBackground))
+                            .shadow(radius: 10)
+                    )
+                }
+            }
+            .navigationTitle("Format d'export")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Annuler") {
+                        dismiss()
+                    }
+                    .disabled(isExporting)
+                }
+            }
+        }
     }
 }
 
 // MARK: - Supporting Views
 
 struct ModernFilterPill: View {
-    let type: ModernHistoryView.FilterType
+    let type: HistoryViewModel.FilterType
     let isSelected: Bool
     let count: Int
     let namespace: Namespace.ID
@@ -391,10 +479,10 @@ struct ModernHistoryRow: View {
                             .lineLimit(1)
                         
                         HStack(spacing: 8) {
-                            Label(entry.type.label, systemImage: "")
+                            Text(entry.type.label)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            
+
                             if entry.type == .adjustment {
                                 HStack(spacing: 4) {
                                     Text("\(entry.previousQuantity)")

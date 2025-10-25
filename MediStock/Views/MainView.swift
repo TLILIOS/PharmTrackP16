@@ -2,17 +2,19 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var appState: AppState
-    @State private var selectedTab = 0
+    @EnvironmentObject var medicineListViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleListViewModel: AisleListViewModel
+    @EnvironmentObject var historyViewModel: HistoryViewModel
     @State private var dashboardPath = NavigationPath()
     @State private var medicinesPath = NavigationPath()
     @State private var aislesPath = NavigationPath()
     @State private var historyPath = NavigationPath()
     @State private var profilePath = NavigationPath()
-    
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appState.selectedTab) {
             NavigationStack(path: $dashboardPath) {
-                DashboardView()
+                DashboardView(pdfExportService: DependencyContainer.shared.pdfExportService)
                     .navigationDestination(for: MedicineDestination.self) { destination in
                         switch destination {
                         case .add:
@@ -71,11 +73,11 @@ struct MainView: View {
                 ModernHistoryView()
                     .navigationDestination(for: HistoryDestination.self) { destination in
                         switch destination {
-                        case .detail(_):
+                        case .detail:
                             HistoryDetailView()
                                 .environmentObject(appState)
-                        case .medicineHistory(_):
-                            ModernHistoryView()
+                        case .medicineHistory(let medicine):
+                            MedicineHistoryView(medicine: medicine)
                                 .environmentObject(appState)
                         }
                     }
@@ -86,33 +88,14 @@ struct MainView: View {
             .tag(3)
             
             NavigationStack(path: $profilePath) {
-                ProfileView()
-                    .navigationDestination(for: ProfileDestination.self) { destination in
-                        switch destination {
-                        case .settings:
-                            ProfileView()
-                                .environmentObject(appState)
-                        case .appearance:
-                            ProfileView()
-                                .environmentObject(appState)
-                        case .notifications:
-                            ProfileView()
-                                .environmentObject(appState)
-                        case .about:
-                            ProfileView()
-                                .environmentObject(appState)
-                        case .help:
-                            ProfileView()
-                                .environmentObject(appState)
-                        }
-                    }
+                ModernProfileView()
             }
             .tabItem {
                 Label("Profil", systemImage: "person.circle.fill")
             }
             .tag(4)
         }
-        .onChange(of: selectedTab) {
+        .onChange(of: appState.selectedTab) {
             // Réinitialiser les paths de navigation lors du changement de tab
             dashboardPath = NavigationPath()
             medicinesPath = NavigationPath()
@@ -121,10 +104,34 @@ struct MainView: View {
             profilePath = NavigationPath()
         }
         .task {
-            // Charger les données si l'utilisateur est connecté
-            if appState.currentUser != nil {
-                await appState.loadData()
-            }
+            // Démarrer les listeners en temps réel pour une synchronisation automatique
+            // au démarrage de MainView (après authentification)
+            startAllListeners()
         }
+        .onDisappear {
+            // Arrêter les listeners quand MainView disparaît pour économiser les ressources
+            stopAllListeners()
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Démarre tous les listeners en temps réel pour synchronisation automatique
+    private func startAllListeners() {
+        print("🎧 [MainView] Démarrage de tous les listeners temps réel...")
+        medicineListViewModel.startListening()
+        aisleListViewModel.startListening()
+
+        // Charger l'historique une seule fois (pas besoin de listener temps réel)
+        Task {
+            await historyViewModel.loadHistory()
+        }
+    }
+
+    /// Arrête tous les listeners en temps réel
+    private func stopAllListeners() {
+        print("🛑 [MainView] Arrêt de tous les listeners temps réel...")
+        medicineListViewModel.stopListening()
+        aisleListViewModel.stopListening()
     }
 }

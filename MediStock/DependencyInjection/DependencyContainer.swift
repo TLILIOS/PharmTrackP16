@@ -5,26 +5,39 @@ import Foundation
 @MainActor
 class DependencyContainer {
     static let shared = DependencyContainer()
-    
+
     private init() {}
-    
-    // Services
-    lazy var dataService = DataServiceAdapter()
+
+    // MARK: - Modular Data Services (New Architecture)
+
+    /// Service dédié à la gestion de l'historique
+    lazy var historyService = HistoryDataService()
+
+    /// Service dédié à la gestion des médicaments
+    lazy var medicineService = MedicineDataService(historyService: historyService)
+
+    /// Service dédié à la gestion des rayons
+    lazy var aisleService = AisleDataService(historyService: historyService)
+
+    // MARK: - Other Services
+
     lazy var authService = AuthService()
     lazy var notificationService = NotificationService()
-    
-    // Repositories
-    lazy var medicineRepository: MedicineRepositoryProtocol = MedicineRepository(dataService: dataService)
-    lazy var aisleRepository: AisleRepositoryProtocol = AisleRepository(dataService: dataService)
-    lazy var historyRepository: HistoryRepositoryProtocol = HistoryRepository(dataService: dataService)
-    
+    lazy var pdfExportService: PDFExportServiceProtocol = PDFExportService()
+
+    // MARK: - Repositories (Using Modular Services)
+
+    lazy var medicineRepository: MedicineRepositoryProtocol = MedicineRepository(medicineService: medicineService)
+    lazy var aisleRepository: AisleRepositoryProtocol = AisleRepository(aisleService: aisleService)
+    lazy var historyRepository: HistoryRepositoryProtocol = HistoryRepository(historyService: historyService)
+
     lazy var authRepository: AuthRepositoryProtocol = AuthRepository(authService: authService)
     
     // ViewModels
     @MainActor
     func makeMedicineListViewModel() -> MedicineListViewModel {
         MedicineListViewModel(
-            repository: medicineRepository,
+            medicineRepository: medicineRepository,
             historyRepository: historyRepository,
             notificationService: notificationService
         )

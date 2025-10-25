@@ -10,12 +10,14 @@ struct DiagnosticView: View {
     var body: some View {
         Form {
             Section("AppState") {
-                Text("Medicines count: \(appState.medicines.count)")
-                Text("Aisles count: \(appState.aisles.count)")
+                Text("Is authenticated: \(appState.isAuthenticated ? "Yes" : "No")")
                 Text("Is loading: \(appState.isLoading ? "Yes" : "No")")
                 if let error = appState.errorMessage {
                     Text("Error: \(error)")
                         .foregroundColor(.red)
+                }
+                if let user = appState.currentUser {
+                    Text("User: \(user.displayName ?? "No name")")
                 }
             }
             
@@ -39,12 +41,6 @@ struct DiagnosticView: View {
             }
             
             Section("Actions") {
-                Button("Load AppState Data") {
-                    Task {
-                        await appState.loadData()
-                    }
-                }
-                
                 Button("Load ViewModel Data") {
                     Task {
                         await medicineListViewModel.loadMedicines()

@@ -13,17 +13,17 @@ class FirebaseService: ObservableObject {
     private init() {}
     
     // MARK: - Configuration
-    
+
     func configure() {
-        // Configuration Firebase
-        FirebaseApp.configure()
-        
+        // Configuration Firebase sécurisée avec FirebaseConfigLoader
+        FirebaseConfigLoader.configure(for: .production)
+
         // Activer Analytics
         Analytics.setAnalyticsCollectionEnabled(true)
-        
+
         // Activer Crashlytics
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-        
+
         // Configuration cache Firestore
         let settings = FirestoreSettings()
         settings.cacheSettings = PersistentCacheSettings(sizeBytes: 10 * 1024 * 1024 as NSNumber)
@@ -64,9 +64,9 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "medicine_added",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id as Any,
                 "medicine_name": medicine.name,
-                "aisle_id": medicine.aisleId,
+                "aisle_id": medicine.aisleId as Any,
                 "initial_quantity": medicine.currentQuantity
             ]
         ))
@@ -76,7 +76,7 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "medicine_updated",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id as Any,
                 "medicine_name": medicine.name,
                 "current_quantity": medicine.currentQuantity
             ]
@@ -96,12 +96,12 @@ class FirebaseService: ObservableObject {
         logEvent(AnalyticsEvent(
             name: "stock_adjusted",
             parameters: [
-                "medicine_id": medicine.id,
+                "medicine_id": medicine.id ?? "unknown",
                 "medicine_name": medicine.name,
                 "adjustment": adjustment,
                 "new_quantity": medicine.currentQuantity + adjustment,
                 "reason": reason,
-                "stock_status": medicine.stockStatus == .critical ? "critical" : 
+                "stock_status": medicine.stockStatus == .critical ? "critical" :
                               medicine.stockStatus == .warning ? "warning" : "normal"
             ]
         ))

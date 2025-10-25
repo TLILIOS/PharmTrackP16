@@ -5,30 +5,30 @@ import Combine
 
 @MainActor
 class AuthRepository: AuthRepositoryProtocol {
-    private let authService: AuthService
+    private let authService: any AuthServiceProtocol
     @Published private var currentUser: User?
-    
+
     var currentUserPublisher: Published<User?>.Publisher {
         $currentUser
     }
-    
-    nonisolated init(authService: AuthService) {
+
+    init(authService: any AuthServiceProtocol) {
         self.authService = authService
-        
-        // Observer l'état d'authentification
-        Task { @MainActor [weak self] in
-            self?.setupObservers()
-        }
+        setupObservers()
+    }
+
+    convenience init() {
+        self.init(authService: FirebaseAuthService())
     }
     
     private func setupObservers() {
-        authService.$currentUser
+        authService.currentUserPublisher
             .assign(to: &$currentUser)
     }
     
     @MainActor
     static func createDefault() -> AuthRepository {
-        return AuthRepository(authService: AuthService())
+        return AuthRepository(authService: FirebaseAuthService())
     }
     
     func signIn(email: String, password: String) async throws {

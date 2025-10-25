@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct MedicineFormView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleViewModel: AisleListViewModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     
@@ -182,7 +183,7 @@ struct MedicineFormView: View {
                             // Sélecteur de rayon modernisé
                             ModernAislePicker(
                                 selectedAisleId: $selectedAisleId,
-                                aisles: appState.aisles
+                                aisles: aisleViewModel.aisles
                             )
                             .padding(.horizontal, 20)
                             
@@ -362,8 +363,8 @@ struct MedicineFormView: View {
                     updatedAt: Date()
                 )
                 
-                await appState.saveMedicine(newMedicine)
-                
+                await medicineViewModel.saveMedicine(newMedicine)
+
                 await MainActor.run {
                     dismiss()
                 }
@@ -549,41 +550,43 @@ struct ModernAislePicker: View {
         .sheet(isPresented: $showingPicker) {
             NavigationStack {
                 List(aisles) { aisle in
-                    Button(action: {
-                        selectedAisleId = aisle.id
-                        showingPicker = false
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }) {
-                        HStack(spacing: 16) {
-                            Image(systemName: aisle.icon)
-                                .font(.system(size: 24))
-                                .foregroundColor(aisle.color)
-                                .frame(width: 32)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(aisle.name)
-                                    .font(.system(size: 17, weight: .medium))
-                                    .foregroundColor(.primary)
-                                
-                                if let description = aisle.description {
-                                    Text(description)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
+                    if let aisleId = aisle.id {
+                        Button(action: {
+                            selectedAisleId = aisleId
+                            showingPicker = false
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }) {
+                            HStack(spacing: 16) {
+                                Image(systemName: aisle.icon)
+                                    .font(.system(size: 24))
+                                    .foregroundColor(aisle.color)
+                                    .frame(width: 32)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(aisle.name)
+                                        .font(.system(size: 17, weight: .medium))
+                                        .foregroundColor(.primary)
+
+                                    if let description = aisle.description {
+                                        Text(description)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+
+                                Spacer()
+
+                                if selectedAisleId == aisleId {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(.accentColor)
                                 }
                             }
-                            
-                            Spacer()
-                            
-                            if selectedAisleId == aisle.id {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundColor(.accentColor)
-                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .navigationTitle("Sélectionner un rayon")
                 .navigationBarTitleDisplayMode(.inline)

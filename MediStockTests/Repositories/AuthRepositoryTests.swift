@@ -158,35 +158,37 @@ final class AuthRepositoryTests: XCTestCase {
     }
 }
 
-// MARK: - Mock AuthService
+// MARK: - Mock AuthService (hérite de AuthService pour AuthRepository)
+// Note: Ce mock local est nécessaire car AuthRepository attend une instance de AuthService
 
+@MainActor
 class MockAuthService: AuthService {
     var signInCallCount = 0
     var signUpCallCount = 0
     var signOutCallCount = 0
-    
+
     var lastSignInEmail: String?
     var lastSignInPassword: String?
-    
+
     var lastSignUpEmail: String?
     var lastSignUpPassword: String?
     var lastSignUpDisplayName: String?
-    
+
     var signInResult: Result<Void, Error> = .success(())
     var signUpResult: Result<Void, Error> = .success(())
     var signOutResult: Result<Void, Error> = .success(())
-    
+
     override init() {
         super.init()
         // Ne pas initialiser Firebase dans les tests
         self.currentUser = nil
     }
-    
+
     override func signIn(email: String, password: String) async throws {
         signInCallCount += 1
         lastSignInEmail = email
         lastSignInPassword = password
-        
+
         switch signInResult {
         case .success:
             return
@@ -194,13 +196,13 @@ class MockAuthService: AuthService {
             throw error
         }
     }
-    
+
     override func signUp(email: String, password: String, displayName: String) async throws {
         signUpCallCount += 1
         lastSignUpEmail = email
         lastSignUpPassword = password
         lastSignUpDisplayName = displayName
-        
+
         switch signUpResult {
         case .success:
             return
@@ -208,10 +210,10 @@ class MockAuthService: AuthService {
             throw error
         }
     }
-    
+
     override func signOut() async throws {
         signOutCallCount += 1
-        
+
         switch signOutResult {
         case .success:
             return

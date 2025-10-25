@@ -1,22 +1,22 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
-    
+    @EnvironmentObject var appState: AppState
+
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated {
+            if appState.isAuthenticated {
                 MainView()
             } else {
                 AuthView()
             }
         }
-        .alert("Erreur", isPresented: .constant(authViewModel.errorMessage != nil)) {
+        .alert("Erreur", isPresented: .constant(appState.errorMessage != nil)) {
             Button("OK") {
-                authViewModel.clearError()
+                appState.clearError()
             }
         } message: {
-            Text(authViewModel.errorMessage ?? "")
+            Text(appState.errorMessage ?? "")
         }
     }
 }

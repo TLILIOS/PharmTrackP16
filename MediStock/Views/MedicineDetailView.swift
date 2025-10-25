@@ -1,19 +1,20 @@
 import SwiftUI
 
 struct MedicineDetailView: View {
-    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
+    @EnvironmentObject var aisleViewModel: AisleListViewModel
     @Environment(\.dismiss) var dismiss
-    
+
     let medicine: Medicine
     @State private var showingEditForm = false
     @State private var showingDeleteAlert = false
     @State private var showingStockAdjustment = false
-    
-    // Récupérer le médicament depuis appState pour avoir toujours la version à jour
+
+    // Récupérer le médicament depuis le ViewModel pour avoir toujours la version à jour
     private var currentMedicine: Medicine? {
-        appState.medicines.first { $0.id == medicine.id }
+        medicineViewModel.medicines.first { $0.id == medicine.id }
     }
-    
+
     private var stockStatusLabel: String {
         let med = currentMedicine ?? medicine
         switch med.stockStatus {
@@ -22,10 +23,10 @@ struct MedicineDetailView: View {
         case .critical: return "Stock critique"
         }
     }
-    
+
     private var aisle: Aisle? {
         let med = currentMedicine ?? medicine
-        return appState.aisles.first { $0.id == med.aisleId }
+        return aisleViewModel.aisles.first { $0.id == med.aisleId }
     }
     
     private var daysUntilExpiration: Int? {
@@ -226,13 +227,14 @@ struct MedicineDetailView: View {
         .sheet(isPresented: $showingEditForm) {
             NavigationStack {
                 MedicineFormView(medicine: med)
-                    .environmentObject(appState)
+                    .environmentObject(medicineViewModel)
+                    .environmentObject(aisleViewModel)
             }
         }
         .sheet(isPresented: $showingStockAdjustment) {
             NavigationStack {
                 StockAdjustmentView(medicine: med)
-                    .environmentObject(appState)
+                    .environmentObject(medicineViewModel)
             }
         }
         .alert("Supprimer ce médicament ?", isPresented: $showingDeleteAlert) {
@@ -248,23 +250,23 @@ struct MedicineDetailView: View {
     private func increaseStock(by amount: Int) {
         let med = currentMedicine ?? medicine
         Task {
-            await appState.adjustStock(medicine: med, adjustment: amount, reason: "Ajustement rapide +\(amount)")
+            await medicineViewModel.adjustStock(medicine: med, adjustment: amount, reason: "Ajustement rapide +\(amount)")
         }
     }
-    
+
     private func decreaseStock(by amount: Int) {
         let med = currentMedicine ?? medicine
         guard med.currentQuantity >= amount else { return }
-        
+
         Task {
-            await appState.adjustStock(medicine: med, adjustment: -amount, reason: "Ajustement rapide -\(amount)")
+            await medicineViewModel.adjustStock(medicine: med, adjustment: -amount, reason: "Ajustement rapide -\(amount)")
         }
     }
-    
+
     private func deleteMedicine() {
         let med = currentMedicine ?? medicine
         Task {
-            await appState.deleteMedicine(med)
+            await medicineViewModel.deleteMedicine(med)
             await MainActor.run {
                 dismiss()
             }

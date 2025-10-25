@@ -46,7 +46,7 @@ class NotificationService {
         
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
         let request = UNNotificationRequest(
-            identifier: "expiration-\(medicine.id)",
+            identifier: "expiration-\(medicine.id ?? UUID().uuidString)",
             content: content,
             trigger: trigger
         )
