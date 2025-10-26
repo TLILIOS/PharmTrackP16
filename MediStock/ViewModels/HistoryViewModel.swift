@@ -31,10 +31,10 @@ class HistoryViewModel: ObservableObject {
 
         var icon: String {
             switch self {
-            case .all: return "clock.fill"
-            case .adjustments: return "arrow.up.arrow.down.circle.fill"
-            case .additions: return "plus.circle.fill"
-            case .deletions: return "trash.circle.fill"
+            case .all: return "clock"
+            case .adjustments: return "arrow.up.arrow.down"
+            case .additions: return "plus.circle"
+            case .deletions: return "trash"
             }
         }
 
@@ -192,23 +192,32 @@ class HistoryViewModel: ObservableObject {
     }
     
     private func extractChange(from details: String) -> Int {
-        // Extraire le nombre depuis "X unités - raison"
-        if let match = details.firstMatch(of: /(\d+)\s+\w+/) {
+        // Extraire le nombre depuis "X unités - raison" ou "X boîtes - raison"
+        // Format attendu: "15 unités - ..." ou "8 boîtes - ..."
+        let pattern = /(\d+)\s+(unités|boîtes|comprimés|gélules)/
+        if let match = details.firstMatch(of: pattern) {
             return Int(String(match.1)) ?? 0
         }
         return 0
     }
-    
+
     private func extractQuantities(from details: String) -> (previous: Int, new: Int) {
-        // Pour l'instant, retourner des valeurs par défaut
+        // Extraire les quantités depuis "(Stock: 50 → 60)"
+        let pattern = /Stock:\s*(\d+)\s*→\s*(\d+)/
+        if let match = details.firstMatch(of: pattern) {
+            let previous = Int(String(match.1)) ?? 0
+            let new = Int(String(match.2)) ?? 0
+            return (previous, new)
+        }
         return (0, 0)
     }
-    
+
     private func extractReason(from details: String) -> String? {
         // Extraire la raison après le tiret
-        if let dashIndex = details.firstIndex(of: "-") {
-            let reasonStart = details.index(after: dashIndex)
-            return String(details[reasonStart...]).trimmingCharacters(in: .whitespaces)
+        // Format attendu: "10 unités - Livraison matinale"
+        if let dashRange = details.range(of: " - ") {
+            let reason = String(details[dashRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+            return reason.isEmpty ? nil : reason
         }
         return nil
     }

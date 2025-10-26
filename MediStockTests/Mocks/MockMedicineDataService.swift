@@ -220,7 +220,7 @@ final class MockMedicineDataService {
         try await mockHistoryService.recordMedicineAction(
             medicineId: id,
             medicineName: updatedMedicine.name,
-            action: "Mise à jour stock",
+            action: "Ajout stock",
             details: "Stock mis à jour: \(newStock)"
         )
 
@@ -375,11 +375,12 @@ final class MockMedicineDataService {
 
 // MARK: - Mock Listener Registration
 
-class MockListenerRegistration: ListenerRegistration {
+class MockListenerRegistration: NSObject, ListenerRegistration {
     private let removeHandler: () -> Void
 
     init(removeHandler: @escaping () -> Void) {
         self.removeHandler = removeHandler
+        super.init()
     }
 
     func remove() {

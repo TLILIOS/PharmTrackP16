@@ -60,7 +60,7 @@ final class ValidationIntegrationTests: XCTestCase {
         XCTAssertFalse(mockAisleRepo.aisles.isEmpty, "Mock should contain the saved aisle")
 
         if let saved = mockAisleRepo.aisles.last {
-            XCTAssertFalse(saved.id.isEmpty)
+            XCTAssertFalse(saved.id?.isEmpty ?? true)
             XCTAssertEqual(saved.name, "Pharmacie Principale")
         } else {
             XCTFail("Valid aisle should be saved")
@@ -148,7 +148,7 @@ final class ValidationIntegrationTests: XCTestCase {
             warningThreshold: 20,
             criticalThreshold: 10,
             expiryDate: Date().addingTimeInterval(365 * 24 * 60 * 60),
-            aisleId: savedAisle.id,
+            aisleId: savedAisle.id ?? "",
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -160,7 +160,7 @@ final class ValidationIntegrationTests: XCTestCase {
         XCTAssertFalse(mockMedicineRepo.medicines.isEmpty, "Medicine should be saved")
 
         if let saved = mockMedicineRepo.medicines.last {
-            XCTAssertFalse(saved.id.isEmpty)
+            XCTAssertFalse(saved.id?.isEmpty ?? true)
             XCTAssertEqual(saved.name, "Paracétamol 500mg")
         } else {
             XCTFail("Valid medicine should be saved")
@@ -197,7 +197,7 @@ final class ValidationIntegrationTests: XCTestCase {
             warningThreshold: 20,
             criticalThreshold: 30, // Invalide: critical > warning
             expiryDate: nil,
-            aisleId: savedAisle.id,
+            aisleId: savedAisle.id ?? "",
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -240,7 +240,7 @@ final class ValidationIntegrationTests: XCTestCase {
             warningThreshold: 15,
             criticalThreshold: 5,
             expiryDate: Date().addingTimeInterval(-86400), // Hier
-            aisleId: savedAisle.id,
+            aisleId: savedAisle.id ?? "",
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -312,7 +312,7 @@ final class ValidationIntegrationTests: XCTestCase {
             warningThreshold: 20,
             criticalThreshold: 10,
             expiryDate: nil,
-            aisleId: savedAisle.id,
+            aisleId: savedAisle.id ?? "",
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -372,7 +372,7 @@ final class ValidationIntegrationTests: XCTestCase {
             warningThreshold: 20,
             criticalThreshold: 10,
             expiryDate: nil,
-            aisleId: savedAisle.id,
+            aisleId: savedAisle.id ?? "",
             createdAt: Date(),
             updatedAt: Date()
         )

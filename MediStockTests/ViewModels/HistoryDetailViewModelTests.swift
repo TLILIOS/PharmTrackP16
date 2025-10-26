@@ -192,18 +192,19 @@ final class HistoryDetailViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
     
-    func testExportToPDFNotSupported() async {
+    func testExportToPDFSuccess() async throws {
         // Given
         mockHistoryRepository.history = createMockHistoryEntries()
         await sut.loadHistory()
-        
-        // When/Then
-        do {
-            _ = try await sut.exportHistory(format: .pdf)
-            XCTFail("Expected export to fail")
-        } catch {
-            XCTAssertTrue(error is ExportError)
-        }
+
+        // When
+        let url = try await sut.exportHistory(format: .pdf)
+
+        // Then
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+
+        // Clean up
+        try? FileManager.default.removeItem(at: url)
     }
     
     func testCSVContentFormat() async throws {

@@ -58,12 +58,12 @@ class AuthServiceIntegrationTests: XCTestCase {
         // Arrange
         let email = "test@example.com"
         let password = "password123"
-        
+
         // Act - Multiple concurrent sign-in attempts
-        async let attempt1 = authService.signIn(email: email, password: password)
-        async let attempt2 = authService.signIn(email: email, password: password)
-        async let attempt3 = authService.signIn(email: email, password: password)
-        
+        async let attempt1: Void = authService.signIn(email: email, password: password)
+        async let attempt2: Void = authService.signIn(email: email, password: password)
+        async let attempt3: Void = authService.signIn(email: email, password: password)
+
         // Assert - All should complete without crashing
         do {
             _ = try await (attempt1, attempt2, attempt3)

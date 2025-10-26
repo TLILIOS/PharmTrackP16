@@ -55,20 +55,17 @@ class AisleListViewModelTests: XCTestCase {
     
     func testLoadMoreAisles() async {
         // Arrange
-        let firstBatch = Array(TestData.mockAisles.prefix(20))
-        let secondBatch = Array(TestData.mockAisles.suffix(10))
+        // Configurer 30 aisles dans le mock pour tester la pagination
+        mockRepository.aisles = TestData.mockAisles
 
-        // Charger le premier batch (exactement 20 éléments, donc hasMoreAisles sera true)
-        mockRepository.aisles = firstBatch
+        // Charger le premier batch (20 éléments, donc hasMoreAisles sera true)
         await viewModel.loadAisles()
 
         // Vérifier que hasMoreAisles est true après le premier chargement
         XCTAssertTrue(viewModel.hasMoreAisles, "Should have more aisles when loading exactly 20 items")
+        XCTAssertEqual(viewModel.aisles.count, 20)
 
-        // Préparer le deuxième batch
-        mockRepository.aisles = secondBatch
-
-        // Act
+        // Act - Charger la page suivante
         await viewModel.loadMoreAisles()
 
         // Assert
@@ -160,14 +157,20 @@ class AisleListViewModelTests: XCTestCase {
         // Arrange
         let aisleToDelete = TestData.mockAisles.first!
 
-        // Utiliser makeMock pour initialiser avec des données
-        viewModel = AisleListViewModel.makeMock(aisles: TestData.mockAisles, repository: mockRepository)
+        // Initialiser le repository avec des données
+        mockRepository.aisles = TestData.mockAisles
+
+        // Charger les données dans le viewModel
+        await viewModel.loadAisles()
+
+        let initialCount = viewModel.aisles.count
 
         // Act
         await viewModel.deleteAisle(aisleToDelete)
 
         // Assert
         XCTAssertFalse(viewModel.aisles.contains { $0.id == aisleToDelete.id })
+        XCTAssertEqual(viewModel.aisles.count, initialCount - 1)
         XCTAssertNil(viewModel.errorMessage)
     }
     
@@ -204,19 +207,19 @@ class AisleListViewModelTests: XCTestCase {
     func testHasMoreAislesLogic() async {
         // Arrange - Less than 20 aisles
         mockRepository.aisles = Array(TestData.mockAisles.prefix(10))
-        
+
         // Act
         await viewModel.loadAisles()
-        
+
         // Assert
         XCTAssertFalse(viewModel.hasMoreAisles)
-        
-        // Arrange - Exactly 20 aisles
+
+        // Arrange - Exactly 20 aisles (force refresh to bypass debouncing)
         mockRepository.aisles = Array(TestData.mockAisles.prefix(20))
-        
-        // Act
-        await viewModel.loadAisles()
-        
+
+        // Act - Force refresh to bypass debouncing
+        await viewModel.loadAisles(forceRefresh: true)
+
         // Assert
         XCTAssertTrue(viewModel.hasMoreAisles)
     }

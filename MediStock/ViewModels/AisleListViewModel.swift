@@ -241,13 +241,13 @@ class AisleListViewModel: ObservableObject {
         do {
             try await repository.deleteAisle(id: aisleId)
 
-            // Recharger la liste seulement si le listener n'est pas actif
+            // Supprimer directement de la liste locale si le listener n'est pas actif
             // Si le listener est actif, il mettra à jour automatiquement
             if !isListenerActive {
-                print("🔄 [AisleListViewModel] Rechargement de la liste après suppression (listener inactif)...")
-                await loadAisles()
+                print("🔄 [AisleListViewModel] Mise à jour de la liste locale après suppression...")
+                aisles.removeAll { $0.id == aisleId }
             } else {
-                print("✅ [AisleListViewModel] Listener actif, pas besoin de recharger manuellement")
+                print("✅ [AisleListViewModel] Listener actif, pas besoin de mettre à jour manuellement")
             }
 
             // Analytics

@@ -12,6 +12,7 @@ class DashboardViewTests: XCTestCase {
     var mockMedicineRepo: MockMedicineRepository!
     var mockAisleRepo: MockAisleRepository!
     var mockNotificationService: MockNotificationService!
+    var mockPDFExportService: MockPDFExportService!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -21,6 +22,7 @@ class DashboardViewTests: XCTestCase {
         mockMedicineRepo = MockMedicineRepository()
         mockAisleRepo = MockAisleRepository()
         mockNotificationService = MockNotificationService()
+        mockPDFExportService = MockPDFExportService()
 
         // Initialiser les ViewModels
         authViewModel = AuthViewModel(repository: mockAuthRepository)
@@ -128,9 +130,10 @@ class DashboardViewTests: XCTestCase {
 
     func testPDFGenerationDoesNotCrash() async throws {
         // Créer une instance de DashboardView
-        _ = DashboardView()
+        _ = DashboardView(pdfExportService: mockPDFExportService)
             .environmentObject(appState)
             .environmentObject(authViewModel)
+            .environmentObject(dashboardViewModel)
 
         // Test pour vérifier que la génération PDF ne crash pas
         let pdfMetaData = [
@@ -164,9 +167,10 @@ class DashboardViewTests: XCTestCase {
 
     func testExportButtonExists() async throws {
         // Vérifier que le bouton d'export existe dans la vue
-        let view = DashboardView()
+        let view = DashboardView(pdfExportService: mockPDFExportService)
             .environmentObject(appState)
             .environmentObject(authViewModel)
+            .environmentObject(dashboardViewModel)
 
         // Pour ce test simple, on vérifie juste que la vue peut être créée sans crash
         let hostingController = UIHostingController(rootView: view)
@@ -222,5 +226,226 @@ class DashboardViewTests: XCTestCase {
                 withAttributes: summaryAttributes
             )
         }
+    }
+
+    // MARK: - Additional Tests for 85%+ Coverage
+
+    func testTopCriticalMedicines() {
+        // Given - Create 7 critical medicines
+        let criticalMeds = (1...7).map {
+            Medicine.mock(
+                id: "\($0)",
+                currentQuantity: 5,
+                criticalThreshold: 10
+            )
+        }
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: criticalMeds)
+
+        // When
+        let topCritical = dashboardViewModel.topCriticalMedicines
+
+        // Then
+        XCTAssertEqual(topCritical.count, 5, "Should return only top 5")
+    }
+
+    func testTopExpiringMedicines() {
+        // Given - Create medicines with various expiry dates
+        let now = Date()
+        let medicines = [
+            Medicine.mock(id: "1", expiryDate: now.addingTimeInterval(5 * 24 * 60 * 60)),   // 5 days
+            Medicine.mock(id: "2", expiryDate: now.addingTimeInterval(10 * 24 * 60 * 60)),  // 10 days
+            Medicine.mock(id: "3", expiryDate: now.addingTimeInterval(15 * 24 * 60 * 60)),  // 15 days
+            Medicine.mock(id: "4", expiryDate: now.addingTimeInterval(20 * 24 * 60 * 60)),  // 20 days
+            Medicine.mock(id: "5", expiryDate: now.addingTimeInterval(25 * 24 * 60 * 60)),  // 25 days
+            Medicine.mock(id: "6", expiryDate: now.addingTimeInterval(28 * 24 * 60 * 60))   // 28 days
+        ]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: medicines)
+
+        // When
+        let topExpiring = dashboardViewModel.topExpiringMedicines
+
+        // Then
+        XCTAssertEqual(topExpiring.count, 5, "Should return top 5")
+        XCTAssertEqual(topExpiring.first?.id, "1", "Should be sorted by earliest expiry")
+    }
+
+    func testLoadDataSuccess() async {
+        // Given
+        let medicines = [Medicine.mock(id: "1"), Medicine.mock(id: "2")]
+        let aisles = [Aisle.mock(id: "1")]
+        mockMedicineRepo.medicines = medicines
+        mockAisleRepo.aisles = aisles
+
+        let viewModel = DashboardViewModel(
+            medicineRepository: mockMedicineRepo,
+            aisleRepository: mockAisleRepo,
+            notificationService: mockNotificationService
+        )
+
+        // When
+        await viewModel.loadData()
+
+        // Then
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertEqual(viewModel.medicines.count, 2)
+        XCTAssertEqual(viewModel.aisles.count, 1)
+        XCTAssertEqual(mockNotificationService.checkExpirationsCallCount, 1)
+    }
+
+    func testLoadDataFailure() async {
+        // Given
+        mockMedicineRepo.shouldThrowError = true
+
+        let viewModel = DashboardViewModel(
+            medicineRepository: mockMedicineRepo,
+            aisleRepository: mockAisleRepo,
+            notificationService: mockNotificationService
+        )
+
+        // When
+        await viewModel.loadData()
+
+        // Then
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNotNil(viewModel.errorMessage)
+    }
+
+    func testRefresh() async {
+        // Given
+        mockMedicineRepo.medicines = [Medicine.mock()]
+        mockAisleRepo.aisles = [Aisle.mock()]
+
+        let viewModel = DashboardViewModel(
+            medicineRepository: mockMedicineRepo,
+            aisleRepository: mockAisleRepo,
+            notificationService: mockNotificationService
+        )
+
+        // When
+        await viewModel.refresh()
+
+        // Then
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertEqual(viewModel.medicines.count, 1)
+    }
+
+    func testClearError() {
+        // Given
+        dashboardViewModel.errorMessage = "Test error"
+
+        // When
+        dashboardViewModel.clearError()
+
+        // Then
+        XCTAssertNil(dashboardViewModel.errorMessage)
+    }
+
+    func testCalculateLowStockPercentage() {
+        // Given
+        let medicines = [
+            Medicine.mock(id: "1", currentQuantity: 5, criticalThreshold: 10),   // Critical
+            Medicine.mock(id: "2", currentQuantity: 15, warningThreshold: 20),   // Warning
+            Medicine.mock(id: "3", currentQuantity: 50, warningThreshold: 20),   // Normal
+            Medicine.mock(id: "4", currentQuantity: 100, warningThreshold: 20)   // Normal
+        ]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: medicines)
+
+        // When
+        let stats = dashboardViewModel.statistics
+
+        // Then - 2 out of 4 = 50%
+        XCTAssertEqual(stats.lowStockPercentage, 50.0)
+    }
+
+    func testStatisticsStatusColor() {
+        // Given - Critical medicines
+        let criticalMeds = [Medicine.mock(currentQuantity: 5, criticalThreshold: 10)]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: criticalMeds)
+
+        // When
+        let stats = dashboardViewModel.statistics
+
+        // Then
+        XCTAssertEqual(stats.statusColor, .red)
+    }
+
+    func testStatisticsStatusColorOrange() {
+        // Given - Only expiring medicines
+        let expiringMeds = [Medicine.mock(expiryDate: Date().addingTimeInterval(15 * 24 * 60 * 60))]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: expiringMeds)
+
+        // When
+        let stats = dashboardViewModel.statistics
+
+        // Then
+        XCTAssertEqual(stats.statusColor, .orange)
+    }
+
+    func testStatisticsStatusColorGreen() {
+        // Given - Normal stock
+        let normalMeds = [Medicine.mock(currentQuantity: 100)]
+        let farFuture = Date().addingTimeInterval(365 * 24 * 60 * 60)
+        let meds = [Medicine.mock(currentQuantity: 100, expiryDate: farFuture)]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: meds)
+
+        // When
+        let stats = dashboardViewModel.statistics
+
+        // Then
+        XCTAssertEqual(stats.statusColor, .green)
+    }
+
+    func testAisleDistributionHasIssues() {
+        // Given
+        let aisle = Aisle.mock(id: "1", name: "Test Aisle")
+        let medicines = [
+            Medicine.mock(id: "1", currentQuantity: 5, criticalThreshold: 10, aisleId: "1")
+        ]
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: medicines, aisles: [aisle])
+
+        // When
+        let distribution = dashboardViewModel.medicinesByAisle.first
+
+        // Then
+        XCTAssertNotNil(distribution)
+        XCTAssertTrue(distribution?.hasIssues ?? false)
+    }
+
+    func testAisleDistributionStatusDescription() {
+        // Given
+        let aisle = Aisle.mock(id: "1")
+        let criticalMed = Medicine.mock(id: "1", currentQuantity: 5, criticalThreshold: 10, aisleId: "1")
+        dashboardViewModel = DashboardViewModel.makeMock(medicines: [criticalMed], aisles: [aisle])
+
+        // When
+        let distribution = dashboardViewModel.medicinesByAisle.first
+
+        // Then
+        XCTAssertEqual(distribution?.statusDescription, "1 critique(s)")
+    }
+
+    func testLoadDataPreventsMultipleConcurrentLoads() async {
+        // Given
+        mockMedicineRepo.medicines = [Medicine.mock()]
+        mockAisleRepo.aisles = [Aisle.mock()]
+
+        let viewModel = DashboardViewModel(
+            medicineRepository: mockMedicineRepo,
+            aisleRepository: mockAisleRepo,
+            notificationService: mockNotificationService
+        )
+
+        // When - Launch multiple concurrent loads
+        async let load1: Void = viewModel.loadData()
+        async let load2: Void = viewModel.loadData()
+        async let load3: Void = viewModel.loadData()
+
+        _ = await load1
+        _ = await load2
+        _ = await load3
+
+        // Then - Should only execute once
+        XCTAssertEqual(mockMedicineRepo.fetchMedicinesCallCount, 1)
     }
 }

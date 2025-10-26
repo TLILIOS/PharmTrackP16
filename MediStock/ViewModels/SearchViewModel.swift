@@ -28,14 +28,17 @@ class SearchViewModel: ObservableObject {
     private let medicineRepository: MedicineRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     private let searchTextSubject = PassthroughSubject<String, Never>()
+    private let userDefaults: UserDefaults
 
     // MARK: - Initialization
 
     init(
-        medicineRepository: MedicineRepositoryProtocol = MedicineRepository()
+        medicineRepository: MedicineRepositoryProtocol = MedicineRepository(),
+        userDefaults: UserDefaults = .standard
     ) {
         self.medicineRepository = medicineRepository
-        
+        self.userDefaults = userDefaults
+
         setupSearchDebounce()
         loadRecentSearches()
     }
@@ -190,32 +193,32 @@ class SearchViewModel: ObservableObject {
     }
     
     // MARK: - Recent Searches
-    
+
     private func loadRecentSearches() {
-        recentSearches = UserDefaults.standard.stringArray(forKey: "recentSearches") ?? []
+        recentSearches = userDefaults.stringArray(forKey: "recentSearches") ?? []
     }
-    
+
     private func addToRecentSearches(_ query: String) {
         guard !query.isEmpty else { return }
-        
+
         // Retirer si déjà présent
         recentSearches.removeAll { $0 == query }
-        
+
         // Ajouter en tête
         recentSearches.insert(query, at: 0)
-        
+
         // Limiter à 10 recherches
         if recentSearches.count > 10 {
             recentSearches = Array(recentSearches.prefix(10))
         }
-        
+
         // Sauvegarder
-        UserDefaults.standard.set(recentSearches, forKey: "recentSearches")
+        userDefaults.set(recentSearches, forKey: "recentSearches")
     }
-    
+
     func clearRecentSearches() {
         recentSearches = []
-        UserDefaults.standard.removeObject(forKey: "recentSearches")
+        userDefaults.removeObject(forKey: "recentSearches")
     }
 }
 

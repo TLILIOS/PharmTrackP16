@@ -63,7 +63,10 @@
       "Bash(then)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(./MediStockTests/verify_isolation.sh:*)",
+      "Read(//Users/macbookair/.claude/**)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }

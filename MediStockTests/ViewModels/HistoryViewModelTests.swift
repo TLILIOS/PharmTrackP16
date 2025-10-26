@@ -186,55 +186,62 @@ final class HistoryViewModelTests: XCTestCase {
     
     func testExtractChangeFromDetails() async {
         // Given
+        let now = Date()
         let entries = [
-            HistoryEntry.mock(action: "Ajout stock", details: "15 unités - Test"),
-            HistoryEntry.mock(action: "Retrait stock", details: "8 boîtes - Vente"),
-            HistoryEntry.mock(action: "Modification", details: "Changement sans quantité")
+            HistoryEntry.mock(action: "Ajout stock", details: "15 unités - Test", timestamp: now.addingTimeInterval(-120)),      // Oldest
+            HistoryEntry.mock(action: "Retrait stock", details: "8 boîtes - Vente", timestamp: now.addingTimeInterval(-60)),     // Middle
+            HistoryEntry.mock(action: "Modification", details: "Changement sans quantité", timestamp: now)                        // Most recent
         ]
         mockRepository.history = entries
-        
+
         // When
         await sut.loadHistory()
-        
-        // Then
-        XCTAssertEqual(sut.stockHistory[0].change, 15)
-        XCTAssertEqual(sut.stockHistory[1].change, 8)
-        XCTAssertEqual(sut.stockHistory[2].change, 0)
+
+        // Then - Results are sorted by timestamp descending (most recent first)
+        XCTAssertEqual(sut.stockHistory.count, 3)
+        XCTAssertEqual(sut.stockHistory[0].change, 0)  // Most recent: "Modification"
+        XCTAssertEqual(sut.stockHistory[1].change, 8)  // Middle: "Retrait stock"
+        XCTAssertEqual(sut.stockHistory[2].change, 15) // Oldest: "Ajout stock"
     }
     
     func testExtractReasonFromDetails() async {
         // Given
+        let now = Date()
         let entries = [
-            HistoryEntry.mock(action: "Ajout stock", details: "10 unités - Livraison matinale"),
-            HistoryEntry.mock(action: "Retrait stock", details: "5 unités - Vente client"),
-            HistoryEntry.mock(action: "Modification", details: "Sans tiret")
+            HistoryEntry.mock(action: "Ajout stock", details: "10 unités - Livraison matinale", timestamp: now.addingTimeInterval(-120)),  // Oldest
+            HistoryEntry.mock(action: "Retrait stock", details: "5 unités - Vente client", timestamp: now.addingTimeInterval(-60)),        // Middle
+            HistoryEntry.mock(action: "Modification", details: "Sans tiret", timestamp: now)                                                // Most recent
         ]
         mockRepository.history = entries
-        
+
         // When
         await sut.loadHistory()
-        
-        // Then
-        XCTAssertEqual(sut.stockHistory[0].reason, "Livraison matinale")
-        XCTAssertEqual(sut.stockHistory[1].reason, "Vente client")
-        XCTAssertNil(sut.stockHistory[2].reason)
+
+        // Then - Results are sorted by timestamp descending (most recent first)
+        XCTAssertEqual(sut.stockHistory.count, 3)
+        XCTAssertNil(sut.stockHistory[0].reason)                        // Most recent: "Sans tiret"
+        XCTAssertEqual(sut.stockHistory[1].reason, "Vente client")     // Middle: "Retrait stock"
+        XCTAssertEqual(sut.stockHistory[2].reason, "Livraison matinale") // Oldest: "Ajout stock"
     }
     
     func testExtractQuantitiesFromDetails() async {
         // Given
+        let now = Date()
         let entries = [
-            HistoryEntry.mock(action: "Ajustement", details: "Ajustement (Stock: 50 → 60)"),
-            HistoryEntry.mock(action: "Retrait", details: "Retrait (Stock: 100 → 75)")
+            HistoryEntry.mock(action: "Ajustement", details: "Ajustement (Stock: 50 → 60)", timestamp: now.addingTimeInterval(-60)),  // Older
+            HistoryEntry.mock(action: "Retrait", details: "Retrait (Stock: 100 → 75)", timestamp: now)                                // Most recent
         ]
         mockRepository.history = entries
-        
+
         // When
         await sut.loadHistory()
-        
-        // Then
-        // Note: extractQuantities currently returns (0, 0) - test the current behavior
-        XCTAssertEqual(sut.stockHistory[0].previousQuantity, 0)
-        XCTAssertEqual(sut.stockHistory[0].newQuantity, 0)
+
+        // Then - Results are sorted by timestamp descending (most recent first)
+        XCTAssertEqual(sut.stockHistory.count, 2)
+        XCTAssertEqual(sut.stockHistory[0].previousQuantity, 100)  // Most recent: "Retrait"
+        XCTAssertEqual(sut.stockHistory[0].newQuantity, 75)
+        XCTAssertEqual(sut.stockHistory[1].previousQuantity, 50)   // Older: "Ajustement"
+        XCTAssertEqual(sut.stockHistory[1].newQuantity, 60)
     }
     
     // MARK: - Clear Error Tests

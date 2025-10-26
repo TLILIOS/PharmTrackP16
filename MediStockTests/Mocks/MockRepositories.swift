@@ -1,159 +1,203 @@
 import Foundation
 import Combine
+import FirebaseFirestore
 @testable import MediStock
 
 // MARK: - Mock Medicine Repository
+/// Repository mock qui délègue vers MockMedicineDataService
+/// pour tester la vraie logique de délégation
 
 class MockMedicineRepository: MedicineRepositoryProtocol {
-    var medicines: [Medicine] = []
-    var shouldThrowError = false
-    var fetchMedicinesCallCount = 0
-    var saveMedicineCallCount = 0
-    var deleteMedicineCallCount = 0
-    
+    private let medicineService: MockMedicineDataService
+    private var listener: ListenerRegistration?
+
+    // Expose les call counts du service pour vérification
+    var fetchMedicinesCallCount: Int { medicineService.getAllMedicinesCallCount }
+    var saveMedicineCallCount: Int { medicineService.saveMedicineCallCount }
+    var updateStockCallCount: Int { medicineService.updateStockCallCount }
+    var deleteMedicineCallCount: Int { medicineService.deleteMedicineCallCount }
+
+    // Raccourcis pour configuration des tests
+    var medicines: [Medicine] {
+        get { medicineService.medicines }
+        set { medicineService.medicines = newValue }
+    }
+
+    var shouldThrowError: Bool {
+        get { medicineService.shouldFailGetMedicines }
+        set {
+            medicineService.shouldFailGetMedicines = newValue
+            medicineService.shouldFailSaveMedicine = newValue
+            medicineService.shouldFailDeleteMedicine = newValue
+            medicineService.shouldFailUpdateStock = newValue
+        }
+    }
+
+    init(medicineService: MockMedicineDataService = MockMedicineDataService()) {
+        self.medicineService = medicineService
+    }
+
     func fetchMedicines() async throws -> [Medicine] {
-        fetchMedicinesCallCount += 1
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0, userInfo: [NSLocalizedDescriptionKey: "Test error"])
-        }
-        return medicines
+        return try await medicineService.getAllMedicines()
     }
-    
+
     func fetchMedicinesPaginated(limit: Int, refresh: Bool) async throws -> [Medicine] {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0, userInfo: [NSLocalizedDescriptionKey: "Test error"])
-        }
-        return Array(medicines.prefix(limit))
+        return try await medicineService.getMedicinesPaginated(limit: limit, refresh: refresh)
     }
-    
+
     func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
-        saveMedicineCallCount += 1
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        
-        if let index = medicines.firstIndex(where: { $0.id == medicine.id }) {
-            medicines[index] = medicine
-        } else {
-            medicines.append(medicine)
-        }
-        
-        return medicine
+        return try await medicineService.saveMedicine(medicine)
     }
-    
+
     func updateMedicineStock(id: String, newStock: Int) async throws -> Medicine {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        
-        guard let index = medicines.firstIndex(where: { $0.id == id }) else {
-            throw NSError(domain: "Test", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
-        }
-        
-        var updated = medicines[index]
-        updated.currentQuantity = newStock
-        medicines[index] = updated
-        
-        return updated
+        return try await medicineService.updateMedicineStock(id: id, newStock: newStock)
     }
-    
+
     func deleteMedicine(id: String) async throws {
-        deleteMedicineCallCount += 1
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
+        guard let medicine = try await medicineService.getMedicine(by: id) else {
+            throw NSError(domain: "MedicineRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Médicament non trouvé"])
         }
-        medicines.removeAll { $0.id == id }
+        try await medicineService.deleteMedicine(medicine)
     }
-    
+
     func updateMultipleMedicines(_ medicines: [Medicine]) async throws {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        
-        for medicine in medicines {
-            if let index = self.medicines.firstIndex(where: { $0.id == medicine.id }) {
-                self.medicines[index] = medicine
-            }
+        try await medicineService.updateMultipleMedicines(medicines)
+    }
+
+    func deleteMultipleMedicines(ids: [String]) async throws {
+        for id in ids {
+            try await deleteMedicine(id: id)
         }
     }
-    
-    func deleteMultipleMedicines(ids: [String]) async throws {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        medicines.removeAll { ids.contains($0.id) }
+
+    func startListeningToMedicines(completion: @escaping ([Medicine]) -> Void) {
+        listener = medicineService.createMedicinesListener(completion: completion)
+    }
+
+    func stopListening() {
+        listener?.remove()
+        listener = nil
     }
 }
 
 // MARK: - Mock Aisle Repository
+/// Repository mock qui délègue vers MockAisleDataService
+/// pour tester la vraie logique de délégation
 
 class MockAisleRepository: AisleRepositoryProtocol {
-    var aisles: [Aisle] = []
-    var shouldThrowError = false
-    
+    private let aisleService: MockAisleDataService
+    private var listener: ListenerRegistration?
+
+    // Raccourcis pour configuration des tests
+    var aisles: [Aisle] {
+        get { aisleService.aisles }
+        set { aisleService.aisles = newValue }
+    }
+
+    var shouldThrowError: Bool {
+        get { aisleService.shouldFailGetAisles }
+        set {
+            aisleService.shouldFailGetAisles = newValue
+            aisleService.shouldFailSaveAisle = newValue
+            aisleService.shouldFailDeleteAisle = newValue
+        }
+    }
+
+    init(aisleService: MockAisleDataService = MockAisleDataService()) {
+        self.aisleService = aisleService
+    }
+
     func fetchAisles() async throws -> [Aisle] {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        return aisles
+        return try await aisleService.getAllAisles()
     }
-    
+
     func fetchAislesPaginated(limit: Int, refresh: Bool) async throws -> [Aisle] {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        return Array(aisles.prefix(limit))
+        return try await aisleService.getAislesPaginated(limit: limit, refresh: refresh)
     }
-    
+
     func saveAisle(_ aisle: Aisle) async throws -> Aisle {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        
-        if let index = aisles.firstIndex(where: { $0.id == aisle.id }) {
-            aisles[index] = aisle
-        } else {
-            aisles.append(aisle)
-        }
-        
-        return aisle
+        return try await aisleService.saveAisle(aisle)
     }
-    
+
     func deleteAisle(id: String) async throws {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
+        guard let aisle = try await aisleService.getAisle(by: id) else {
+            throw NSError(domain: "AisleRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Rayon non trouvé"])
         }
-        aisles.removeAll { $0.id == id }
+        try await aisleService.deleteAisle(aisle)
+    }
+
+    func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
+        listener = aisleService.createAislesListener(completion: completion)
+    }
+
+    func stopListening() {
+        listener?.remove()
+        listener = nil
     }
 }
 
 // MARK: - Mock History Repository
+/// Repository mock qui délègue vers MockHistoryDataService
+/// pour tester la vraie logique de délégation
 
 class MockHistoryRepository: HistoryRepositoryProtocol {
-    var history: [HistoryEntry] = []
-    var shouldThrowError = false
-    var addHistoryEntryCallCount = 0
-    
+    private let historyService: MockHistoryDataService
+
+    // Expose les call counts du service pour vérification
+    var addHistoryEntryCallCount: Int { historyService.recordMedicineActionCallCount }
+
+    // Raccourcis pour configuration des tests
+    var history: [HistoryEntry] {
+        get { historyService.history }
+        set { historyService.history = newValue }
+    }
+
+    var shouldThrowError: Bool {
+        get { historyService.shouldFailGetHistory }
+        set {
+            historyService.shouldFailGetHistory = newValue
+            historyService.shouldFailRecordAction = newValue
+        }
+    }
+
+    init(historyService: MockHistoryDataService = MockHistoryDataService()) {
+        self.historyService = historyService
+    }
+
     func fetchHistory() async throws -> [HistoryEntry] {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        return history
+        return try await historyService.getHistory(medicineId: nil)
     }
-    
-    func addHistoryEntry(_ entry: HistoryEntry) async throws {
-        addHistoryEntryCallCount += 1
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
-        }
-        history.append(entry)
-    }
-    
+
     func fetchHistoryForMedicine(_ medicineId: String) async throws -> [HistoryEntry] {
-        if shouldThrowError {
-            throw NSError(domain: "Test", code: 0)
+        return try await historyService.getHistory(medicineId: medicineId)
+    }
+
+    func addHistoryEntry(_ entry: HistoryEntry) async throws {
+        if !entry.medicineId.isEmpty {
+            let medicineName = extractMedicineName(from: entry.details)
+            try await historyService.recordMedicineAction(
+                medicineId: entry.medicineId,
+                medicineName: medicineName,
+                action: entry.action,
+                details: entry.details
+            )
+        } else {
+            try await historyService.recordDeletion(
+                itemType: "general",
+                itemId: entry.id,
+                itemName: "",
+                details: entry.details
+            )
         }
-        return history.filter { $0.medicineId == medicineId }
+    }
+
+    private func extractMedicineName(from details: String) -> String {
+        if let range = details.range(of: "médicament ") {
+            let afterMedicine = String(details[range.upperBound...])
+            let name = afterMedicine.split(separator: " ").first ?? ""
+            return String(name)
+        }
+        return ""
     }
 }
 
@@ -165,40 +209,40 @@ class MockAuthRepository: AuthRepositoryProtocol {
     var signInCallCount = 0
     var signOutCallCount = 0
     var shouldThrowError = false
-    
+
     var currentUserPublisher: Published<User?>.Publisher {
         $currentUser
     }
-    
+
     init() {
         self.currentUser = nil
     }
-    
+
     func signIn(email: String, password: String) async throws {
         signInCallCount += 1
         if shouldThrowError {
             throw NSError(domain: "Test", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid credentials"])
         }
-        
+
         currentUser = User(
             id: "test-user-id",
             email: email,
             displayName: "Test User"
         )
     }
-    
+
     func signUp(email: String, password: String, displayName: String) async throws {
         if shouldThrowError {
             throw NSError(domain: "Test", code: 0)
         }
-        
+
         currentUser = User(
             id: "new-user-id",
             email: email,
             displayName: displayName
         )
     }
-    
+
     func signOut() async throws {
         signOutCallCount += 1
         if shouldThrowError {
@@ -206,7 +250,7 @@ class MockAuthRepository: AuthRepositoryProtocol {
         }
         currentUser = nil
     }
-    
+
     func getCurrentUser() -> User? {
         return currentUser
     }
@@ -219,6 +263,56 @@ class MockNotificationService: NotificationService {
 
     override func checkExpirations(medicines: [Medicine]) async {
         checkExpirationsCallCount += 1
+    }
+}
+
+// MARK: - Mock PDF Export Service
+
+class MockPDFExportService: PDFExportServiceProtocol {
+    var generateInventoryReportCallCount = 0
+    var generateHistoryReportCallCount = 0
+    var generateStockHistoryReportCallCount = 0
+    var shouldThrowError = false
+    var mockPDFData = Data()
+
+    func generateInventoryReport(medicines: [Medicine], aisles: [Aisle], authorName: String) async throws -> Data {
+        generateInventoryReportCallCount += 1
+
+        if shouldThrowError {
+            throw NSError(domain: "MockPDFExportService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+        }
+
+        return mockPDFData
+    }
+
+    func generateHistoryReport(
+        entries: [HistoryEntry],
+        statistics: HistoryStatistics?,
+        dateRange: String,
+        authorName: String
+    ) async throws -> Data {
+        generateHistoryReportCallCount += 1
+
+        if shouldThrowError {
+            throw NSError(domain: "MockPDFExportService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+        }
+
+        return mockPDFData
+    }
+
+    func generateStockHistoryReport(
+        entries: [StockHistory],
+        medicines: [String: String],
+        filterType: String,
+        authorName: String
+    ) async throws -> Data {
+        generateStockHistoryReportCallCount += 1
+
+        if shouldThrowError {
+            throw NSError(domain: "MockPDFExportService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
+        }
+
+        return mockPDFData
     }
 }
 
@@ -322,8 +416,8 @@ class MockAuthServiceStandalone: ObservableObject {
 
 extension MockMedicineRepository {
     static func withSampleData() -> MockMedicineRepository {
-        let repo = MockMedicineRepository()
-        repo.medicines = [
+        let mockService = MockMedicineDataService()
+        mockService.medicines = [
             Medicine(
                 id: "1",
                 name: "Paracétamol",
@@ -359,13 +453,13 @@ extension MockMedicineRepository {
                 updatedAt: Date()
             )
         ]
-        return repo
+        return MockMedicineRepository(medicineService: mockService)
     }
 }
 
 extension MockAisleRepository {
     static func withSampleData() -> MockAisleRepository {
-        let repo = MockAisleRepository()
+        let mockService = MockAisleDataService()
 
         var aisle1 = Aisle(
             name: "Antalgiques",
@@ -383,15 +477,15 @@ extension MockAisleRepository {
         )
         aisle2.id = "aisle2"
 
-        repo.aisles = [aisle1, aisle2]
-        return repo
+        mockService.aisles = [aisle1, aisle2]
+        return MockAisleRepository(aisleService: mockService)
     }
 }
 
 extension MockHistoryRepository {
     static func withSampleData() -> MockHistoryRepository {
-        let repo = MockHistoryRepository()
-        repo.history = [
+        let mockService = MockHistoryDataService()
+        mockService.history = [
             HistoryEntry(
                 id: "h1",
                 medicineId: "1",
@@ -409,6 +503,6 @@ extension MockHistoryRepository {
                 timestamp: Calendar.current.date(byAdding: .hour, value: -2, to: Date()) ?? Date()
             )
         ]
-        return repo
+        return MockHistoryRepository(historyService: mockService)
     }
 }

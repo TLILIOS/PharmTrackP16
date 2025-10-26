@@ -40,7 +40,32 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      codeCoverageEnabled = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "YES">
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D0F409DF2E37E25200EC8B27"
+            BuildableName = "MediStockTests.xctest"
+            BlueprintName = "MediStockTests"
+            ReferencedContainer = "container:MediStock.xcodeproj">
+         </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D0F409D22E37E25100EC8B27"
+            BuildableName = "MediStock.app"
+            BlueprintName = "MediStock"
+            ReferencedContainer = "container:MediStock.xcodeproj">
+         </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "D0F409E92E37E25200EC8B27"
+            BuildableName = "MediStockUITests.xctest"
+            BlueprintName = "MediStockUITests"
+            ReferencedContainer = "container:MediStock.xcodeproj">
+         </BuildableReference>
+      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO">

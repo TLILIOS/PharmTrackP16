@@ -65,30 +65,7 @@ class MedicineListViewModel: ObservableObject {
             result = result.filter { $0.aisleId == selectedAisleId }
         }
 
-        let sorted = result.sorted { $0.name < $1.name }
-
-        // DEBUG: Logs pour identifier le problème
-        print("🔍 [MedicineListViewModel] filteredMedicines:")
-        print("  - Total medicines: \(medicines.count)")
-        print("  - Filtered count: \(sorted.count)")
-        print("  - Search text: '\(searchText)'")
-        print("  - Selected aisle: '\(selectedAisleId)'")
-        print("  - Filtered IDs: \(sorted.compactMap { $0.id }.joined(separator: ", "))")
-
-        // Vérifier les IDs nil
-        let nilIdCount = sorted.filter { $0.id == nil }.count
-        if nilIdCount > 0 {
-            print("  ⚠️ WARNING: \(nilIdCount) medicine(s) with nil ID")
-        }
-
-        // Vérifier les IDs dupliqués
-        let ids = sorted.compactMap { $0.id }
-        let uniqueIds = Set(ids)
-        if ids.count != uniqueIds.count {
-            print("  ⚠️ WARNING: Duplicate IDs detected! \(ids.count) items but only \(uniqueIds.count) unique IDs")
-        }
-
-        return sorted
+        return result.sorted { $0.name < $1.name }
     }
 
     /// Médicaments avec stock critique

@@ -12,40 +12,40 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
     // MARK: - Properties
 
-    var authViewModel: AuthViewModel!
-    var medicineViewModel: MedicineListViewModel!
+    var authViewModel: ExampleAuthViewModel!
+    var medicineViewModel: ExampleMedicineListViewModel!
 
     var mockAuthService: MockAuthService!
-    var mockDataService: MockDataService!
+    var mockMedicineService: MockMedicineDataService!
 
     var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup & Teardown
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         // Créer les mocks
         mockAuthService = MockAuthService()
-        mockDataService = MockDataService()
+        mockMedicineService = MockMedicineDataService()
 
         // Configurer avec des données de test
-        mockDataService.seedTestData()
+        mockMedicineService.seedTestData()
 
         // Injecter les mocks dans les ViewModels
-        authViewModel = AuthViewModel(authService: mockAuthService)
-        medicineViewModel = MedicineListViewModel(dataService: mockDataService)
+        authViewModel = ExampleAuthViewModel(authService: mockAuthService)
+        medicineViewModel = ExampleMedicineListViewModel(medicineService: mockMedicineService)
 
         cancellables = Set<AnyCancellable>()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         cancellables = nil
         authViewModel = nil
         medicineViewModel = nil
         mockAuthService = nil
-        mockDataService = nil
-        super.tearDown()
+        mockMedicineService = nil
+        try await super.tearDown()
     }
 
     // MARK: - Tests d'Authentification
@@ -116,13 +116,13 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
     func testFetchMedicinesSuccess() async throws {
         // Given - Les données sont déjà chargées via seedTestData()
-        XCTAssertEqual(mockDataService.medicines.count, 1, "Devrait avoir 1 médicament de test")
+        XCTAssertEqual(mockMedicineService.medicines.count, 1, "Devrait avoir 1 médicament de test")
 
         // When
         try await medicineViewModel.fetchMedicines()
 
         // Then
-        XCTAssertEqual(mockDataService.getMedicinesCallCount, 1, "Get medicines devrait être appelé une fois")
+        XCTAssertEqual(mockMedicineService.getAllMedicinesCallCount, 1, "Get medicines devrait être appelé une fois")
         XCTAssertEqual(medicineViewModel.medicines.count, 1, "Devrait avoir 1 médicament dans le ViewModel")
         XCTAssertEqual(medicineViewModel.medicines.first?.name, "Doliprane 500mg")
         XCTAssertFalse(medicineViewModel.isLoading, "Le chargement devrait être terminé")
@@ -131,7 +131,7 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
     func testFetchMedicinesWithNetworkError() async {
         // Given - Configurer le mock pour échouer
-        mockDataService.shouldFailGetMedicines = true
+        mockMedicineService.shouldFailGetMedicines = true
 
         // When & Then
         do {
@@ -168,55 +168,55 @@ final class ExampleMigratedViewModelTest: XCTestCase {
         let savedMedicine = try await medicineViewModel.saveMedicine(newMedicine)
 
         // Then
-        XCTAssertEqual(mockDataService.saveMedicineCallCount, 1, "Save medicine devrait être appelé une fois")
-        XCTAssertFalse(savedMedicine.id.isEmpty, "Un ID devrait être généré")
+        XCTAssertEqual(mockMedicineService.saveMedicineCallCount, 1, "Save medicine devrait être appelé une fois")
+        XCTAssertFalse(savedMedicine.id?.isEmpty ?? true, "Un ID devrait être généré")
         XCTAssertEqual(savedMedicine.name, "Aspirine 500mg")
-        XCTAssertEqual(mockDataService.medicines.count, 2, "Devrait avoir 2 médicaments maintenant")
+        XCTAssertEqual(mockMedicineService.medicines.count, 2, "Devrait avoir 2 médicaments maintenant")
 
         // Vérifier l'historique
-        let history = try await mockDataService.getHistory()
+        let history = try await mockMedicineService.mockHistoryService.getHistory(medicineId: nil)
         let creationEntry = history.first { $0.action == "Création" }
         XCTAssertNotNil(creationEntry, "Une entrée d'historique devrait être créée")
     }
 
     func testUpdateMedicineStock() async throws {
         // Given - Utiliser le médicament de test existant
-        let medicine = mockDataService.medicines.first!
+        let medicine = mockMedicineService.medicines.first!
         let originalStock = medicine.currentQuantity
         let newStock = 75
 
         // When
         let updatedMedicine = try await medicineViewModel.updateStock(
-            for: medicine.id,
+            for: medicine.id ?? "",
             newStock: newStock
         )
 
         // Then
-        XCTAssertEqual(mockDataService.updateStockCallCount, 1, "Update stock devrait être appelé une fois")
+        XCTAssertEqual(mockMedicineService.updateStockCallCount, 1, "Update stock devrait être appelé une fois")
         XCTAssertEqual(updatedMedicine.currentQuantity, newStock, "Le stock devrait être mis à jour")
         XCTAssertNotEqual(updatedMedicine.currentQuantity, originalStock, "Le stock devrait avoir changé")
 
         // Vérifier l'historique
-        let history = try await mockDataService.getHistory()
+        let history = try await mockMedicineService.mockHistoryService.getHistory(medicineId: nil)
         let stockEntry = history.first { $0.action == "Ajout stock" }
         XCTAssertNotNil(stockEntry, "Une entrée d'historique de stock devrait être créée")
     }
 
     func testDeleteMedicine() async throws {
         // Given
-        let medicine = mockDataService.medicines.first!
-        let initialCount = mockDataService.medicines.count
+        let medicine = mockMedicineService.medicines.first!
+        let initialCount = mockMedicineService.medicines.count
 
         // When
-        try await medicineViewModel.deleteMedicine(id: medicine.id)
+        try await medicineViewModel.deleteMedicine(id: medicine.id ?? "")
 
         // Then
-        XCTAssertEqual(mockDataService.deleteMedicineCallCount, 1, "Delete medicine devrait être appelé une fois")
-        XCTAssertEqual(mockDataService.medicines.count, initialCount - 1, "Un médicament devrait être supprimé")
-        XCTAssertFalse(mockDataService.medicines.contains { $0.id == medicine.id }, "Le médicament ne devrait plus exister")
+        XCTAssertEqual(mockMedicineService.deleteMedicineCallCount, 1, "Delete medicine devrait être appelé une fois")
+        XCTAssertEqual(mockMedicineService.medicines.count, initialCount - 1, "Un médicament devrait être supprimé")
+        XCTAssertFalse(mockMedicineService.medicines.contains { $0.id == medicine.id }, "Le médicament ne devrait plus exister")
 
         // Vérifier l'historique
-        let history = try await mockDataService.getHistory()
+        let history = try await mockMedicineService.mockHistoryService.getHistory(medicineId: nil)
         let deletionEntry = history.first { $0.action == "Suppression" }
         XCTAssertNotNil(deletionEntry, "Une entrée d'historique de suppression devrait être créée")
     }
@@ -247,9 +247,9 @@ final class ExampleMigratedViewModelTest: XCTestCase {
         do {
             _ = try await medicineViewModel.saveMedicine(invalidMedicine)
             XCTFail("Devrait échouer avec des données invalides")
-        } catch let error as ValidationError {
+        } catch is ValidationError {
             XCTAssertTrue(true, "Une erreur de validation devrait être levée")
-            XCTAssertEqual(mockDataService.saveMedicineCallCount, 1, "La validation est côté service")
+            XCTAssertEqual(mockMedicineService.saveMedicineCallCount, 1, "La validation est côté service")
         } catch {
             XCTFail("Devrait lever une ValidationError, pas \(error)")
         }
@@ -257,12 +257,12 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
     func testUpdateStockWithNegativeValue() async {
         // Given
-        let medicine = mockDataService.medicines.first!
+        let medicine = mockMedicineService.medicines.first!
         let negativeStock = -10
 
         // When & Then
         do {
-            _ = try await medicineViewModel.updateStock(for: medicine.id, newStock: negativeStock)
+            _ = try await medicineViewModel.updateStock(for: medicine.id ?? "", newStock: negativeStock)
             XCTFail("Ne devrait pas accepter un stock négatif")
         } catch let error as ValidationError {
             if case .negativeQuantity = error {
@@ -283,7 +283,7 @@ final class ExampleMigratedViewModelTest: XCTestCase {
         var receivedMedicines: [Medicine] = []
 
         // Démarrer le listener
-        mockDataService.startListeningToMedicines { medicines in
+        _ = mockMedicineService.createMedicinesListener { medicines in
             receivedMedicines = medicines
             expectation.fulfill()
         }
@@ -307,16 +307,16 @@ final class ExampleMigratedViewModelTest: XCTestCase {
             updatedAt: Date()
         )
 
-        _ = try await mockDataService.saveMedicine(newMedicine)
+        _ = try await mockMedicineService.saveMedicine(newMedicine)
 
         // Then
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertTrue(mockDataService.isListening, "Le listener devrait être actif")
+        XCTAssertTrue(mockMedicineService.isListening, "Le listener devrait être actif")
         XCTAssertEqual(receivedMedicines.count, 2, "Devrait recevoir les médicaments mis à jour")
 
         // Cleanup
-        mockDataService.stopListening()
-        XCTAssertFalse(mockDataService.isListening, "Le listener devrait être arrêté")
+        mockMedicineService.activeListener?.remove()
+        XCTAssertFalse(mockMedicineService.isListening, "Le listener devrait être arrêté")
     }
 
     // MARK: - Tests de Performance
@@ -341,7 +341,7 @@ final class ExampleMigratedViewModelTest: XCTestCase {
                 createdAt: Date(),
                 updatedAt: Date()
             )
-            mockDataService.medicines.append(medicine)
+            mockMedicineService.medicines.append(medicine)
         }
 
         // When & Then - Mesurer la performance
@@ -360,17 +360,17 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
     func testConcurrentStockUpdates() async throws {
         // Given
-        let medicine = mockDataService.medicines.first!
+        let medicine = mockMedicineService.medicines.first!
 
         // When - Plusieurs mises à jour en parallèle
-        async let update1 = medicineViewModel.updateStock(for: medicine.id, newStock: 90)
-        async let update2 = medicineViewModel.updateStock(for: medicine.id, newStock: 80)
-        async let update3 = medicineViewModel.updateStock(for: medicine.id, newStock: 70)
+        async let update1 = medicineViewModel.updateStock(for: medicine.id ?? "", newStock: 90)
+        async let update2 = medicineViewModel.updateStock(for: medicine.id ?? "", newStock: 80)
+        async let update3 = medicineViewModel.updateStock(for: medicine.id ?? "", newStock: 70)
 
         // Then - Toutes les mises à jour devraient se terminer sans erreur
         let results = try await [update1, update2, update3]
         XCTAssertEqual(results.count, 3, "Les 3 mises à jour devraient réussir")
-        XCTAssertEqual(mockDataService.updateStockCallCount, 3, "Devrait avoir 3 appels")
+        XCTAssertEqual(mockMedicineService.updateStockCallCount, 3, "Devrait avoir 3 appels")
     }
 }
 
@@ -378,14 +378,14 @@ final class ExampleMigratedViewModelTest: XCTestCase {
 
 /// Example simple de ViewModel pour démontrer l'injection de dépendances
 @MainActor
-class AuthViewModel: ObservableObject {
+class ExampleAuthViewModel: ObservableObject {
     @Published var currentUser: User?
     @Published var isAuthenticated = false
     @Published var errorMessage: String?
 
-    private let authService: AuthServiceProtocol
+    private let authService: any AuthServiceProtocol
 
-    init(authService: AuthServiceProtocol) {
+    init(authService: any AuthServiceProtocol) {
         self.authService = authService
     }
 
@@ -413,15 +413,15 @@ class AuthViewModel: ObservableObject {
 }
 
 @MainActor
-class MedicineListViewModel: ObservableObject {
+class ExampleMedicineListViewModel: ObservableObject {
     @Published var medicines: [Medicine] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let dataService: DataServiceProtocol
+    private let medicineService: MockMedicineDataService
 
-    init(dataService: DataServiceProtocol) {
-        self.dataService = dataService
+    init(medicineService: MockMedicineDataService) {
+        self.medicineService = medicineService
     }
 
     func fetchMedicines() async throws {
@@ -429,7 +429,7 @@ class MedicineListViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            medicines = try await dataService.getMedicines()
+            medicines = try await medicineService.getAllMedicines()
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -439,7 +439,7 @@ class MedicineListViewModel: ObservableObject {
 
     func saveMedicine(_ medicine: Medicine) async throws -> Medicine {
         do {
-            let saved = try await dataService.saveMedicine(medicine)
+            let saved = try await medicineService.saveMedicine(medicine)
             // Rafraîchir la liste
             try await fetchMedicines()
             return saved
@@ -451,7 +451,7 @@ class MedicineListViewModel: ObservableObject {
 
     func updateStock(for id: String, newStock: Int) async throws -> Medicine {
         do {
-            let updated = try await dataService.updateMedicineStock(id: id, newStock: newStock)
+            let updated = try await medicineService.updateMedicineStock(id: id, newStock: newStock)
             // Mettre à jour la liste locale
             if let index = medicines.firstIndex(where: { $0.id == id }) {
                 medicines[index] = updated
@@ -464,7 +464,10 @@ class MedicineListViewModel: ObservableObject {
     }
 
     func deleteMedicine(id: String) async throws {
-        try await dataService.deleteMedicine(id: id)
+        guard let medicine = try await medicineService.getMedicine(by: id) else {
+            throw NSError(domain: "Medicine", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
+        }
+        try await medicineService.deleteMedicine(medicine)
         medicines.removeAll { $0.id == id }
     }
 }
