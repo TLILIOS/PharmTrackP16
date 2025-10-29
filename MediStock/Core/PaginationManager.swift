@@ -75,7 +75,6 @@ class PaginationManager<T: Identifiable>: ObservableObject {
             
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ Erreur pagination: \(error)")
         }
     }
 }

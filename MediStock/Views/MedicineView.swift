@@ -11,12 +11,21 @@ struct MedicineListView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                content
-                    .padding(.top, 10)
-                
-                // Header avec ombre
-                headerShadow
+            VStack(spacing: 0) {
+                // Network Status Banner
+                if !medicineViewModel.networkStatus.isConnected {
+                    NetworkStatusBanner(status: medicineViewModel.networkStatus)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+
+                ZStack(alignment: .top) {
+                    content
+                        .padding(.top, 10)
+
+                    // Header avec ombre
+                    headerShadow
+                }
             }
             .navigationTitle("Médicaments")
             .navigationBarTitleDisplayMode(.large)
@@ -164,7 +173,6 @@ struct MedicineListView: View {
                         .buttonStyle(.plain)
                         .onAppear {
                             // DEBUG: Log pour voir quels médicaments apparaissent
-                            print("🎨 [MedicineView] Rendering medicine #\(index): \(medicine.name) (ID: \(medicine.id ?? "nil"), AisleID: \(medicine.aisleId))")
 
                             // Pagination
                             if medicine.id == medicineViewModel.filteredMedicines.last?.id {
@@ -238,8 +246,6 @@ struct MedicineListView: View {
                 }
                 .pickerStyle(.menu)
                 .onChange(of: medicineViewModel.selectedAisleId) { oldValue, newValue in
-                    print("🔄 [MedicineView] Picker changed - Old: '\(oldValue)', New: '\(newValue)'")
-                    print("📋 [MedicineView] Available aisles: \(aisleViewModel.aisles.map { "\($0.name) (\($0.id ?? "nil"))" }.joined(separator: ", "))")
                 }
             }
         }

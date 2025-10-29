@@ -120,7 +120,6 @@ struct HistoryDetailView: View {
             exportedFileURL = url
             showingShareSheet = true
         } catch {
-            print("Erreur d'export: \(error)")
         }
     }
 }
@@ -351,28 +350,40 @@ struct HistoryRowView: View {
     }
     
     private var actionIcon: String {
+        // Utiliser l'enum HistoryActionType pour déterminer l'icône
+        if let actionType = entry.actionType {
+            return actionType.icon
+        }
+
+        // Fallback pour les anciennes données
         if entry.action.contains("Ajout") {
-            return "plus.circle"
-        } else if entry.action.contains("Retrait") {
-            return "minus.circle"
+            return HistoryActionType.addition.icon
+        } else if entry.action.contains("Retrait") || entry.action.contains("Ajustement") {
+            return HistoryActionType.adjustment.icon
         } else if entry.action.contains("Modification") {
-            return "pencil.circle"
+            return HistoryActionType.modification.icon
         } else if entry.action.contains("Suppression") {
-            return "trash.circle"
+            return HistoryActionType.deletion.icon
         } else {
-            return "info.circle"
+            return "exclamationmark.circle"
         }
     }
-    
+
     private var actionColor: Color {
+        // Utiliser l'enum HistoryActionType pour déterminer la couleur
+        if let actionType = entry.actionType {
+            return actionType.color
+        }
+
+        // Fallback pour les anciennes données
         if entry.action.contains("Ajout") {
-            return .green
-        } else if entry.action.contains("Retrait") {
-            return .orange
+            return HistoryActionType.addition.color
+        } else if entry.action.contains("Retrait") || entry.action.contains("Ajustement") {
+            return HistoryActionType.adjustment.color
         } else if entry.action.contains("Modification") {
-            return .blue
+            return HistoryActionType.modification.color
         } else if entry.action.contains("Suppression") {
-            return .red
+            return HistoryActionType.deletion.color
         } else {
             return .gray
         }

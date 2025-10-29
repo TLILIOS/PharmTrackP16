@@ -13,6 +13,13 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Network Status Banner
+                if !dashboardViewModel.networkStatus.isConnected {
+                    NetworkStatusBanner(status: dashboardViewModel.networkStatus)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+
                 // En-tête
                 HStack {
                     VStack(alignment: .leading) {

@@ -33,7 +33,7 @@ class FirebaseAuthService: AuthServiceProtocol {
                         let token = try await firebaseUser.getIDToken()
                         try self?.keychain.saveAuthToken(token)
                     } catch {
-                        print("Erreur lors de la sauvegarde du token: \(error)")
+                        // Token save failed silently
                     }
                 }
             } else {

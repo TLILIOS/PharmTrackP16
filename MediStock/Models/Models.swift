@@ -183,6 +183,32 @@ struct User: Identifiable, Codable, Equatable {
     let displayName: String?
 }
 
+// MARK: - History Action Type
+enum HistoryActionType: String, Codable {
+    case addition = "Ajout"
+    case deletion = "Suppression"
+    case modification = "Modification"
+    case adjustment = "Ajustement"
+
+    var icon: String {
+        switch self {
+        case .addition: return "plus.circle"
+        case .deletion: return "trash.circle"
+        case .modification: return "pencil.circle"
+        case .adjustment: return "arrow.up.arrow.down.circle"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .addition: return .green
+        case .deletion: return .red
+        case .modification: return .blue
+        case .adjustment: return .orange
+        }
+    }
+}
+
 struct HistoryEntry: Identifiable, Codable, Hashable {
     let id: String
     let medicineId: String
@@ -190,6 +216,15 @@ struct HistoryEntry: Identifiable, Codable, Hashable {
     let action: String
     let details: String
     let timestamp: Date
+
+    // Helper pour extraire le type d'action
+    var actionType: HistoryActionType? {
+        if action.contains("Ajout") { return .addition }
+        if action.contains("Suppression") { return .deletion }
+        if action.contains("Modification") { return .modification }
+        if action.contains("Ajustement") { return .adjustment }
+        return nil
+    }
 }
 
 struct StockHistory: Identifiable, Codable {

@@ -27,7 +27,8 @@ final class ValidationIntegrationTests: XCTestCase {
         medicineViewModel = MedicineListViewModel(
             medicineRepository: mockMedicineRepo,
             historyRepository: mockHistoryRepo,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: MockNetworkMonitor(initialStatus: .connected(.wifi))
         )
     }
 

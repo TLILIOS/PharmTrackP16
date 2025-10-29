@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/macbookair/Desktop/**)",
+      "Bash(find:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(swift:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

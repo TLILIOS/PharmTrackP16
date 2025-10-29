@@ -135,7 +135,7 @@ class HistoryDetailViewModel: ObservableObject {
                 }
             }
         } catch {
-            print("Erreur lors de la récupération des médicaments: \(error)")
+            // Failed to fetch medicines
         }
         
         statistics = HistoryStatistics(

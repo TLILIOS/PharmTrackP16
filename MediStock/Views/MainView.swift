@@ -118,7 +118,6 @@ struct MainView: View {
 
     /// Démarre tous les listeners en temps réel pour synchronisation automatique
     private func startAllListeners() {
-        print("🎧 [MainView] Démarrage de tous les listeners temps réel...")
         medicineListViewModel.startListening()
         aisleListViewModel.startListening()
 
@@ -130,7 +129,6 @@ struct MainView: View {
 
     /// Arrête tous les listeners en temps réel
     private func stopAllListeners() {
-        print("🛑 [MainView] Arrêt de tous les listeners temps réel...")
         medicineListViewModel.stopListening()
         aisleListViewModel.stopListening()
     }

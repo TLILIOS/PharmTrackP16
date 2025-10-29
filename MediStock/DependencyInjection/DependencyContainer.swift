@@ -24,6 +24,7 @@ class DependencyContainer {
     lazy var authService = AuthService()
     lazy var notificationService = NotificationService()
     lazy var pdfExportService: PDFExportServiceProtocol = PDFExportService()
+    lazy var networkMonitor = NetworkMonitor()
 
     // MARK: - Repositories (Using Modular Services)
 
@@ -39,29 +40,31 @@ class DependencyContainer {
         MedicineListViewModel(
             medicineRepository: medicineRepository,
             historyRepository: historyRepository,
-            notificationService: notificationService
+            notificationService: notificationService,
+            networkMonitor: networkMonitor
         )
     }
-    
+
     @MainActor
     func makeAisleListViewModel() -> AisleListViewModel {
         AisleListViewModel(repository: aisleRepository)
     }
-    
+
     @MainActor
     func makeAuthViewModel() -> AuthViewModel {
         AuthViewModel(repository: authRepository)
     }
-    
+
     @MainActor
     func makeDashboardViewModel() -> DashboardViewModel {
         DashboardViewModel(
             medicineRepository: medicineRepository,
             aisleRepository: aisleRepository,
-            notificationService: notificationService
+            notificationService: notificationService,
+            networkMonitor: networkMonitor
         )
     }
-    
+
     @MainActor
     func makeHistoryViewModel() -> HistoryViewModel {
         HistoryViewModel(repository: historyRepository)

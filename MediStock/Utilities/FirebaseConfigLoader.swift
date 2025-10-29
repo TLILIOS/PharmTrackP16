@@ -29,13 +29,11 @@ enum FirebaseConfigLoader {
     /// - Parameter environment: Environnement de configuration
     static func configure(for environment: Environment = .production) {
         #if DEBUG
-        print("🔥 Configuring Firebase for \(environment)")
         #endif
 
         // Vérifier si Firebase est déjà configuré
         guard FirebaseApp.app() == nil else {
             #if DEBUG
-            print("⚠️ Firebase already configured")
             #endif
             return
         }
@@ -44,7 +42,6 @@ enum FirebaseConfigLoader {
         if let options = loadFromXCConfig() {
             FirebaseApp.configure(options: options)
             #if DEBUG
-            print("✅ Firebase configured from xcconfig")
             #endif
             return
         }
@@ -53,14 +50,12 @@ enum FirebaseConfigLoader {
         if let options = loadFromPlist(environment: environment) {
             FirebaseApp.configure(options: options)
             #if DEBUG
-            print("✅ Firebase configured from plist")
             #endif
             return
         }
 
         // Si aucune configuration n'est trouvée, utiliser la configuration par défaut
         #if DEBUG
-        print("⚠️ No Firebase configuration found, using default")
         #endif
         FirebaseApp.configure()
     }
@@ -70,7 +65,6 @@ enum FirebaseConfigLoader {
         // Pour les tests, on ne configure pas Firebase
         // Les mocks seront utilisés à la place
         #if DEBUG
-        print("✅ Firebase configured for testing (mocked)")
         #endif
     }
 
@@ -105,7 +99,6 @@ enum FirebaseConfigLoader {
         guard let filePath = Bundle.main.path(forResource: fileName, ofType: "plist"),
               let options = FirebaseOptions(contentsOfFile: filePath) else {
             #if DEBUG
-            print("⚠️ Could not load \(fileName).plist")
             #endif
             return nil
         }
@@ -131,7 +124,6 @@ final class FirebaseConfigManager {
     func configure(for environment: FirebaseConfigLoader.Environment = .production) {
         guard !isConfigured else {
             #if DEBUG
-            print("⚠️ Firebase already configured by FirebaseConfigManager")
             #endif
             return
         }
@@ -141,7 +133,6 @@ final class FirebaseConfigManager {
         isConfigured = true
 
         #if DEBUG
-        print("✅ FirebaseConfigManager configured for \(environment)")
         #endif
     }
 
@@ -153,7 +144,6 @@ final class FirebaseConfigManager {
         environment = .test
 
         #if DEBUG
-        print("✅ FirebaseConfigManager configured for testing (mocked)")
         #endif
     }
 

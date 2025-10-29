@@ -15,6 +15,7 @@ final class MedicineListViewModelTests: XCTestCase {
     private var mockMedicineRepository: MockMedicineRepository!
     private var mockHistoryRepository: MockHistoryRepository!
     private var mockNotificationService: MockNotificationService!
+    private var mockNetworkMonitor: MockNetworkMonitor!
     private var cancellables: Set<AnyCancellable>!
 
     // MARK: - Setup & Teardown
@@ -25,12 +26,14 @@ final class MedicineListViewModelTests: XCTestCase {
         mockMedicineRepository = MockMedicineRepository()
         mockHistoryRepository = MockHistoryRepository()
         mockNotificationService = MockNotificationService()
+        mockNetworkMonitor = MockNetworkMonitor(initialStatus: .connected(.wifi))
         cancellables = Set<AnyCancellable>()
 
         sut = MedicineListViewModel(
             medicineRepository: mockMedicineRepository,
             historyRepository: mockHistoryRepository,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: mockNetworkMonitor
         )
     }
 
@@ -39,6 +42,7 @@ final class MedicineListViewModelTests: XCTestCase {
         mockMedicineRepository = nil
         mockHistoryRepository = nil
         mockNotificationService = nil
+        mockNetworkMonitor = nil
         cancellables = nil
         try await super.tearDown()
     }
@@ -130,8 +134,8 @@ final class MedicineListViewModelTests: XCTestCase {
         await load2
         await load3
 
-        // Then - Should only execute one load
-        XCTAssertEqual(mockMedicineRepository.fetchMedicinesCallCount, 1)
+        // Then - Should only execute one load (guard !isLoading prevents concurrent calls)
+        XCTAssertEqual(mockMedicineRepository.fetchMedicinesPaginatedCallCount, 1)
     }
 
     func testLoadMedicinesChecksPagination() async {
@@ -207,8 +211,8 @@ final class MedicineListViewModelTests: XCTestCase {
         await load1
         await load2
 
-        // Then - Should only execute once (initial + 1 pagination)
-        XCTAssertEqual(mockMedicineRepository.fetchMedicinesCallCount, 2)
+        // Then - Should only execute once (initial + 1 pagination) due to guard !isLoadingMore
+        XCTAssertEqual(mockMedicineRepository.fetchMedicinesPaginatedCallCount, 2)
     }
 
     func testLoadMoreMedicinesHandlesError() async {
@@ -651,5 +655,142 @@ final class MedicineListViewModelTests: XCTestCase {
 
         // Then
         XCTAssertFalse(sut.isEmpty)
+    }
+
+    // MARK: - Network Status Tests
+
+    func testInitialNetworkStatusIsConnected() {
+        // Then
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.wifi))
+    }
+
+    func testNetworkStatusWhenDisconnected() async {
+        // When
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+        // Then
+        XCTAssertFalse(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .disconnected)
+    }
+
+    func testNetworkStatusWhenReconnected() async {
+        // Given
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertFalse(sut.isConnected)
+
+        // When
+        mockNetworkMonitor.simulateConnection(type: .cellular)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+        // Then
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.cellular))
+    }
+
+    func testNetworkStatusChangeFromWifiToCellular() async {
+        // Given - Initial WiFi
+        XCTAssertEqual(sut.networkStatus, .connected(.wifi))
+
+        // When - Switch to cellular
+        mockNetworkMonitor.simulateConnection(type: .cellular)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+        // Then
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.cellular))
+    }
+
+    // MARK: - Offline Behavior Tests
+
+    func testLoadMedicinesWorksOffline() async {
+        // Given - Offline with cached medicines
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        let cachedMedicines = [
+            Medicine.mock(id: "1", name: "Cached Medicine 1"),
+            Medicine.mock(id: "2", name: "Cached Medicine 2")
+        ]
+        mockMedicineRepository.medicines = cachedMedicines
+
+        // When
+        await sut.loadMedicines()
+
+        // Then - Should still load from cache
+        XCTAssertFalse(sut.isConnected)
+        XCTAssertEqual(sut.medicines.count, 2)
+        XCTAssertFalse(sut.isEmpty)
+    }
+
+    func testSaveMedicineOffline() async {
+        // Given - Offline
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        let newMedicine = Medicine.mock(name: "New Medicine")
+
+        // When - Try to save
+        await sut.saveMedicine(newMedicine)
+
+        // Then - Should save to local cache (Firestore handles offline)
+        XCTAssertEqual(mockMedicineRepository.saveMedicineCallCount, 1)
+        XCTAssertFalse(sut.isConnected)
+    }
+
+    func testNetworkRecoveryAfterDisconnection() async {
+        // Given - Start offline
+        mockNetworkMonitor.simulateDisconnection()
+
+        // Wait for status to propagate through Combine chain
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+        XCTAssertFalse(sut.isConnected)
+
+        // When - Reconnect
+        mockNetworkMonitor.simulateConnection(type: .wifi)
+
+        // Wait for status to propagate through Combine chain
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+        // Then - Network status should update
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.wifi))
+    }
+
+    func testMultipleNetworkStatusChanges() async {
+        // Given - Initial connected state
+        XCTAssertTrue(sut.isConnected)
+
+        // When - Multiple status changes
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertFalse(sut.isConnected)
+
+        mockNetworkMonitor.simulateConnection(type: .cellular)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.cellular))
+
+        mockNetworkMonitor.simulateConnection(type: .wifi)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertTrue(sut.isConnected)
+        XCTAssertEqual(sut.networkStatus, .connected(.wifi))
+
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertFalse(sut.isConnected)
+    }
+
+    func testIsConnectedComputedProperty() async {
+        // Connected state
+        mockNetworkMonitor.simulateConnection(type: .wifi)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertTrue(sut.isConnected)
+
+        // Disconnected state
+        mockNetworkMonitor.simulateDisconnection()
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        XCTAssertFalse(sut.isConnected)
     }
 }

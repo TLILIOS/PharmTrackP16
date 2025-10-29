@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import MediStock
 
 @MainActor
@@ -273,8 +274,190 @@ final class HistoryViewModelTests: XCTestCase {
         XCTAssertEqual(HistoryViewModel.FilterType.deletions.rawValue, "Suppressions")
     }
     
+    // MARK: - Export Tests
+
+    func testExportToCSVSuccess() async throws {
+        // Given
+        mockRepository.history = createMockHistoryEntries()
+        await sut.loadHistory()
+
+        let medicines = [
+            "1": "Doliprane",
+            "2": "Aspirine"
+        ]
+
+        // When
+        let url = try await sut.exportHistory(format: .csv, medicines: medicines)
+
+        // Then
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+
+        // Clean up
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testExportToPDFSuccess() async throws {
+        // Given
+        mockRepository.history = createMockHistoryEntries()
+        await sut.loadHistory()
+
+        let medicines = [
+            "1": "Doliprane",
+            "2": "Aspirine"
+        ]
+
+        // When
+        let url = try await sut.exportHistory(format: .pdf, medicines: medicines)
+
+        // Then
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+
+        // Clean up
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testCSVContentFormat() async throws {
+        // Given
+        let mockEntry = HistoryEntry.mock(
+            id: "1",
+            action: "Ajout stock",
+            details: "10 unités - Livraison test"
+        )
+        mockRepository.history = [mockEntry]
+        await sut.loadHistory()
+
+        let medicines = ["1": "Doliprane"]
+
+        // When
+        let url = try await sut.exportHistory(format: .csv, medicines: medicines)
+        let content = try String(contentsOf: url, encoding: .utf8)
+
+        // Then
+        XCTAssertTrue(content.contains("Date,Heure,Type,Médicament"))
+        XCTAssertTrue(content.contains("Ajustement") || content.contains("Ajout"))
+
+        // Clean up
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    // MARK: - Notification Observer Tests
+
+    func testHistoryDidChangeNotification() async {
+        // Given
+        let expectation = XCTestExpectation(description: "History reloaded on notification")
+        mockRepository.history = createMockHistoryEntries()
+
+        sut.$stockHistory
+            .dropFirst()
+            .sink { history in
+                if !history.isEmpty {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 2.0)
+    }
+
+    private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - deinit Test
+
+    func testDeinitRemovesObserver() {
+        // Given
+        var viewModel: HistoryViewModel? = HistoryViewModel(repository: mockRepository)
+
+        // When
+        viewModel = nil
+
+        // Then - Should not crash (observer removed in deinit)
+        NotificationCenter.default.post(name: NSNotification.Name("HistoryDidChange"), object: nil)
+        XCTAssertNil(viewModel)
+    }
+
+    // MARK: - Filter Type Enum Tests
+
+    func testFilterTypeColors() {
+        XCTAssertNotNil(HistoryViewModel.FilterType.all.color)
+        XCTAssertNotNil(HistoryViewModel.FilterType.adjustments.color)
+        XCTAssertNotNil(HistoryViewModel.FilterType.additions.color)
+        XCTAssertNotNil(HistoryViewModel.FilterType.deletions.color)
+    }
+
+    func testFilterTypeIdentifiable() {
+        XCTAssertEqual(HistoryViewModel.FilterType.all.id, "Tout")
+        XCTAssertEqual(HistoryViewModel.FilterType.adjustments.id, "Ajustements")
+        XCTAssertEqual(HistoryViewModel.FilterType.additions.id, "Ajouts")
+        XCTAssertEqual(HistoryViewModel.FilterType.deletions.id, "Suppressions")
+    }
+
+    func testFilterTypeCaseIterable() {
+        let allCases = HistoryViewModel.FilterType.allCases
+        XCTAssertEqual(allCases.count, 4)
+        XCTAssertTrue(allCases.contains(.all))
+        XCTAssertTrue(allCases.contains(.adjustments))
+        XCTAssertTrue(allCases.contains(.additions))
+        XCTAssertTrue(allCases.contains(.deletions))
+    }
+
+    // MARK: - Edge Cases Tests
+
+    func testExtractChangeFromDetailsEmptyString() async {
+        // Given
+        let entry = HistoryEntry.mock(action: "Test", details: "")
+        mockRepository.history = [entry]
+
+        // When
+        await sut.loadHistory()
+
+        // Then
+        XCTAssertEqual(sut.stockHistory.first?.change, 0)
+    }
+
+    func testExtractQuantitiesFromDetailsNoMatch() async {
+        // Given
+        let entry = HistoryEntry.mock(action: "Test", details: "No quantities here")
+        mockRepository.history = [entry]
+
+        // When
+        await sut.loadHistory()
+
+        // Then
+        XCTAssertEqual(sut.stockHistory.first?.previousQuantity, 0)
+        XCTAssertEqual(sut.stockHistory.first?.newQuantity, 0)
+    }
+
+    func testConvertToStockHistoryDefaultType() async {
+        // Given - Unknown action type
+        let entry = HistoryEntry.mock(action: "Unknown action", details: "Test")
+        mockRepository.history = [entry]
+
+        // When
+        await sut.loadHistory()
+
+        // Then - Should default to adjustment
+        XCTAssertEqual(sut.stockHistory.first?.type, .adjustment)
+    }
+
+    func testFilterUpdateTriggersFilteredHistoryUpdate() async {
+        // Given
+        mockRepository.history = createMockHistoryEntries()
+        await sut.loadHistory()
+        let initialCount = sut.filteredHistory.count
+
+        // When
+        sut.filterType = .adjustments
+
+        // Then
+        XCTAssertNotEqual(sut.filteredHistory.count, initialCount)
+    }
+
     // MARK: - Performance Tests
-    
+
     func testLoadHistoryPerformance() {
         // Given
         let largeHistory = (0..<1000).map { index in
@@ -285,7 +468,7 @@ final class HistoryViewModelTests: XCTestCase {
             )
         }
         mockRepository.history = largeHistory
-        
+
         // When/Then
         measure {
             let expectation = XCTestExpectation(description: "Load history")

@@ -58,7 +58,6 @@ class HistoryViewModel: ObservableObject {
         self.repository = repository
         self.pdfExportService = pdfExportService
 
-        print("🎧 [HistoryViewModel] Initialisation et configuration du listener de notification")
 
         // Écouter les notifications de changement d'historique
         NotificationCenter.default.addObserver(
@@ -66,14 +65,11 @@ class HistoryViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            print("📢 [HistoryViewModel] Notification HistoryDidChange REÇUE !")
             Task { @MainActor [weak self] in
-                print("🔄 [HistoryViewModel] Rechargement de l'historique suite à la notification...")
                 await self?.loadHistory()
             }
         }
 
-        print("✅ [HistoryViewModel] Listener de notification configuré avec succès")
     }
 
     deinit {
@@ -81,7 +77,6 @@ class HistoryViewModel: ObservableObject {
     }
 
     private func updateFilteredHistory() {
-        print("🔄 Mise à jour du filtre: \(filterType.rawValue)")
 
         switch filterType {
         case .all:
@@ -92,42 +87,29 @@ class HistoryViewModel: ObservableObject {
             filteredHistory = stockHistory.filter { $0.type == .addition }
         case .deletions:
             let deletions = stockHistory.filter { $0.type == .deletion }
-            print("🗑️ Suppressions trouvées: \(deletions.count)")
             if deletions.isEmpty {
-                print("⚠️ Aucune suppression dans stockHistory de \(stockHistory.count) éléments")
                 // Afficher quelques exemples
                 let examples = stockHistory.prefix(3).map { "'\($0.type)'" }.joined(separator: ", ")
-                print("   Exemples de types: [\(examples)]")
             } else {
                 deletions.forEach { deletion in
-                    print("   ✓ Suppression trouvée: medicineId=\(deletion.medicineId)")
                 }
             }
             filteredHistory = deletions
         }
 
-        print("📊 Résultat filtré: \(filteredHistory.count) élément(s)")
     }
     
     func loadHistory() async {
-        print("📡 [HistoryViewModel] loadHistory() appelée")
         isLoading = true
         errorMessage = nil
 
         do {
-            print("🔄 [HistoryViewModel] Récupération de l'historique depuis le repository...")
             history = try await repository.fetchHistory()
-            print("✅ [HistoryViewModel] Récupéré \(history.count) entrées depuis le repository")
 
             // 📋 Afficher TOUTES les actions brutes
-            print("\n📋 === ACTIONS BRUTES DEPUIS LA BASE DE DONNÉES ===")
             let uniqueActions = Set(history.map { $0.action })
-            print("Actions uniques trouvées: \(uniqueActions.sorted())")
-            print("Détails des \(history.count) entrées:")
             for (index, entry) in history.enumerated() {
-                print("  [\(index + 1)] Action: '\(entry.action)' | Details: '\(entry.details)'")
             }
-            print("==============================================\n")
 
             // Convertir l'historique en StockHistory
             stockHistory = history.compactMap { entry in
@@ -138,7 +120,6 @@ class HistoryViewModel: ObservableObject {
             let adjustments = stockHistory.filter { $0.type == .adjustment }.count
             let additions = stockHistory.filter { $0.type == .addition }.count
             let deletions = stockHistory.filter { $0.type == .deletion }.count
-            print("📊 Résumé historique: \(stockHistory.count) total | Ajustements: \(adjustments) | Ajouts: \(additions) | Suppressions: \(deletions)")
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -167,11 +148,9 @@ class HistoryViewModel: ObservableObject {
             type = .adjustment
         } else {
             // Par défaut, considérer comme un ajustement
-            print("⚠️ Action non reconnue: '\(entry.action)' - classée comme adjustment")
             type = .adjustment
         }
 
-        print("🔍 Action: '\(entry.action)' → Type: \(type)")
 
         
         // Extraire le changement et les quantités depuis les détails

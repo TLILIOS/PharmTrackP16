@@ -77,14 +77,12 @@ class AisleListViewModel: ObservableObject {
 
     /// Démarrer l'écoute en temps réel des rayons
     func startListening() {
-        print("🎧 [AisleListViewModel] Démarrage du listener temps réel...")
         isListenerActive = true
 
         repository.startListeningToAisles { [weak self] aisles in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
 
-                print("🔄 [AisleListViewModel] Listener reçu \(aisles.count) rayon(s)")
                 self.aisles = aisles
                 self.isLoading = false
 
@@ -98,30 +96,25 @@ class AisleListViewModel: ObservableObject {
     func stopListening() {
         repository.stopListening()
         isListenerActive = false
-        print("🛑 [AisleListViewModel] Listener temps réel arrêté")
     }
 
     /// Charger les rayons (première page) - Méthode de fallback
     /// - Parameter forceRefresh: Force le rechargement même si le listener est actif
     func loadAisles(forceRefresh: Bool = false) async {
-        print("🔄 [AisleListViewModel] loadAisles() appelé (forceRefresh: \(forceRefresh))")
 
         // 1. Protection : Si le listener est actif et ce n'est pas un refresh forcé, ignorer
         if isListenerActive && !forceRefresh {
-            print("⚠️ [AisleListViewModel] Listener actif, chargement ignoré")
             return
         }
 
         // 2. Protection : Vérifier si un chargement est déjà en cours
         guard !isLoading else {
-            print("⚠️ [AisleListViewModel] Chargement déjà en cours, annulation")
             return
         }
 
         // 3. Protection : Debouncing - vérifier le délai minimum depuis le dernier chargement
         if let lastLoad = lastLoadTimestamp,
            Date().timeIntervalSince(lastLoad) < minimumLoadInterval && !forceRefresh {
-            print("⚠️ [AisleListViewModel] Debouncing - Dernier chargement il y a \(Date().timeIntervalSince(lastLoad))s, minimum: \(minimumLoadInterval)s")
             return
         }
 
@@ -138,7 +131,6 @@ class AisleListViewModel: ObservableObject {
                 // Vérifier si la tâche a été annulée
                 try Task.checkCancellation()
 
-                print("📡 [AisleListViewModel] Requête Firestore en cours...")
                 aisles = try await repository.fetchAislesPaginated(
                     limit: AppConstants.Pagination.defaultLimit,
                     refresh: true
@@ -147,17 +139,13 @@ class AisleListViewModel: ObservableObject {
                 // Vérifier à nouveau si la tâche a été annulée
                 try Task.checkCancellation()
 
-                print("✅ [AisleListViewModel] \(aisles.count) rayon(s) récupéré(s)")
-                print("📝 [AisleListViewModel] Liste des rayons: \(aisles.map { $0.name })")
                 hasMoreAisles = aisles.count >= AppConstants.Pagination.defaultLimit
 
                 // Mettre à jour le timestamp
                 lastLoadTimestamp = Date()
 
             } catch is CancellationError {
-                print("⚠️ [AisleListViewModel] Chargement annulé")
             } catch {
-                print("❌ [AisleListViewModel] Erreur lors du chargement: \(error.localizedDescription)")
                 errorMessage = error.localizedDescription
                 FirebaseService.shared.logError(error, userInfo: [
                     "action": "loadAisles",
@@ -166,7 +154,6 @@ class AisleListViewModel: ObservableObject {
             }
 
             isLoading = false
-            print("🏁 [AisleListViewModel] loadAisles() terminé, isLoading=\(isLoading)")
         }
 
         // Attendre la fin de la tâche
@@ -199,17 +186,14 @@ class AisleListViewModel: ObservableObject {
 
     /// Sauvegarder un rayon (création ou modification)
     func saveAisle(_ aisle: Aisle) async {
-        print("💾 [AisleListViewModel] saveAisle() appelé pour '\(aisle.name)'")
         do {
             let saved = try await repository.saveAisle(aisle)
 
             // Recharger la liste seulement si le listener n'est pas actif
             // Si le listener est actif, il mettra à jour automatiquement
             if !isListenerActive {
-                print("🔄 [AisleListViewModel] Rechargement de la liste après sauvegarde (listener inactif)...")
                 await loadAisles()
             } else {
-                print("✅ [AisleListViewModel] Listener actif, pas besoin de recharger manuellement")
             }
 
             // Analytics
@@ -222,8 +206,14 @@ class AisleListViewModel: ObservableObject {
             ))
 
         } catch {
-            print("❌ [AisleListViewModel] Erreur lors de la sauvegarde: \(error.localizedDescription)")
-            errorMessage = error.localizedDescription
+
+            // Traduire l'erreur réseau en message utilisateur convivial
+            if isNetworkError(error) {
+                errorMessage = "Mode hors ligne : Cette opération nécessite une connexion Internet. Veuillez vous reconnecter pour effectuer cette action."
+            } else {
+                errorMessage = error.localizedDescription
+            }
+
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "saveAisle",
                 "aisleId": aisle.id as Any
@@ -244,10 +234,8 @@ class AisleListViewModel: ObservableObject {
             // Supprimer directement de la liste locale si le listener n'est pas actif
             // Si le listener est actif, il mettra à jour automatiquement
             if !isListenerActive {
-                print("🔄 [AisleListViewModel] Mise à jour de la liste locale après suppression...")
                 aisles.removeAll { $0.id == aisleId }
             } else {
-                print("✅ [AisleListViewModel] Listener actif, pas besoin de mettre à jour manuellement")
             }
 
             // Analytics
@@ -270,6 +258,22 @@ class AisleListViewModel: ObservableObject {
     /// Effacer l'erreur
     func clearError() {
         errorMessage = nil
+    }
+
+    // MARK: - Error Handling Helpers
+
+    /// Détecte si une erreur est liée au réseau
+    private func isNetworkError(_ error: Error) -> Bool {
+        let errorDescription = error.localizedDescription.lowercased()
+        return errorDescription.contains("network") ||
+               errorDescription.contains("internet") ||
+               errorDescription.contains("offline") ||
+               errorDescription.contains("resolving") ||
+               errorDescription.contains("dns") ||
+               errorDescription.contains("hostname lookup") ||
+               errorDescription.contains("domain name not found") ||
+               errorDescription.contains("connection") ||
+               errorDescription.contains("firestore.googleapis.com")
     }
 }
 

@@ -58,7 +58,6 @@ extension ViewModelBase {
         }
         
         // Log pour debug (sans exposer d'infos sensibles)
-        print("❌ Erreur ViewModel: \(type(of: error)) - \(errorMessage ?? "")")
     }
     
     /// Réinitialise l'état d'erreur
@@ -80,46 +79,3 @@ class BaseViewModel: ObservableObject, ViewModelBase {
     // Initialisation par défaut
     init() {}
 }
-
-// MARK: - Exemple d'Utilisation
-
-/*
- Migration d'un ViewModel existant :
- 
- AVANT:
- ```swift
- class MedicineListViewModel: ObservableObject {
-     @Published var isLoading = false
-     @Published var errorMessage: String?
-     
-     func loadMedicines() async {
-         isLoading = true
-         errorMessage = nil
-         
-         do {
-             medicines = try await repository.fetchMedicines()
-         } catch {
-             errorMessage = error.localizedDescription
-         }
-         
-         isLoading = false
-     }
- }
- ```
- 
- APRÈS:
- ```swift
- class MedicineListViewModel: ObservableObject, ViewModelBase {
-     @Published var isLoading = false
-     @Published var errorMessage: String?
-     
-     func loadMedicines() async {
-         medicines = await performOperation {
-             try await repository.fetchMedicines()
-         } ?? []
-     }
- }
- ```
- 
- Réduction: ~10 lignes → 3 lignes par méthode async
- */

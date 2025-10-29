@@ -13,6 +13,7 @@ class MockMedicineRepository: MedicineRepositoryProtocol {
 
     // Expose les call counts du service pour vérification
     var fetchMedicinesCallCount: Int { medicineService.getAllMedicinesCallCount }
+    var fetchMedicinesPaginatedCallCount: Int { medicineService.getMedicinesPaginatedCallCount }
     var saveMedicineCallCount: Int { medicineService.saveMedicineCallCount }
     var updateStockCallCount: Int { medicineService.updateStockCallCount }
     var deleteMedicineCallCount: Int { medicineService.deleteMedicineCallCount }

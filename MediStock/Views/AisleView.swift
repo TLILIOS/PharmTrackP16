@@ -4,11 +4,26 @@ import SwiftUI
 
 struct AisleListView: View {
     @EnvironmentObject var viewModel: AisleListViewModel
+    @EnvironmentObject var medicineViewModel: MedicineListViewModel
     @State private var showingAddForm = false
     @State private var addButtonScale: CGFloat = 1.0
     @State private var cardAppearAnimation = false
 
     var body: some View {
+        VStack(spacing: 0) {
+            // Network Status Banner
+            if !medicineViewModel.networkStatus.isConnected {
+                NetworkStatusBanner(status: medicineViewModel.networkStatus)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
+
+            mainContent
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
         Group {
             if viewModel.isLoading && viewModel.isEmpty {
                 // Chargement initial

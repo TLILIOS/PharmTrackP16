@@ -60,18 +60,20 @@ final class SearchViewModelTests: XCTestCase {
 
     func testPerformSearchWithQuery() async {
         // Given
+        // Note: SearchViewModel searches in name, reference, description, AND dosage
+        // So we need to ensure our test data doesn't accidentally match in multiple fields
         mockRepository.medicines = [
-            Medicine.mock(id: "1", name: "Doliprane"),
-            Medicine.mock(id: "2", name: "Aspirine"),
-            Medicine.mock(id: "3", name: "Doliprane XL")
+            Medicine.mock(id: "1", name: "Doliprane", description: "Antalgique", dosage: "500mg", reference: "PAR500"),
+            Medicine.mock(id: "2", name: "Aspirine", description: "Anti-inflammatoire", dosage: "100mg", reference: "ASP100"),
+            Medicine.mock(id: "3", name: "Doliprane XL", description: "Antalgique prolongé", dosage: "1000mg", reference: "PARXL")
         ]
 
-        // When
+        // When - Search for "dol" which should match names "Doliprane" and "Doliprane XL"
         await sut.performSearch("dol")
 
         // Then
         XCTAssertFalse(sut.isSearching)
-        XCTAssertEqual(sut.searchResults.count, 2)
+        XCTAssertEqual(sut.searchResults.count, 2, "Should find 2 medicines with 'dol' in name")
         XCTAssertTrue(sut.searchResults.allSatisfy { $0.name.lowercased().contains("dol") })
     }
 
@@ -88,9 +90,10 @@ final class SearchViewModelTests: XCTestCase {
 
     func testPerformSearchByReference() async {
         // Given
+        // Ensure name, description, and dosage don't contain "DOL"
         mockRepository.medicines = [
-            Medicine.mock(id: "1", reference: "DOL500"),
-            Medicine.mock(id: "2", reference: "ASP100")
+            Medicine.mock(id: "1", name: "Paracétamol", description: "Antalgique", dosage: "500mg", reference: "DOL500"),
+            Medicine.mock(id: "2", name: "Aspirine", description: "Anti-inflammatoire", dosage: "100mg", reference: "ASP100")
         ]
 
         // When
@@ -118,9 +121,10 @@ final class SearchViewModelTests: XCTestCase {
 
     func testPerformSearchByDosage() async {
         // Given
+        // Ensure name, description, and reference don't contain "500"
         mockRepository.medicines = [
-            Medicine.mock(id: "1", dosage: "500mg"),
-            Medicine.mock(id: "2", dosage: "100mg")
+            Medicine.mock(id: "1", name: "Paracétamol", description: "Antalgique", dosage: "500mg", reference: "PAR"),
+            Medicine.mock(id: "2", name: "Aspirine", description: "Anti-inflammatoire", dosage: "100mg", reference: "ASP")
         ]
 
         // When

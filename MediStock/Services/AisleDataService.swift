@@ -40,16 +40,11 @@ class AisleDataService {
     
     /// Récupère les rayons avec pagination
     func getAislesPaginated(limit: Int = 20, refresh: Bool = false) async throws -> [Aisle] {
-        print("📡 [AisleDataService] getAislesPaginated(limit: \(limit), refresh: \(refresh))")
-        print("👤 [AisleDataService] userId utilisé: \(userId)")
-
         if refresh {
             resetPagination()
-            print("🔄 [AisleDataService] Pagination réinitialisée")
         }
 
         guard hasMore else {
-            print("⚠️ [AisleDataService] hasMore=false, retour liste vide")
             return []
         }
 
@@ -60,38 +55,17 @@ class AisleDataService {
 
         if let lastDoc = lastDocument {
             query = query.start(afterDocument: lastDoc)
-            print("📄 [AisleDataService] Continuation depuis le dernier document")
         }
 
-        print("🔍 [AisleDataService] Exécution de la requête Firestore...")
         let snapshot = try await query.getDocuments()
-        print("✅ [AisleDataService] Requête terminée: \(snapshot.documents.count) document(s) trouvé(s)")
 
         // Mise à jour de l'état de pagination
         hasMore = snapshot.documents.count >= limit
         lastDocument = snapshot.documents.last
 
-        // Décodage avec capture d'erreurs
-        var aisles: [Aisle] = []
-        for (index, doc) in snapshot.documents.enumerated() {
-            print("🔍 [AisleDataService] Décodage document \(index + 1)/\(snapshot.documents.count) (ID: \(doc.documentID))")
-            print("📄 [AisleDataService] Données brutes: \(doc.data())")
-
-            do {
-                let aisle = try decodeAisle(from: doc)
-                aisles.append(aisle)
-                print("✅ [AisleDataService] Document décodé avec succès: \(aisle.name) (ID: \(aisle.id ?? "nil"))")
-            } catch {
-                print("❌ [AisleDataService] ERREUR DE DÉCODAGE pour document \(doc.documentID):")
-                print("   Type d'erreur: \(type(of: error))")
-                print("   Message: \(error.localizedDescription)")
-                print("   Détails: \(error)")
-            }
-        }
-
-        print("📦 [AisleDataService] \(aisles.count)/\(snapshot.documents.count) rayon(s) décodé(s) avec succès")
-        if !aisles.isEmpty {
-            print("📝 [AisleDataService] Noms des rayons: \(aisles.map { $0.name })")
+        // Décodage
+        let aisles: [Aisle] = snapshot.documents.compactMap { doc in
+            try? decodeAisle(from: doc)
         }
 
         return aisles
@@ -135,40 +109,23 @@ class AisleDataService {
     
     /// Supprime un rayon
     func deleteAisle(_ aisle: Aisle) async throws {
-        print("🗑️ [AisleDataService] deleteAisle() appelée pour: \(aisle.name)")
-
         guard let aisleId = aisle.id, !aisleId.isEmpty else {
-            print("❌ [AisleDataService] ID invalide, abandon de la suppression")
             throw ValidationError.invalidId
         }
 
-        print("🔍 [AisleDataService] ID du rayon: \(aisleId)")
-
         // Vérifier qu'aucun médicament n'est lié à ce rayon
-        print("🔍 [AisleDataService] Vérification des médicaments liés au rayon...")
         try await validateNoMedicinesInAisle(aisleId)
-        print("✅ [AisleDataService] Aucun médicament lié, suppression autorisée")
 
         // Supprimer le rayon
-        print("✅ [AisleDataService] Suppression du rayon dans Firestore...")
         try await db.collection("aisles").document(aisleId).delete()
-        print("✅ [AisleDataService] Rayon supprimé avec succès")
 
         // Enregistrer dans l'historique
-        print("📝 [AisleDataService] Enregistrement dans l'historique...")
-        do {
-            try await historyService.recordDeletion(
-                itemType: "aisle",
-                itemId: aisleId,
-                itemName: aisle.name,
-                details: "Suppression du rayon \(aisle.name)"
-            )
-            print("✅ [AisleDataService] Suppression enregistrée dans l'historique avec succès")
-        } catch {
-            print("❌ [AisleDataService] ERREUR lors de l'enregistrement dans l'historique: \(error.localizedDescription)")
-            print("   Détails de l'erreur: \(error)")
-            throw error
-        }
+        try await historyService.recordDeletion(
+            itemType: "aisle",
+            itemId: aisleId,
+            itemName: aisle.name,
+            details: "Suppression du rayon \(aisle.name)"
+        )
     }
     
     /// Compte le nombre de médicaments dans un rayon
@@ -273,11 +230,10 @@ class AisleDataService {
     
     private func recordAisleHistory(_ aisle: Aisle, isNew: Bool) async throws {
         guard let aisleId = aisle.id else {
-            print("⚠️ [AisleDataService] Cannot record history: aisle.id is nil")
             return
         }
 
-        let action = isNew ? "Création" : "Modification"
+        let action = isNew ? HistoryActionType.addition.rawValue : HistoryActionType.modification.rawValue
         let details = isNew
             ? "Création du rayon \(aisle.name)"
             : "Mise à jour du rayon \(aisle.name)"
@@ -303,7 +259,6 @@ extension AisleDataService {
                 guard let self = self else { return }
 
                 guard let documents = snapshot?.documents else {
-                    print("Erreur listener aisles: \(error?.localizedDescription ?? "Unknown")")
                     completion([])
                     return
                 }

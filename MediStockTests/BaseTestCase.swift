@@ -188,7 +188,6 @@ class BaseTestCase: XCTestCase {
         try block()
         let end = CFAbsoluteTimeGetCurrent()
         let elapsed = end - start
-        print("⏱ \(description) took \(String(format: "%.3f", elapsed))s")
     }
 
     /// Mesure le temps d'exécution d'un bloc async
@@ -200,6 +199,5 @@ class BaseTestCase: XCTestCase {
         try await block()
         let end = CFAbsoluteTimeGetCurrent()
         let elapsed = end - start
-        print("⏱ \(description) took \(String(format: "%.3f", elapsed))s")
     }
 }

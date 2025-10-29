@@ -11,7 +11,6 @@ class NotificationService {
                 .requestAuthorization(options: [.alert, .badge, .sound])
             return granted
         } catch {
-            print("Erreur autorisation notifications: \(error)")
             return false
         }
     }
@@ -54,7 +53,7 @@ class NotificationService {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            print("Erreur ajout notification: \(error)")
+            // Notification add failed silently
         }
     }
 }

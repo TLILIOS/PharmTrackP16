@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 // MARK: - DashboardViewModel Refactorisé (MVVM Strict)
 // Responsabilité : Gestion du tableau de bord et statistiques
@@ -26,17 +27,55 @@ class DashboardViewModel: ObservableObject {
     private let medicineRepository: MedicineRepositoryProtocol
     private let aisleRepository: AisleRepositoryProtocol
     private let notificationService: NotificationService
+    private let networkMonitor: NetworkMonitorProtocol
+
+    // MARK: - Network State
+
+    /// État de la connexion réseau
+    @Published private(set) var networkStatus: NetworkStatus = .disconnected
+
+    /// Indique si l'app est connectée au réseau
+    var isConnected: Bool {
+        networkStatus.isConnected
+    }
+
+    // MARK: - Combine
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
     init(
         medicineRepository: MedicineRepositoryProtocol,
         aisleRepository: AisleRepositoryProtocol,
-        notificationService: NotificationService
+        notificationService: NotificationService,
+        networkMonitor: NetworkMonitorProtocol
     ) {
         self.medicineRepository = medicineRepository
         self.aisleRepository = aisleRepository
         self.notificationService = notificationService
+        self.networkMonitor = networkMonitor
+
+        // Initialiser l'état réseau
+        self.networkStatus = networkMonitor.status
+
+        // Observer les changements d'état réseau
+        setupNetworkObserver()
+    }
+
+    // MARK: - Network Observation
+
+    private func setupNetworkObserver() {
+        // Observer les changements du networkMonitor via objectWillChange
+        networkMonitor.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                Task { @MainActor in
+                    self.networkStatus = self.networkMonitor.status
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Computed Properties (Statistiques)
@@ -208,7 +247,8 @@ extension DashboardViewModel {
         return DashboardViewModel(
             medicineRepository: container.medicineRepository,
             aisleRepository: container.aisleRepository,
-            notificationService: container.notificationService
+            notificationService: container.notificationService,
+            networkMonitor: container.networkMonitor
         )
     }
 
@@ -218,6 +258,14 @@ extension DashboardViewModel {
         aisles: [Aisle] = []
     ) -> DashboardViewModel {
         // Mini-mocks inline pour previews
+        class PreviewNetworkMonitor: NetworkMonitorProtocol, ObservableObject {
+            @Published var status: NetworkStatus = .connected(.wifi)
+            @Published var isConnected: Bool = true
+
+            func startMonitoring() {}
+            func stopMonitoring() {}
+        }
+
         class PreviewMedicineRepository: MedicineRepositoryProtocol {
             var medicines: [Medicine]
             init(_ medicines: [Medicine]) { self.medicines = medicines }
@@ -246,7 +294,8 @@ extension DashboardViewModel {
         let viewModel = DashboardViewModel(
             medicineRepository: PreviewMedicineRepository(medicines),
             aisleRepository: PreviewAisleRepository(aisles),
-            notificationService: NotificationService()
+            notificationService: NotificationService(),
+            networkMonitor: PreviewNetworkMonitor()
         )
 
         viewModel.medicines = medicines

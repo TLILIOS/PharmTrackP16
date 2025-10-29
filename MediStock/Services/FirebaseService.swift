@@ -24,9 +24,19 @@ class FirebaseService: ObservableObject {
         // Activer Crashlytics
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
 
-        // Configuration cache Firestore
+        // Configuration cache Firestore optimisée pour offline-first
+        // IMPORTANT: Cette configuration DOIT être appliquée AVANT toute utilisation de Firestore
         let settings = FirestoreSettings()
-        settings.cacheSettings = PersistentCacheSettings(sizeBytes: 10 * 1024 * 1024 as NSNumber)
+
+        // Cache persistant de 100MB pour supporter toutes les données offline
+        settings.cacheSettings = PersistentCacheSettings(sizeBytes: 100 * 1024 * 1024 as NSNumber)
+
+        // Désactiver la vérification SSL en cas de problèmes réseau (développement uniquement)
+        #if DEBUG
+        settings.isSSLEnabled = true // Toujours activer SSL, même en debug
+        #endif
+
+        // Appliquer les settings AVANT toute utilisation de Firestore
         Firestore.firestore().settings = settings
     }
     
@@ -156,20 +166,26 @@ class FirebaseService: ObservableObject {
     }
     
     // MARK: - Performance Monitoring
-    
+
     func logPerformanceEvent(name: String, duration: TimeInterval, metadata: [String: Any]? = nil) {
         var parameters: [String: Any] = [
             "duration_ms": Int(duration * 1000)
         ]
-        
+
         if let metadata = metadata {
             parameters.merge(metadata) { _, new in new }
         }
-        
+
         logEvent(AnalyticsEvent(
             name: "performance_\(name)",
             parameters: parameters
         ))
+    }
+
+    // MARK: - Network Events
+
+    func logEvent(name: String, parameters: [String: Any]?) {
+        Analytics.logEvent(name, parameters: parameters)
     }
 }
 

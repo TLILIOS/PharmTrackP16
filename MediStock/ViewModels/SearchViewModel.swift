@@ -122,9 +122,8 @@ class SearchViewModel: ObservableObject {
                 searchTerm: query,
                 resultCount: searchResults.count
             )
-            
+
         } catch {
-            print("Erreur lors de la recherche: \(error)")
             searchResults = []
         }
         

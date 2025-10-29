@@ -13,6 +13,7 @@ class DashboardViewTests: XCTestCase {
     var mockAisleRepo: MockAisleRepository!
     var mockNotificationService: MockNotificationService!
     var mockPDFExportService: MockPDFExportService!
+    var mockNetworkMonitor: MockNetworkMonitor!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -23,6 +24,7 @@ class DashboardViewTests: XCTestCase {
         mockAisleRepo = MockAisleRepository()
         mockNotificationService = MockNotificationService()
         mockPDFExportService = MockPDFExportService()
+        mockNetworkMonitor = MockNetworkMonitor()
 
         // Initialiser les ViewModels
         authViewModel = AuthViewModel(repository: mockAuthRepository)
@@ -279,7 +281,8 @@ class DashboardViewTests: XCTestCase {
         let viewModel = DashboardViewModel(
             medicineRepository: mockMedicineRepo,
             aisleRepository: mockAisleRepo,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: mockNetworkMonitor
         )
 
         // When
@@ -300,7 +303,8 @@ class DashboardViewTests: XCTestCase {
         let viewModel = DashboardViewModel(
             medicineRepository: mockMedicineRepo,
             aisleRepository: mockAisleRepo,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: mockNetworkMonitor
         )
 
         // When
@@ -319,7 +323,8 @@ class DashboardViewTests: XCTestCase {
         let viewModel = DashboardViewModel(
             medicineRepository: mockMedicineRepo,
             aisleRepository: mockAisleRepo,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: mockNetworkMonitor
         )
 
         // When
@@ -433,7 +438,8 @@ class DashboardViewTests: XCTestCase {
         let viewModel = DashboardViewModel(
             medicineRepository: mockMedicineRepo,
             aisleRepository: mockAisleRepo,
-            notificationService: mockNotificationService
+            notificationService: mockNotificationService,
+            networkMonitor: mockNetworkMonitor
         )
 
         // When - Launch multiple concurrent loads
@@ -445,7 +451,9 @@ class DashboardViewTests: XCTestCase {
         _ = await load2
         _ = await load3
 
-        // Then - Should only execute once
-        XCTAssertEqual(mockMedicineRepo.fetchMedicinesCallCount, 1)
+        // Then - Should only execute once due to isLoading guard
+        // The guard in loadData() checks isLoading BEFORE calling the repository
+        // So only ONE call should reach the repository
+        XCTAssertEqual(mockMedicineRepo.fetchMedicinesPaginatedCallCount, 1, "Multiple concurrent loads should be prevented by isLoading guard")
     }
 }

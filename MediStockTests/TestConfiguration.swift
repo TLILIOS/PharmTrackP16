@@ -29,7 +29,6 @@ class TestConfiguration {
             configureMinimalFirebase()
         }
         #else
-        print("✅ Firebase disabled in unit test mode")
         #endif
     }
     
@@ -46,7 +45,6 @@ class TestConfiguration {
         settings.isSSLEnabled = false
         Firestore.firestore().settings = settings
         
-        print("✅ Firebase Emulators configured for testing")
         #endif
     }
     
@@ -58,7 +56,6 @@ class TestConfiguration {
         settings.cacheSettings = MemoryCacheSettings()
         Firestore.firestore().settings = settings
         
-        print("✅ Firebase configured with minimal settings for testing")
         #endif
     }
     
@@ -69,14 +66,12 @@ class TestConfiguration {
         do {
             try Auth.auth().signOut()
         } catch {
-            print("⚠️ Error signing out during teardown: \(error)")
         }
         
         // Terminer toutes les opérations Firestore en cours
         do {
             try await Firestore.firestore().terminate()
         } catch {
-            print("⚠️ Error terminating Firestore: \(error)")
         }
         #endif
     }
@@ -88,7 +83,6 @@ class TestConfiguration {
         
         // Réduire les délais de debounce en mode test
         if let testMode = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] {
-            print("✅ Running in test mode: \(testMode)")
         }
         
         // Configurer les timeouts pour les tests

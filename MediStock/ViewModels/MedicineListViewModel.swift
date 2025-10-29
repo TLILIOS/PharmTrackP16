@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import FirebaseFirestore
+import Combine
 
 @MainActor
 class MedicineListViewModel: ObservableObject {
@@ -33,17 +34,55 @@ class MedicineListViewModel: ObservableObject {
     private let medicineRepository: MedicineRepositoryProtocol
     private let historyRepository: HistoryRepositoryProtocol
     private let notificationService: NotificationService
+    private let networkMonitor: NetworkMonitorProtocol
+
+    // MARK: - Network State
+
+    /// État de la connexion réseau
+    @Published private(set) var networkStatus: NetworkStatus = .disconnected
+
+    /// Indique si l'app est connectée au réseau
+    var isConnected: Bool {
+        networkStatus.isConnected
+    }
+
+    // MARK: - Combine
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init with Dependency Injection
 
     init(
         medicineRepository: MedicineRepositoryProtocol,
         historyRepository: HistoryRepositoryProtocol,
-        notificationService: NotificationService
+        notificationService: NotificationService,
+        networkMonitor: NetworkMonitorProtocol
     ) {
         self.medicineRepository = medicineRepository
         self.historyRepository = historyRepository
         self.notificationService = notificationService
+        self.networkMonitor = networkMonitor
+
+        // Initialiser l'état réseau
+        self.networkStatus = networkMonitor.status
+
+        // Observer les changements d'état réseau
+        setupNetworkObserver()
+    }
+
+    // MARK: - Network Observation
+
+    private func setupNetworkObserver() {
+        // Observer les changements du networkMonitor via objectWillChange
+        networkMonitor.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                Task { @MainActor in
+                    self.networkStatus = self.networkMonitor.status
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Computed Properties (Presentation Logic)
@@ -92,13 +131,10 @@ class MedicineListViewModel: ObservableObject {
 
     /// Démarrer l'écoute en temps réel des médicaments
     func startListening() {
-        print("🎧 [MedicineListViewModel] Démarrage du listener temps réel...")
-
         medicineRepository.startListeningToMedicines { [weak self] medicines in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
 
-                print("🔄 [MedicineListViewModel] Listener reçu \(medicines.count) médicament(s)")
                 self.medicines = medicines
                 self.isLoading = false
 
@@ -111,7 +147,6 @@ class MedicineListViewModel: ObservableObject {
     /// Arrêter l'écoute en temps réel
     func stopListening() {
         medicineRepository.stopListening()
-        print("🛑 [MedicineListViewModel] Listener temps réel arrêté")
     }
 
     /// Charger les médicaments (première page) - Méthode de fallback
@@ -190,7 +225,13 @@ class MedicineListViewModel: ObservableObject {
             }
 
         } catch {
-            errorMessage = error.localizedDescription
+            // Traduire l'erreur réseau en message utilisateur convivial
+            if isNetworkError(error) {
+                errorMessage = "Mode hors ligne : Cette opération nécessite une connexion Internet. Veuillez vous reconnecter pour effectuer cette action."
+            } else {
+                errorMessage = error.localizedDescription
+            }
+
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "saveMedicine",
                 "medicineId": medicine.id ?? ""
@@ -213,7 +254,13 @@ class MedicineListViewModel: ObservableObject {
             FirebaseService.shared.logMedicineDeleted(medicineId: medicine.id ?? "")
 
         } catch {
-            errorMessage = error.localizedDescription
+            // Traduire l'erreur réseau en message utilisateur convivial
+            if isNetworkError(error) {
+                errorMessage = "Mode hors ligne : Cette opération nécessite une connexion Internet. Veuillez vous reconnecter pour effectuer cette action."
+            } else {
+                errorMessage = error.localizedDescription
+            }
+
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "deleteMedicine",
                 "medicineId": medicine.id ?? ""
@@ -247,7 +294,13 @@ class MedicineListViewModel: ObservableObject {
             )
 
         } catch {
-            errorMessage = error.localizedDescription
+            // Traduire l'erreur réseau en message utilisateur convivial
+            if isNetworkError(error) {
+                errorMessage = "Mode hors ligne : Cette opération nécessite une connexion Internet. Veuillez vous reconnecter pour effectuer cette action."
+            } else {
+                errorMessage = error.localizedDescription
+            }
+
             FirebaseService.shared.logError(error, userInfo: [
                 "action": "adjustStock",
                 "medicineId": medicine.id ?? "",
@@ -266,6 +319,22 @@ class MedicineListViewModel: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
+
+    // MARK: - Error Handling Helpers
+
+    /// Détecte si une erreur est liée au réseau
+    private func isNetworkError(_ error: Error) -> Bool {
+        let errorDescription = error.localizedDescription.lowercased()
+        return errorDescription.contains("network") ||
+               errorDescription.contains("internet") ||
+               errorDescription.contains("offline") ||
+               errorDescription.contains("resolving") ||
+               errorDescription.contains("dns") ||
+               errorDescription.contains("hostname lookup") ||
+               errorDescription.contains("domain name not found") ||
+               errorDescription.contains("connection") ||
+               errorDescription.contains("firestore.googleapis.com")
+    }
 }
 
 // MARK: - Factory pour Dependency Injection
@@ -277,7 +346,8 @@ extension MedicineListViewModel {
         return MedicineListViewModel(
             medicineRepository: container.medicineRepository,
             historyRepository: container.historyRepository,
-            notificationService: container.notificationService
+            notificationService: container.notificationService,
+            networkMonitor: container.networkMonitor
         )
     }
 
@@ -288,6 +358,14 @@ extension MedicineListViewModel {
         repository: MedicineRepositoryProtocol? = nil
     ) -> MedicineListViewModel {
         // Mini-mocks inline pour previews
+        class PreviewNetworkMonitor: NetworkMonitorProtocol, ObservableObject {
+            @Published var status: NetworkStatus = .connected(.wifi)
+            @Published var isConnected: Bool = true
+
+            func startMonitoring() {}
+            func stopMonitoring() {}
+        }
+
         class PreviewMedicineRepository: MedicineRepositoryProtocol {
             var medicines: [Medicine]
             init(_ medicines: [Medicine]) { self.medicines = medicines }
@@ -311,7 +389,8 @@ extension MedicineListViewModel {
         let viewModel = MedicineListViewModel(
             medicineRepository: repository ?? PreviewMedicineRepository(medicines),
             historyRepository: PreviewHistoryRepository(),
-            notificationService: NotificationService()
+            notificationService: NotificationService(),
+            networkMonitor: PreviewNetworkMonitor()
         )
 
         viewModel.medicines = medicines
