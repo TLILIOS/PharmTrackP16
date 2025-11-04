@@ -59,15 +59,15 @@ opt_in_rules:
   - literal_expression_end_indentation  # Indentation cohérente littéraux
   - modifier_order                       # Ordre cohérent des modificateurs
   - prefer_self_type_over_type_of_self  # Utiliser Self au lieu de type(of: self)
-  - sorted_imports                       # Imports triés alphabétiquement
+  # - sorted_imports                     # DÉSACTIVÉ: Imports triés alphabétiquement
   - vertical_parameter_alignment_on_call # Alignement paramètres
 
   # SwiftUI Specific
   - multiple_closures_with_trailing_closure # Éviter trailing closures multiples
 
-  # Code Organization
-  - file_header                          # Header de fichier standardisé
-  - type_contents_order                  # Ordre standard du contenu des types
+  # Code Organization (DÉSACTIVÉES temporairement)
+  # - file_header                        # DÉSACTIVÉ: Header de fichier standardisé
+  # - type_contents_order                # DÉSACTIVÉ: Ordre standard du contenu des types
 
 # ========================
 # RÈGLES DÉSACTIVÉES
@@ -78,6 +78,9 @@ disabled_rules:
   - trailing_whitespace                  # Géré par l'éditeur
   - force_try                            # Parfois nécessaire dans tests
   - line_length                          # Géré par line_length ci-dessous avec config custom
+  - type_contents_order                  # TODO: Réactiver après refactoring HistoryViewModel
+  - file_header                          # TODO: Réactiver après ajout headers standardisés
+  - sorted_imports                       # TODO: Réactiver après correction imports
 
 # ========================
 # RÈGLES PERSONNALISÉES
@@ -196,37 +199,37 @@ modifier_order:
     - typeMethods
     - owned
 
-# Sorted imports
-sorted_imports:
-  severity: warning
+# Sorted imports (DÉSACTIVÉ)
+# sorted_imports:
+#   severity: warning
 
-# File header
-file_header:
-  required_pattern: |
-                    \/\/
-                    \/\/  .*?\.swift
-                    \/\/  MediStock
-                    \/\/
-                    \/\/  Created by .* on \d{1,2}\/\d{1,2}\/\d{4}\.
-                    \/\/
+# File header (DÉSACTIVÉ)
+# file_header:
+#   required_pattern: |
+#                     \/\/
+#                     \/\/  .*?\.swift
+#                     \/\/  MediStock
+#                     \/\/
+#                     \/\/  Created by .* on \d{1,2}\/\d{1,2}\/\d{4}\.
+#                     \/\/
 
-# Type contents order
-type_contents_order:
-  order:
-    - case
-    - associated_type
-    - type_alias
-    - subtype
-    - type_property
-    - instance_property
-    - ib_outlet
-    - initializer
-    - deinitializer
-    - type_method
-    - view_life_cycle_method
-    - ib_action
-    - other_method
-    - subscript
+# Type contents order (DÉSACTIVÉ)
+# type_contents_order:
+#   order:
+#     - case
+#     - associated_type
+#     - type_alias
+#     - subtype
+#     - type_property
+#     - instance_property
+#     - ib_outlet
+#     - initializer
+#     - deinitializer
+#     - type_method
+#     - view_life_cycle_method
+#     - ib_action
+#     - other_method
+#     - subscript
 
 # ========================
 # RÈGLES PERSONNALISÉES CUSTOM

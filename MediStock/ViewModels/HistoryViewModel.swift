@@ -1,6 +1,6 @@
+import FirebaseAuth
 import Foundation
 import SwiftUI
-import FirebaseAuth
 
 // MARK: - History ViewModel
 
