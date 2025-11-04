@@ -243,8 +243,8 @@ final class AuthRepositoryTests: XCTestCase {
         mockAuthService.currentUser = testUser
 
         // When - Launch multiple concurrent sign ins
-        async let signIn1 = sut.signIn(email: "concurrent@test.com", password: "pass1")
-        async let signIn2 = sut.signIn(email: "concurrent@test.com", password: "pass2")
+        async let signIn1: Void = sut.signIn(email: "concurrent@test.com", password: "pass1")
+        async let signIn2: Void = sut.signIn(email: "concurrent@test.com", password: "pass2")
 
         try await signIn1
         try await signIn2
@@ -256,12 +256,10 @@ final class AuthRepositoryTests: XCTestCase {
     func testCurrentUserPublisherEmitsOnSignIn() async throws {
         // Given
         let expectation = XCTestExpectation(description: "User change published")
-        var publishedUser: User?
 
         sut.currentUserPublisher
             .dropFirst()
-            .sink { user in
-                publishedUser = user
+            .sink { _ in
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -288,12 +286,10 @@ final class AuthRepositoryTests: XCTestCase {
         try await sut.signIn(email: "signout@test.com", password: "password")
 
         let expectation = XCTestExpectation(description: "User cleared published")
-        var publishedUser: User?
 
         sut.currentUserPublisher
             .dropFirst()
-            .sink { user in
-                publishedUser = user
+            .sink { _ in
                 expectation.fulfill()
             }
             .store(in: &cancellables)
