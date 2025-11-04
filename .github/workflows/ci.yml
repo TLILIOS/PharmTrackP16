@@ -24,16 +24,28 @@ jobs:
       run: xcrun simctl list devices available
 
     - name: Setup Firebase Configuration
-      if: env.GOOGLE_SERVICE_INFO_PLIST != ''
       env:
         GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
       run: |
         if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
-          echo "📱 Setting up Firebase configuration..."
+          echo "📱 Setting up Firebase configuration from secrets..."
           echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > MediStock/GoogleService-Info.plist
-          echo "✅ GoogleService-Info.plist configured"
+          echo "✅ GoogleService-Info.plist configured from secrets"
         else
-          echo "⚠️ GOOGLE_SERVICE_INFO_PLIST not configured, using existing file"
+          echo "⚠️ GOOGLE_SERVICE_INFO_PLIST secret not configured"
+          if [ -f "MediStock/GoogleService-Info.plist" ]; then
+            echo "✅ Using existing GoogleService-Info.plist file"
+          else
+            echo "❌ ERROR: No Firebase configuration found!"
+            echo "Please configure GOOGLE_SERVICE_INFO_PLIST secret or commit the file"
+            exit 1
+          fi
+        fi
+
+        # Verify the file exists and is valid
+        if [ -f "MediStock/GoogleService-Info.plist" ]; then
+          plutil -lint MediStock/GoogleService-Info.plist
+          echo "✅ Firebase configuration file is valid"
         fi
 
     - name: Install dependencies
@@ -44,23 +56,31 @@ jobs:
     - name: Build for Testing
       run: |
         echo "🔨 Building for testing..."
-        xcodebuild build-for-testing \
+        set -o pipefail
+        xcodebuild clean build-for-testing \
           -project MediStock.xcodeproj \
           -scheme MediStock \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
           -derivedDataPath DerivedData \
-          | xcpretty || true
+          -configuration Debug \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          ONLY_ACTIVE_ARCH=NO \
+          | xcpretty --color || exit 1
 
     - name: Run Tests
+      id: run_tests
       run: |
         echo "🧪 Running tests..."
+        set -o pipefail
         xcodebuild test-without-building \
           -project MediStock.xcodeproj \
           -scheme MediStock \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
           -derivedDataPath DerivedData \
           -resultBundlePath TestResults/TestResults.xcresult \
-          | xcpretty || true
+          -enableCodeCoverage YES \
+          | xcpretty --color --report junit --output TestResults/junit.xml || echo "test_failed=true" >> $GITHUB_OUTPUT
       continue-on-error: true
 
     - name: Check if test results exist
@@ -89,13 +109,31 @@ jobs:
         path: TestResults/TestResults.xcresult
         retention-days: 30
 
+    - name: Upload JUnit Results
+      if: always() && steps.check_results.outputs.results_exist == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: junit-results
+        path: TestResults/junit.xml
+        retention-days: 30
+
     - name: Build Summary
       if: always()
       run: |
         echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "- **Xcode Version**: $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Simulator**: iPhone 15 Pro" >> $GITHUB_STEP_SUMMARY
+        echo "- **Scheme**: MediStock" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Results" >> $GITHUB_STEP_SUMMARY
         if [ -d "TestResults/TestResults.xcresult" ]; then
-          echo "✅ Tests executed successfully" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.run_tests.outputs.test_failed }}" == "true" ]; then
+            echo "⚠️ Tests executed but some failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All tests passed successfully" >> $GITHUB_STEP_SUMMARY
+          fi
         else
-          echo "⚠️ Tests were not executed or failed" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Tests were not executed - build may have failed" >> $GITHUB_STEP_SUMMARY
         fi
