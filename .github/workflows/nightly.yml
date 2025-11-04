@@ -1,0 +1,429 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Tous les jours à 3h00 UTC (4h00 CET)
+  workflow_dispatch:     # Permet déclenchement manuel
+
+concurrency:
+  group: nightly-build
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+  XCODE_PROJECT: MediStock.xcodeproj
+  XCODE_SCHEME: MediStock
+  SIMULATOR_DEVICE: iPhone 16
+  SIMULATOR_OS: iOS 17.2
+
+jobs:
+  # ============================================
+  # JOB 1: Extended Test Suite
+  # ============================================
+  extended-tests:
+    name: Extended Test Suite
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          cat > MediStock/GoogleService-Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>TEST</string>
+            <key>GCM_SENDER_ID</key><string>123</string>
+            <key>GOOGLE_APP_ID</key><string>1:123:ios:abc</string>
+            <key>PROJECT_ID</key><string>test</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Run All Tests (with retry)
+        run: |
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+
+          until [ $ATTEMPT -gt $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+            if xcodebuild test \
+              -project $XCODE_PROJECT \
+              -scheme $XCODE_SCHEME \
+              -destination "platform=iOS Simulator,name=$SIMULATOR_DEVICE,OS=$SIMULATOR_OS" \
+              -enableCodeCoverage YES \
+              -resultBundlePath TestResults-Nightly.xcresult \
+              CODE_SIGNING_ALLOWED=NO \
+              | xcpretty; then
+              echo "✅ Tests passed on attempt $ATTEMPT"
+              break
+            fi
+
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -le $MAX_ATTEMPTS ]; then
+              echo "⚠️ Tests failed, retrying in 30s..."
+              sleep 30
+            fi
+          done
+
+          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+            echo "❌ Tests failed after $MAX_ATTEMPTS attempts"
+            exit 1
+          fi
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-results
+          path: TestResults-Nightly.xcresult
+          retention-days: 7
+
+  # ============================================
+  # JOB 2: Code Quality Metrics
+  # ============================================
+  code-quality:
+    name: Code Quality Metrics
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for metrics
+
+      - name: Install Tools
+        run: |
+          brew install swiftlint
+          # brew install sloc  # Lines of code counter (optional)
+
+      - name: Run SwiftLint with Metrics
+        run: |
+          swiftlint lint --reporter json > swiftlint-metrics.json || true
+          swiftlint lint --reporter html > swiftlint-metrics.html || true
+
+          # Count violations by severity
+          ERRORS=$(cat swiftlint-metrics.json | jq '[.[] | select(.severity=="error")] | length')
+          WARNINGS=$(cat swiftlint-metrics.json | jq '[.[] | select(.severity=="warning")] | length')
+
+          echo "LINT_ERRORS=$ERRORS" >> $GITHUB_ENV
+          echo "LINT_WARNINGS=$WARNINGS" >> $GITHUB_ENV
+
+          echo "SwiftLint Errors: $ERRORS"
+          echo "SwiftLint Warnings: $WARNINGS"
+
+      - name: Count Lines of Code
+        run: |
+          # Count Swift files
+          SWIFT_FILES=$(find MediStock -name "*.swift" -not -path "*/.*" | wc -l | xargs)
+          echo "SWIFT_FILES=$SWIFT_FILES" >> $GITHUB_ENV
+
+          # Count lines (excluding comments and empty lines)
+          TOTAL_LINES=$(find MediStock -name "*.swift" -not -path "*/.*" -exec cat {} \; | wc -l | xargs)
+          echo "TOTAL_LINES=$TOTAL_LINES" >> $GITHUB_ENV
+
+          echo "Swift Files: $SWIFT_FILES"
+          echo "Total Lines: $TOTAL_LINES"
+
+      - name: Analyze Code Complexity
+        continue-on-error: true
+        run: |
+          # Using SwiftLint for complexity analysis
+          swiftlint analyze --compiler-log-path compile_commands.json || echo "Analysis skipped"
+
+      - name: Generate Metrics Report
+        run: |
+          cat > code-quality-report.md << EOF
+          # Code Quality Report - Nightly Build
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${GITHUB_REF#refs/heads/}
+          **Commit:** ${GITHUB_SHA:0:7}
+
+          ## Metrics
+
+          | Metric | Value |
+          |--------|-------|
+          | Swift Files | $SWIFT_FILES |
+          | Total Lines | $TOTAL_LINES |
+          | Avg Lines/File | $((TOTAL_LINES / SWIFT_FILES)) |
+          | Lint Errors | $LINT_ERRORS |
+          | Lint Warnings | $LINT_WARNINGS |
+
+          ## Trends
+
+          $(if [ $LINT_ERRORS -gt 0 ]; then echo "⚠️ $LINT_ERRORS lint errors found"; else echo "✅ No lint errors"; fi)
+          $(if [ $LINT_WARNINGS -gt 10 ]; then echo "⚠️ High warning count ($LINT_WARNINGS)"; else echo "✅ Warning count acceptable"; fi)
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat code-quality-report.md
+
+      - name: Upload Quality Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-report
+          path: |
+            code-quality-report.md
+            swiftlint-metrics.json
+            swiftlint-metrics.html
+          retention-days: 30
+
+  # ============================================
+  # JOB 3: Documentation Generation
+  # ============================================
+  generate-documentation:
+    name: Generate Documentation
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>API_KEY</key><string>TEST</string>
+          <key>GCM_SENDER_ID</key><string>123</string>
+          <key>GOOGLE_APP_ID</key><string>1:123:ios:abc</string>
+          <key>PROJECT_ID</key><string>test</string>
+          </dict></plist>' > MediStock/GoogleService-Info.plist
+
+      - name: Generate DocC Documentation
+        continue-on-error: true
+        run: |
+          xcodebuild docbuild \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -destination generic/platform=iOS \
+            -derivedDataPath DerivedData \
+            | xcpretty || echo "DocC generation failed"
+
+      - name: Find and Package DocC Archive
+        continue-on-error: true
+        run: |
+          DOCC_ARCHIVE=$(find DerivedData -name "*.doccarchive" | head -n1)
+
+          if [ -n "$DOCC_ARCHIVE" ]; then
+            echo "✅ Found DocC archive: $DOCC_ARCHIVE"
+            cp -r "$DOCC_ARCHIVE" MediStock.doccarchive
+          else
+            echo "⚠️ No DocC archive found"
+          fi
+
+      - name: Upload Documentation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: MediStock.doccarchive
+          retention-days: 30
+
+  # ============================================
+  # JOB 4: Dependency Audit
+  # ============================================
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve Dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies -project $XCODE_PROJECT -scheme $XCODE_SCHEME
+
+      - name: List Dependencies
+        run: |
+          xcodebuild -project $XCODE_PROJECT -scheme $XCODE_SCHEME -showBuildSettings | grep -i "package" || true
+
+          # Extract Package.resolved if exists
+          if [ -f "MediStock.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
+            cat MediStock.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | jq . || true
+          fi
+
+      - name: Check for Outdated Dependencies
+        continue-on-error: true
+        run: |
+          echo "⚠️ Manual check required for dependency updates"
+          echo "Current Firebase SDK versions:"
+          # List current versions from Package.resolved
+
+      - name: Generate Dependency Report
+        run: |
+          cat > dependency-report.md << EOF
+          # Dependency Audit Report
+
+          **Date:** $(date -u +"%Y-%m-%d")
+          **Branch:** ${GITHUB_REF#refs/heads/}
+
+          ## Swift Package Dependencies
+
+          ### Firebase SDK
+          - FirebaseAuth
+          - FirebaseFirestore
+          - FirebaseAnalytics
+          - FirebaseAuthCombine-Community
+          - FirebaseFirestoreCombine-Community
+
+          ## Recommendations
+
+          - Check for Firebase SDK updates monthly
+          - Review security advisories
+          - Test compatibility before upgrading
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat dependency-report.md
+
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependency-report.md
+          retention-days: 30
+
+  # ============================================
+  # JOB 5: Performance Benchmarks
+  # ============================================
+  performance-benchmarks:
+    name: Performance Benchmarks
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          cat > MediStock/GoogleService-Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>TEST</string>
+            <key>GCM_SENDER_ID</key><string>123</string>
+            <key>GOOGLE_APP_ID</key><string>1:123:ios:abc</string>
+            <key>PROJECT_ID</key><string>test</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Measure Build Time
+        run: |
+          START=$(date +%s)
+
+          xcodebuild clean build \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -destination "platform=iOS Simulator,name=$SIMULATOR_DEVICE,OS=$SIMULATOR_OS" \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+          END=$(date +%s)
+          BUILD_TIME=$((END - START))
+
+          echo "BUILD_TIME=$BUILD_TIME" >> $GITHUB_ENV
+          echo "Build Time: ${BUILD_TIME}s"
+
+      - name: Generate Performance Report
+        run: |
+          cat > performance-report.md << EOF
+          # Performance Report - Nightly Build
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Build Performance
+
+          | Metric | Value |
+          |--------|-------|
+          | Clean Build Time | ${BUILD_TIME}s |
+          | Xcode Version | $(xcodebuild -version | head -n1) |
+          | Runner | macos-14 |
+
+          ## Analysis
+
+          $(if [ $BUILD_TIME -lt 180 ]; then echo "✅ Build time excellent (<3min)"; elif [ $BUILD_TIME -lt 300 ]; then echo "⚠️ Build time acceptable (3-5min)"; else echo "❌ Build time needs optimization (>5min)"; fi)
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat performance-report.md
+
+      - name: Upload Performance Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: performance-report.md
+          retention-days: 30
+
+  # ============================================
+  # JOB 6: Summary & Notification
+  # ============================================
+  nightly-summary:
+    name: Nightly Summary
+    runs-on: macos-14
+    needs: [extended-tests, code-quality, generate-documentation, dependency-audit, performance-benchmarks]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "### 🌙 Nightly Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Extended Tests | ${{ needs.extended-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.generate-documentation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependencies | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | ${{ needs.performance-benchmarks.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ALL_SUCCESS=true
+          for status in "${{ needs.extended-tests.result }}" "${{ needs.code-quality.result }}" "${{ needs.generate-documentation.result }}" "${{ needs.dependency-audit.result }}" "${{ needs.performance-benchmarks.result }}"; do
+            if [ "$status" != "success" ]; then
+              ALL_SUCCESS=false
+              break
+            fi
+          done
+
+          if [ "$ALL_SUCCESS" = true ]; then
+            echo "✅ **All nightly jobs completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Some nightly jobs failed or were skipped.**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Optionnel: Notification si échec
+      # - name: Slack Notification (on failure)
+      #   if: failure()
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "❌ MediStock nightly build failed"
+      #       }

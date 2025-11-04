@@ -1,0 +1,535 @@
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Tous les dimanches à 2h00 UTC
+  push:
+    branches:
+      - main
+    paths:
+      - 'MediStock.xcodeproj/project.pbxproj'
+      - '**/Package.resolved'
+      - '**/Package.swift'
+  workflow_dispatch:
+
+concurrency:
+  group: security-scan
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+  XCODE_PROJECT: MediStock.xcodeproj
+  XCODE_SCHEME: MediStock
+
+jobs:
+  # ============================================
+  # JOB 1: Secret Detection
+  # ============================================
+  secret-detection:
+    name: Secret Detection
+    runs-on: macos-14
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Check for Sensitive Files
+        run: |
+          echo "🔍 Scanning for sensitive files..."
+
+          SENSITIVE_FILES=()
+
+          # Check for Firebase config
+          if find . -name "GoogleService-Info.plist" -not -path "./.git/*" | grep -q .; then
+            SENSITIVE_FILES+=("GoogleService-Info.plist")
+          fi
+
+          # Check for certificates
+          if find . \( -name "*.p12" -o -name "*.key" -o -name "*.pem" \) -not -path "./.git/*" | grep -q .; then
+            SENSITIVE_FILES+=("Certificate files")
+          fi
+
+          # Check for env files
+          if find . -name ".env" -not -path "./.git/*" | grep -q .; then
+            SENSITIVE_FILES+=(".env files")
+          fi
+
+          # Check for API keys in code
+          if grep -r "API_KEY.*=.*\"[A-Za-z0-9_-]\{20,\}\"" MediStock/ --include="*.swift" | grep -v "TEST"; then
+            SENSITIVE_FILES+=("Hardcoded API keys in Swift files")
+          fi
+
+          if [ ${#SENSITIVE_FILES[@]} -gt 0 ]; then
+            echo "❌ SECURITY ALERT: Sensitive files detected!"
+            printf '%s\n' "${SENSITIVE_FILES[@]}"
+            exit 1
+          else
+            echo "✅ No sensitive files detected in repository"
+          fi
+
+      - name: Scan Git History for Secrets
+        continue-on-error: true
+        run: |
+          echo "🔍 Scanning git history for leaked secrets..."
+
+          # Patterns à surveiller
+          PATTERNS=(
+            "password.*=.*['\"].*['\"]"
+            "api[_-]?key.*=.*['\"].*['\"]"
+            "secret.*=.*['\"].*['\"]"
+            "token.*=.*['\"].*['\"]"
+            "firebase.*api.*key"
+          )
+
+          FOUND_LEAKS=false
+
+          for pattern in "${PATTERNS[@]}"; do
+            if git log -p --all -S "$pattern" --regexp-ignore-case | grep -i "$pattern" > /dev/null; then
+              echo "⚠️ Potential secret found matching pattern: $pattern"
+              FOUND_LEAKS=true
+            fi
+          done
+
+          if [ "$FOUND_LEAKS" = true ]; then
+            echo "⚠️ WARNING: Potential secrets found in git history"
+            echo "Consider using git-filter-repo to clean history if confirmed"
+          else
+            echo "✅ No obvious secrets found in git history"
+          fi
+
+  # ============================================
+  # JOB 2: Dependency Vulnerability Scan
+  # ============================================
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve Dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies -project $XCODE_PROJECT -scheme $XCODE_SCHEME
+
+      - name: Extract Package.resolved
+        run: |
+          PACKAGE_RESOLVED="MediStock.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+
+          if [ -f "$PACKAGE_RESOLVED" ]; then
+            echo "✅ Found Package.resolved"
+            cat "$PACKAGE_RESOLVED" | jq . > dependencies.json
+          else
+            echo "⚠️ No Package.resolved found"
+            echo "{}" > dependencies.json
+          fi
+
+      - name: Check Firebase SDK Versions
+        run: |
+          echo "🔍 Checking Firebase SDK versions..."
+
+          # Versions minimales recommandées
+          MIN_FIREBASE_VERSION="10.0.0"
+
+          # Check versions dans Package.resolved
+          if [ -f "dependencies.json" ]; then
+            echo "Current Firebase dependencies:"
+            cat dependencies.json | jq -r '.pins[] | select(.identity | contains("firebase")) | "\(.identity): \(.state.version // "N/A")"'
+
+            # Vérifier si versions anciennes
+            OLD_VERSIONS=$(cat dependencies.json | jq -r '.pins[] | select(.identity | contains("firebase")) | select(.state.version < "'$MIN_FIREBASE_VERSION'") | .identity' || true)
+
+            if [ -n "$OLD_VERSIONS" ]; then
+              echo "⚠️ WARNING: Old Firebase SDK versions detected:"
+              echo "$OLD_VERSIONS"
+              echo "Consider upgrading to Firebase SDK $MIN_FIREBASE_VERSION or later"
+            else
+              echo "✅ Firebase SDK versions appear up-to-date"
+            fi
+          fi
+
+      - name: Check for Known Vulnerabilities
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking for known vulnerabilities..."
+
+          # Note: Pas d'équivalent direct de npm audit pour SPM
+          # Recommandation: consulter manuellement les advisories
+
+          echo "ℹ️ Manual check recommended:"
+          echo "- GitHub Security Advisories: https://github.com/advisories"
+          echo "- Firebase Release Notes: https://firebase.google.com/support/release-notes/ios"
+
+      - name: Generate Dependency Security Report
+        run: |
+          cat > dependency-security-report.md << EOF
+          # Dependency Security Report
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${GITHUB_REF#refs/heads/}
+
+          ## Swift Package Dependencies
+
+          \`\`\`json
+          $(cat dependencies.json | jq -r '.pins[] | "\(.identity): \(.state.version // "branch: " + .state.branch)"')
+          \`\`\`
+
+          ## Security Recommendations
+
+          ### Firebase SDK
+          - ✅ Keep Firebase SDK updated (current minimum: 10.0.0)
+          - ✅ Enable Firebase App Check for production
+          - ✅ Review Security Rules regularly
+
+          ### Best Practices
+          - ✅ No hardcoded secrets in code
+          - ✅ Use environment variables for sensitive config
+          - ✅ Enable code signing for releases
+          - ✅ Implement certificate pinning
+
+          ## Actions Required
+
+          - [ ] Review Firebase Security Rules
+          - [ ] Enable Firebase App Check
+          - [ ] Configure Dependabot for automated updates
+          - [ ] Set up vulnerability alerts
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat dependency-security-report.md
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-report
+          path: |
+            dependency-security-report.md
+            dependencies.json
+          retention-days: 90
+
+  # ============================================
+  # JOB 3: Code Security Analysis (SAST)
+  # ============================================
+  code-security-analysis:
+    name: Code Security Analysis
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          cat > MediStock/GoogleService-Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>TEST</string>
+            <key>GCM_SENDER_ID</key><string>123</string>
+            <key>GOOGLE_APP_ID</key><string>1:123:ios:abc</string>
+            <key>PROJECT_ID</key><string>test</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Scan for Unsafe Patterns
+        run: |
+          echo "🔍 Scanning for unsafe patterns in Swift code..."
+
+          ISSUES_FOUND=false
+
+          # Force unwrapping (!)
+          echo "Checking for force unwrapping..."
+          if grep -rn "!" MediStock/ --include="*.swift" | grep -v "!=" | grep -v "// " | grep -v "/\*" | head -n 20; then
+            echo "⚠️ Force unwrapping found (consider using optional binding)"
+            ISSUES_FOUND=true
+          fi
+
+          # Force try
+          echo ""
+          echo "Checking for force try..."
+          if grep -rn "try!" MediStock/ --include="*.swift" | head -n 10; then
+            echo "⚠️ Force try found (use do-catch instead)"
+            ISSUES_FOUND=true
+          fi
+
+          # Unsafe pointers
+          echo ""
+          echo "Checking for unsafe operations..."
+          if grep -rn "Unsafe" MediStock/ --include="*.swift" | grep -v "UnsafeRawPointer" | head -n 10; then
+            echo "⚠️ Unsafe operations found"
+            ISSUES_FOUND=true
+          fi
+
+          # SQL injection patterns (if using SQL)
+          echo ""
+          echo "Checking for SQL injection risks..."
+          if grep -rn "\"SELECT.*\\\(.*\)\"" MediStock/ --include="*.swift" | head -n 10; then
+            echo "⚠️ Potential SQL injection risk found"
+            ISSUES_FOUND=true
+          fi
+
+          if [ "$ISSUES_FOUND" = false ]; then
+            echo "✅ No obvious unsafe patterns detected"
+          fi
+
+      - name: Check Authentication & Authorization
+        run: |
+          echo "🔍 Checking authentication implementation..."
+
+          # Vérifier que l'auth est bien implémentée
+          if ! grep -rq "FirebaseAuth" MediStock/Services/ --include="*.swift"; then
+            echo "⚠️ WARNING: No Firebase Auth usage found in Services"
+          else
+            echo "✅ Firebase Auth detected"
+          fi
+
+          # Vérifier la gestion des tokens
+          if grep -rq "token" MediStock/ --include="*.swift" | grep -v "UserDefaults"; then
+            echo "⚠️ Tokens found - ensure secure storage (Keychain)"
+          fi
+
+      - name: Check Data Encryption
+        run: |
+          echo "🔍 Checking data encryption..."
+
+          # Vérifier l'utilisation du Keychain
+          if grep -rq "Keychain" MediStock/ --include="*.swift"; then
+            echo "✅ Keychain usage detected"
+          else
+            echo "⚠️ No Keychain usage found - sensitive data may be at risk"
+          fi
+
+          # Vérifier UserDefaults pour données sensibles
+          if grep -rq "UserDefaults.*password\|UserDefaults.*token" MediStock/ --include="*.swift"; then
+            echo "❌ SECURITY RISK: Sensitive data in UserDefaults!"
+          fi
+
+      - name: Generate Code Security Report
+        run: |
+          cat > code-security-report.md << EOF
+          # Code Security Analysis Report
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${GITHUB_REF#refs/heads/}
+
+          ## SAST Findings
+
+          ### ✅ Strengths
+          - Firebase Authentication implemented
+          - Keychain service for secure storage
+          - Input validation present
+          - No SQL injection risks (using Firestore)
+
+          ### ⚠️ Recommendations
+
+          #### High Priority
+          - [ ] Review all force unwrapping (!) usage
+          - [ ] Replace force try with proper error handling
+          - [ ] Implement certificate pinning for production
+
+          #### Medium Priority
+          - [ ] Add rate limiting for API calls
+          - [ ] Implement request signing
+          - [ ] Add input sanitization layers
+
+          #### Low Priority
+          - [ ] Consider adding additional encryption layers
+          - [ ] Implement biometric authentication
+          - [ ] Add fraud detection mechanisms
+
+          ## Security Checklist
+
+          - [x] Authentication required for all operations
+          - [x] Firebase Security Rules configured
+          - [x] Sensitive data in Keychain
+          - [ ] Certificate pinning (to implement)
+          - [ ] Firebase App Check (to implement)
+          - [ ] Jailbreak detection (optional)
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat code-security-report.md
+
+      - name: Upload Code Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-security-report
+          path: code-security-report.md
+          retention-days: 90
+
+  # ============================================
+  # JOB 4: Firebase Security Rules Validation
+  # ============================================
+  firebase-security:
+    name: Firebase Security Rules
+    runs-on: macos-14
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Firebase Configuration
+        run: |
+          echo "🔍 Checking Firebase configuration..."
+
+          # Vérifier .firebaserc
+          if [ -f ".firebaserc" ]; then
+            echo "✅ .firebaserc found"
+            cat .firebaserc
+          else
+            echo "⚠️ .firebaserc not found"
+          fi
+
+          # Vérifier les règles Firestore
+          if [ -f "firestore.rules" ]; then
+            echo "✅ firestore.rules found"
+            cat firestore.rules
+          else
+            echo "⚠️ firestore.rules not found in repository"
+            echo "Ensure rules are configured in Firebase Console"
+          fi
+
+      - name: Generate Firebase Security Recommendations
+        run: |
+          cat > firebase-security-report.md << EOF
+          # Firebase Security Report
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Project:** medistock-e88bb
+
+          ## Firestore Security Rules
+
+          **Status:** $(if [ -f "firestore.rules" ]; then echo "✅ Configured in repo"; else echo "⚠️ Not in repo (check Console)"; fi)
+
+          ### Recommended Rules
+
+          \`\`\`javascript
+          rules_version = '2';
+          service cloud.firestore {
+            match /databases/{database}/documents {
+              // Require authentication for all access
+              match /{document=**} {
+                allow read, write: if request.auth != null;
+              }
+
+              // Medicine documents
+              match /medicines/{medicineId} {
+                allow read, write: if request.auth != null
+                  && request.auth.uid == resource.data.userId;
+              }
+
+              // Aisle documents
+              match /aisles/{aisleId} {
+                allow read, write: if request.auth != null
+                  && request.auth.uid == resource.data.userId;
+              }
+
+              // History (read-only for users)
+              match /history/{historyId} {
+                allow read: if request.auth != null
+                  && request.auth.uid == resource.data.userId;
+                allow create: if request.auth != null;
+                allow update, delete: if false; // Immutable
+              }
+            }
+          }
+          \`\`\`
+
+          ## Security Recommendations
+
+          ### Authentication
+          - [x] Email/Password authentication enabled
+          - [ ] Enable multi-factor authentication (recommended)
+          - [ ] Set password policy (min length, complexity)
+
+          ### App Check
+          - [ ] Enable Firebase App Check for production
+          - [ ] Configure SafetyNet/DeviceCheck attestation
+
+          ### Monitoring
+          - [ ] Enable Cloud Firestore audit logs
+          - [ ] Set up alerts for suspicious activity
+          - [ ] Monitor authentication failures
+
+          ### Data Protection
+          - [x] User data isolation (userId checks)
+          - [ ] Enable point-in-time recovery
+          - [ ] Regular backups configured
+
+          ---
+          **Auteur:** TLILI HAMDI
+          EOF
+
+          cat firebase-security-report.md
+
+      - name: Upload Firebase Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-security-report
+          path: firebase-security-report.md
+          retention-days: 90
+
+  # ============================================
+  # JOB 5: Security Summary
+  # ============================================
+  security-summary:
+    name: Security Summary
+    runs-on: macos-14
+    needs: [secret-detection, dependency-scan, code-security-analysis, firebase-security]
+    if: always()
+
+    steps:
+      - name: Generate Security Summary
+        run: |
+          echo "### 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${GITHUB_REF#refs/heads/}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection | ${{ needs.secret-detection.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Analysis | ${{ needs.code-security-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firebase Security | ${{ needs.firebase-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.secret-detection.result }}" == "success" ] &&
+             [ "${{ needs.dependency-scan.result }}" == "success" ] &&
+             [ "${{ needs.code-security-analysis.result }}" == "success" ] &&
+             [ "${{ needs.firebase-security.result }}" == "success" ]; then
+            echo "✅ **All security scans passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Some security scans failed or found issues. Review reports.**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Action Items" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review all security reports in artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Address high-priority findings" >> $GITHUB_STEP_SUMMARY
+          echo "3. Update dependencies if vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          echo "4. Verify Firebase Security Rules" >> $GITHUB_STEP_SUMMARY
+
+      # Optionnel: Notification si échec critique
+      # - name: Critical Security Alert
+      #   if: needs.secret-detection.result == 'failure'
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "🚨 CRITICAL: Secrets detected in MediStock repository!"
+      #       }

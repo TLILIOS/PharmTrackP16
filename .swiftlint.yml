@@ -1,0 +1,344 @@
+# SwiftLint Configuration - MediStock
+# Auteur: TLILI HAMDI
+# Version: 1.0.0
+# Documentation: https://realm.github.io/SwiftLint/rule-directory.html
+
+# Chemins inclus dans le lint
+included:
+  - MediStock
+  - MediStockTests
+
+# Chemins exclus du lint
+excluded:
+  - Pods
+  - Carthage
+  - DerivedData
+  - .build
+  - MediStock/CloudFunctions
+
+# Mode strict : considérer tous les warnings comme des erreurs en CI
+# strict: true
+
+# Reporter utilisé (xcode, json, csv, checkstyle, codeclimate, junit, html, emoji, sonarqube, markdown, github-actions-logging)
+reporter: "xcode"
+
+# ========================
+# RÈGLES ACTIVÉES
+# ========================
+
+opt_in_rules:
+  # Performance
+  - empty_count                           # Utiliser .isEmpty au lieu de count == 0
+  - first_where                           # Utiliser .first(where:) au lieu de .filter().first
+  - last_where                            # Utiliser .last(where:) au lieu de .filter().last
+  - contains_over_filter_count           # Utiliser .contains() au lieu de filter().count > 0
+  - contains_over_filter_is_empty        # Utiliser .contains() au lieu de !filter().isEmpty
+  - contains_over_first_not_nil          # Utiliser .contains() au lieu de first() != nil
+  - contains_over_range_nil_comparison   # Utiliser .contains() au lieu de range(of:) != nil
+
+  # Code Quality
+  - explicit_init                        # Éviter .init() explicite
+  - redundant_nil_coalescing            # Éviter ?? nil redondant
+  - redundant_type_annotation           # Éviter annotations de type redondantes
+  - implicit_return                      # Return implicite dans closures courtes
+  - multiline_parameters                 # Paramètres sur plusieurs lignes
+  - multiline_arguments                  # Arguments sur plusieurs lignes
+  - multiline_function_chains            # Chaînes de fonctions sur plusieurs lignes
+  - closure_spacing                      # Espacement dans les closures
+  - operator_usage_whitespace            # Espaces autour des opérateurs
+
+  # Documentation
+  - missing_docs                         # Documentation obligatoire pour public/open
+
+  # Sécurité
+  - force_unwrapping                     # Interdire force unwrap (!)
+  - implicitly_unwrapped_optional       # Éviter les optionnels implicitement déballés
+
+  # Modern Swift
+  - closure_end_indentation             # Indentation cohérente closures
+  - literal_expression_end_indentation  # Indentation cohérente littéraux
+  - modifier_order                       # Ordre cohérent des modificateurs
+  - prefer_self_type_over_type_of_self  # Utiliser Self au lieu de type(of: self)
+  - sorted_imports                       # Imports triés alphabétiquement
+  - vertical_parameter_alignment_on_call # Alignement paramètres
+
+  # SwiftUI Specific
+  - multiple_closures_with_trailing_closure # Éviter trailing closures multiples
+
+  # Code Organization
+  - file_header                          # Header de fichier standardisé
+  - type_contents_order                  # Ordre standard du contenu des types
+
+# ========================
+# RÈGLES DÉSACTIVÉES
+# ========================
+
+disabled_rules:
+  - todo                                 # Permettre TODO/FIXME (tracking dans issues)
+  - trailing_whitespace                  # Géré par l'éditeur
+  - force_try                            # Parfois nécessaire dans tests
+  - line_length                          # Géré par line_length ci-dessous avec config custom
+
+# ========================
+# RÈGLES PERSONNALISÉES
+# ========================
+
+# Longueur des lignes
+line_length:
+  warning: 120
+  error: 150
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_urls: true
+
+# Longueur des fichiers
+file_length:
+  warning: 500
+  error: 800
+  ignore_comment_only_lines: true
+
+# Longueur des fonctions
+function_body_length:
+  warning: 50
+  error: 100
+
+# Longueur des types
+type_body_length:
+  warning: 300
+  error: 500
+
+# Nombre de paramètres
+function_parameter_count:
+  warning: 5
+  error: 7
+
+# Complexité cyclomatique
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+  ignores_case_statements: true
+
+# Nombre de lignes entre accolades
+large_tuple:
+  warning: 3
+  error: 4
+
+# Nesting (imbrication)
+nesting:
+  type_level:
+    warning: 2
+  statement_level:
+    warning: 5
+
+# Nom des types (PascalCase)
+type_name:
+  min_length: 3
+  max_length:
+    warning: 40
+    error: 50
+  excluded:
+    - ID
+    - URL
+    - VC
+
+# Nom des identificateurs (camelCase)
+identifier_name:
+  min_length:
+    warning: 2
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - db
+    - URL
+    - red
+    - blue
+    - top
+    - left
+    - ios
+
+# Force cast
+force_cast:
+  severity: error
+
+# Force unwrapping
+force_unwrapping:
+  severity: error
+
+# Implicitly unwrapped optional
+implicitly_unwrapped_optional:
+  severity: warning
+  mode: all_except_iboutlets
+
+# Missing docs
+missing_docs:
+  warning:
+    - public
+  excludes_extensions: true
+  excludes_inherited_types: true
+
+# Modifier order
+modifier_order:
+  preferred_modifier_order:
+    - acl
+    - setterACL
+    - override
+    - dynamic
+    - mutators
+    - lazy
+    - final
+    - required
+    - convenience
+    - typeMethods
+    - owned
+
+# Sorted imports
+sorted_imports:
+  severity: warning
+
+# File header
+file_header:
+  required_pattern: |
+                    \/\/
+                    \/\/  .*?\.swift
+                    \/\/  MediStock
+                    \/\/
+                    \/\/  Created by .* on \d{1,2}\/\d{1,2}\/\d{4}\.
+                    \/\/
+
+# Type contents order
+type_contents_order:
+  order:
+    - case
+    - associated_type
+    - type_alias
+    - subtype
+    - type_property
+    - instance_property
+    - ib_outlet
+    - initializer
+    - deinitializer
+    - type_method
+    - view_life_cycle_method
+    - ib_action
+    - other_method
+    - subscript
+
+# ========================
+# RÈGLES PERSONNALISÉES CUSTOM
+# ========================
+
+custom_rules:
+  # Interdire print() en production (utiliser Logger)
+  no_print:
+    name: "No Print Statements"
+    regex: "print\\("
+    message: "Utiliser Logger au lieu de print()"
+    severity: warning
+
+  # Forcer @MainActor sur les ViewModels
+  viewmodel_main_actor:
+    name: "ViewModel Must Be @MainActor"
+    regex: "class\\s+\\w+ViewModel(?!.*@MainActor)"
+    message: "Les ViewModels doivent être annotés @MainActor"
+    severity: error
+
+  # Interdire DispatchQueue.main.async (utiliser @MainActor)
+  no_dispatch_main:
+    name: "No DispatchQueue.main.async"
+    regex: "DispatchQueue\\.main\\.async"
+    message: "Utiliser @MainActor au lieu de DispatchQueue.main.async"
+    severity: warning
+
+  # Forcer weak self dans closures async
+  weak_self_in_closures:
+    name: "Weak Self in Async Closures"
+    regex: "\\{\\s*\\[(?!weak self)"
+    message: "Utiliser [weak self] dans les closures asynchrones"
+    severity: warning
+
+  # Interdire force try en production
+  no_force_try_production:
+    name: "No Force Try"
+    regex: "try!"
+    match_kinds:
+      - identifier
+    message: "Éviter try! en production, utiliser do-catch"
+    severity: error
+
+  # Forcer des labels accessibilité
+  accessibility_label:
+    name: "Accessibility Label Required"
+    regex: "Button\\(|Image\\(|Text\\("
+    message: "Ajouter .accessibilityLabel() pour l'accessibilité"
+    severity: warning
+
+  # Interdire les TODOs sans ticket
+  todo_with_ticket:
+    name: "TODO Must Reference Ticket"
+    regex: "TODO(?!.*#\\d+)"
+    message: "Les TODO doivent référencer un ticket (ex: TODO: #123)"
+    severity: warning
+
+# ========================
+# CONFIGURATION AVANCÉE
+# ========================
+
+# Nombre de violations avant de s'arrêter
+# max_violations: 100
+
+# Compilation conditionnelle
+# compiler_directives:
+#   - if
+#   - endif
+#   - DEBUG
+#   - RELEASE
+
+# ========================
+# EXCLUSIONS PAR TYPE DE FICHIER
+# ========================
+
+# Patterns de noms de fichiers à exclure
+excluded_patterns:
+  - ".*\\.generated\\.swift"
+  - ".*Mock.*\\.swift"  # Mocks peuvent avoir des règles plus flexibles
+  - ".*Stub.*\\.swift"
+
+# ========================
+# INTÉGRATION CI/CD
+# ========================
+
+# Pour GitHub Actions: ajouter --strict pour bloquer PR si violations
+# swiftlint lint --strict --reporter github-actions-logging
+
+# Pour Xcode Build Phase:
+# if which swiftlint >/dev/null; then
+#   swiftlint
+# else
+#   echo "warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint"
+# fi
+
+# ========================
+# NOTES D'UTILISATION
+# ========================
+
+# Installation:
+# brew install swiftlint
+
+# Commandes utiles:
+# swiftlint                      # Lint le projet
+# swiftlint --fix                # Auto-correction
+# swiftlint --strict             # Considérer warnings comme erreurs
+# swiftlint analyze              # Analyse approfondie (plus lent)
+# swiftlint rules                # Lister toutes les règles
+# swiftlint generate-docs        # Générer documentation des règles
+
+# Intégration Xcode Build Phase:
+# Build Phases → + → New Run Script Phase
+# ${PODS_ROOT}/SwiftLint/swiftlint
+
+# Version SwiftLint recommandée: 0.54.0+

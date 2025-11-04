@@ -4,7 +4,12 @@
       "Read(//Users/macbookair/Desktop/**)",
       "Bash(find:*)",
       "Bash(xcodebuild:*)",
-      "Bash(swift:*)"
+      "Bash(swift:*)",
+      "Bash(for dir in App Core DependencyInjection Extensions Models Protocols Repositories Services Utilities ViewModels Views)",
+      "Bash(do echo '=== MediStock/$dir ===')",
+      "Bash(done)",
+      "Bash(for dir in Mocks ViewModels Repositories Services Core Examples)",
+      "Bash(do echo '=== MediStockTests/$dir ===')"
     ],
     "deny": [],
     "ask": []

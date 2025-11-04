@@ -1,0 +1,317 @@
+name: Main CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: 'Upload IPA artifacts'
+        required: false
+        default: 'true'
+        type: boolean
+
+concurrency:
+  group: main-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+  XCODE_PROJECT: MediStock.xcodeproj
+  XCODE_SCHEME: MediStock
+  SIMULATOR_DEVICE: iPhone 16
+  SIMULATOR_OS: iOS 17.2
+
+jobs:
+  # ============================================
+  # JOB 1: Complete Test Suite
+  # ============================================
+  test-suite:
+    name: Complete Test Suite
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          cat > MediStock/GoogleService-Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>${{ secrets.FIREBASE_API_KEY || 'TEST_KEY' }}</string>
+            <key>GCM_SENDER_ID</key><string>123456789</string>
+            <key>GOOGLE_APP_ID</key><string>1:123456789:ios:abcdef</string>
+            <key>PROJECT_ID</key><string>medistock-test</string>
+            <key>STORAGE_BUCKET</key><string>medistock-test.appspot.com</string>
+            <key>DATABASE_URL</key><string>https://medistock-test.firebaseio.com</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Resolve Dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies -project $XCODE_PROJECT -scheme $XCODE_SCHEME
+
+      - name: Build for Testing
+        run: |
+          xcodebuild build-for-testing \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -destination "platform=iOS Simulator,name=$SIMULATOR_DEVICE,OS=$SIMULATOR_OS" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Run All Tests
+        run: |
+          xcodebuild test-without-building \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -destination "platform=iOS Simulator,name=$SIMULATOR_DEVICE,OS=$SIMULATOR_OS" \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults-Main.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Generate Detailed Coverage Report
+        if: always()
+        run: |
+          xcrun xccov view --report --json TestResults-Main.xcresult > coverage-main.json
+          xcrun xccov view --report TestResults-Main.xcresult > coverage-main.txt
+
+          # Parse coverage percentage
+          COVERAGE=$(cat coverage-main.json | jq '.targets[] | select(.name=="MediStock") | .lineCoverage')
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Code Coverage: $COVERAGE%"
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-main
+          path: TestResults-Main.xcresult
+          retention-days: 30
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-main
+          path: |
+            coverage-main.json
+            coverage-main.txt
+          retention-days: 30
+
+      - name: Comment Coverage on Commit
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = process.env.COVERAGE || '0';
+            const emoji = coverage >= 80 ? '✅' : '⚠️';
+            const comment = `${emoji} **Code Coverage:** ${coverage}%\n\n` +
+              `Commit: ${context.sha.substring(0, 7)}\n` +
+              `Branch: ${context.ref.replace('refs/heads/', '')}`;
+
+            console.log(comment);
+
+  # ============================================
+  # JOB 2: Build Release Archive
+  # ============================================
+  build-release:
+    name: Build Release Archive
+    runs-on: macos-14
+    timeout-minutes: 30
+    needs: [test-suite]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Production Config
+        run: |
+          mkdir -p MediStock
+          # En production, utiliser le vrai GoogleService-Info.plist depuis secrets
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > MediStock/GoogleService-Info.plist || \
+          cat > MediStock/GoogleService-Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>PRODUCTION_KEY</string>
+            <key>GCM_SENDER_ID</key><string>123456789</string>
+            <key>GOOGLE_APP_ID</key><string>1:123456789:ios:prod</string>
+            <key>PROJECT_ID</key><string>medistock-e88bb</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+
+      - name: Build Release Configuration
+        run: |
+          xcodebuild clean build \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Archive Application
+        run: |
+          xcodebuild archive \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -configuration Release \
+            -archivePath MediStock.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Create Export Options
+        run: |
+          cat > ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export IPA (if signing configured)
+        if: inputs.upload_artifacts || github.event_name == 'push'
+        continue-on-error: true
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath MediStock.xcarchive \
+            -exportPath Export \
+            -exportOptionsPlist ExportOptions.plist \
+            | xcpretty || echo "Export failed (expected without signing certificates)"
+
+      - name: Upload Archive
+        if: always() && (inputs.upload_artifacts || github.event_name == 'push')
+        uses: actions/upload-artifact@v4
+        with:
+          name: medistock-archive
+          path: MediStock.xcarchive
+          retention-days: 30
+
+      - name: Upload IPA
+        if: always() && (inputs.upload_artifacts || github.event_name == 'push')
+        uses: actions/upload-artifact@v4
+        with:
+          name: medistock-ipa
+          path: Export/*.ipa
+          retention-days: 30
+
+  # ============================================
+  # JOB 3: Generate Documentation
+  # ============================================
+  generate-docs:
+    name: Generate Documentation
+    runs-on: macos-14
+    timeout-minutes: 15
+    needs: [test-suite]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Firebase Mock
+        run: |
+          mkdir -p MediStock
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>API_KEY</key><string>TEST</string>
+          <key>GCM_SENDER_ID</key><string>123</string>
+          <key>GOOGLE_APP_ID</key><string>1:123:ios:abc</string>
+          <key>PROJECT_ID</key><string>test</string>
+          </dict></plist>' > MediStock/GoogleService-Info.plist
+
+      - name: Generate DocC Documentation
+        continue-on-error: true
+        run: |
+          xcodebuild docbuild \
+            -project $XCODE_PROJECT \
+            -scheme $XCODE_SCHEME \
+            -destination generic/platform=iOS \
+            | xcpretty || echo "DocC generation failed (optional)"
+
+      - name: Find DocC Archive
+        continue-on-error: true
+        run: |
+          find ~/Library/Developer/Xcode/DerivedData -name "*.doccarchive" || echo "No DocC archive found"
+
+  # ============================================
+  # JOB 4: Notification & Summary
+  # ============================================
+  notify-success:
+    name: Notification & Summary
+    runs-on: macos-14
+    needs: [test-suite, build-release, generate-docs]
+    if: always()
+
+    steps:
+      - name: Generate Build Summary
+        run: |
+          echo "### 🎉 Main Branch CI Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** main" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test-suite.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Release | ${{ needs.build-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.generate-docs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.test-suite.result }}" == "success" ] && [ "${{ needs.build-release.result }}" == "success" ]; then
+            echo "✅ **All critical jobs passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Some jobs failed. Please investigate.**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Optionnel: Notification Slack
+      # - name: Slack Notification
+      #   if: always()
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "Main CI: ${{ job.status }}\nCommit: ${{ github.sha }}"
+      #       }
