@@ -89,7 +89,7 @@ class HistoryViewModel: ObservableObject {
             let deletions = stockHistory.filter { $0.type == .deletion }
             if deletions.isEmpty {
                 // Afficher quelques exemples
-                let examples = stockHistory.prefix(3).map { "'\($0.type)'" }.joined(separator: ", ")
+                _ = stockHistory.prefix(3).map { "'\($0.type)'" }.joined(separator: ", ")
             } else {
                 deletions.forEach { deletion in
                 }

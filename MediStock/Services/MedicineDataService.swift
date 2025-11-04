@@ -441,7 +441,7 @@ extension MedicineDataService {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
 
-                if let error = error {
+                if error != nil {
                     completion([])
                     return
                 }
