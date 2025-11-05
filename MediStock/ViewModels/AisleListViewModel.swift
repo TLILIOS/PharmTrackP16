@@ -234,7 +234,8 @@ class AisleListViewModel: ObservableObject {
             // Supprimer directement de la liste locale si le listener n'est pas actif
             // Si le listener est actif, il mettra à jour automatiquement
             if !isListenerActive {
-                aisles.removeAll { $0.id == aisleId }
+                // Utiliser filter pour créer une nouvelle copie thread-safe
+                aisles = aisles.filter { $0.id != aisleId }
             } else {
             }
 

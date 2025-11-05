@@ -24,7 +24,17 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "Bash(UNIT_TESTS_ONLY=1 xcodebuild test:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(pkill:*)",
+      "Bash(cat:*)",
+      "Bash(UNIT_TESTS_ONLY=1 xcodebuild clean test:*)",
+      "Bash(gh pr list:*)",
+      "Bash(UNIT_TESTS_ONLY=1 swift:*)",
+      "Bash(set -o pipefail)",
+      "Bash(export UNIT_TESTS_ONLY=1)",
+      "Bash('SIMULATOR=iPhone 15 Pro')",
+      "Bash(echo:*)",
+      "Bash(xcrun xcresulttool:*)"
     ],
     "deny": [],
     "ask": []

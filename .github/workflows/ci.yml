@@ -35,32 +35,55 @@ jobs:
           echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
           echo "Environment check: UNIT_TESTS_ONLY=$UNIT_TESTS_ONLY"
 
+          # Détecter le simulateur disponible (priorité: iPhone 15 Pro > iPhone 16 > Premier iPhone disponible)
+          SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone 15 Pro" | head -1)
+          if [ -z "$SIMULATOR" ]; then
+            SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone 16" | head -1)
+          fi
+          if [ -z "$SIMULATOR" ]; then
+            SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone [0-9]*" | head -1)
+          fi
+          if [ -z "$SIMULATOR" ]; then
+            SIMULATOR="iPhone 15 Pro"
+          fi
+          echo "📱 Using simulator: $SIMULATOR"
+
           # Boot simulator first to avoid timing issues
-          xcrun simctl boot "iPhone 16" 2>/dev/null || echo "Simulator already booted"
+          xcrun simctl boot "$SIMULATOR" 2>/dev/null || echo "Simulator already booted"
           sleep 3
 
           xcodebuild test \
             -project MediStock.xcodeproj \
             -scheme MediStock-UnitTests \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,name=$SIMULATOR" \
             -resultBundlePath TestResults/TestResults.xcresult \
-            -only-testing:MediStockTests/UnitTests \
             -test-timeouts-enabled YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             ENABLE_THREAD_SANITIZER=NO \
             | tee xcodebuild.log \
             | grep -E "(Test Suite|Test Case|passed|failed|Testing started|Testing completed)" \
-            || echo "Tests completed with issues"
+            || true
 
-          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
-        continue-on-error: true
+          # Capture the actual exit code
+          TEST_EXIT_CODE="${PIPESTATUS[0]}"
+          echo "test_exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Show test results
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ Tests passed successfully"
+          else
+            echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+          fi
 
       - name: Generate Test Report
         if: always()
         uses: kishikawakatsumi/xcresulttool@v1
         with:
           path: TestResults/TestResults.xcresult
+          title: "Test Results - MediStock"
+          show-passed-tests: false
+          show-code-coverage: false
         continue-on-error: true
 
       - name: Upload Test Results
@@ -79,19 +102,23 @@ jobs:
           echo "### Configuration" >> $GITHUB_STEP_SUMMARY
           echo "- **Project:** MediStock.xcodeproj" >> $GITHUB_STEP_SUMMARY
           echo "- **Scheme:** MediStock-UnitTests" >> $GITHUB_STEP_SUMMARY
-          echo "- **Simulator:** iPhone 16" >> $GITHUB_STEP_SUMMARY
           echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Mode:** UNIT_TESTS_ONLY=1" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
 
           if [ -d "TestResults/TestResults.xcresult" ]; then
-            echo "✅ Tests executed" >> $GITHUB_STEP_SUMMARY
-
             # Extract test summary from xcresult
             if command -v xcrun &> /dev/null; then
               TESTS_COUNT=$(grep -o "Executed [0-9]* tests" xcodebuild.log | head -1 || echo "Tests count unavailable")
-              TESTS_TIME=$(grep -o "in [0-9]*\.[0-9]* seconds" xcodebuild.log | head -1 || echo "")
+              TESTS_TIME=$(grep -o "in [0-9.]*.*seconds" xcodebuild.log | head -1 || echo "")
+
+              if grep -q "TEST SUCCEEDED" xcodebuild.log; then
+                echo "✅ **Tests passed**" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "❌ **Tests failed**" >> $GITHUB_STEP_SUMMARY
+              fi
+
               echo "- $TESTS_COUNT $TESTS_TIME" >> $GITHUB_STEP_SUMMARY
             fi
           else
@@ -99,5 +126,14 @@ jobs:
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Logs" >> $GITHUB_STEP_SUMMARY
+          echo "Test results and logs are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "**Auteur:** TLILI HAMDI" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Test Results
+        if: steps.run_tests.outputs.test_exit_code != '0'
+        run: |
+          echo "::error::Tests failed with exit code ${{ steps.run_tests.outputs.test_exit_code }}"
+          exit 1
