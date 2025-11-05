@@ -26,11 +26,15 @@ jobs:
       - name: Build and Test
         id: run_tests
         timeout-minutes: 10
+        env:
+          UNIT_TESTS_ONLY: "1"
         run: |
           set -o pipefail
           mkdir -p TestResults
 
           echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
+          echo "Environment check: UNIT_TESTS_ONLY=$UNIT_TESTS_ONLY"
+
           xcodebuild test \
             -project MediStock.xcodeproj \
             -scheme MediStock \
@@ -38,7 +42,6 @@ jobs:
             -resultBundlePath TestResults/TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            UNIT_TESTS_ONLY=1 \
             | tee xcodebuild.log \
             | grep -E "(Test Suite|Test Case|passed|failed|Testing started|Testing completed)" \
             || echo "Tests completed with issues"
