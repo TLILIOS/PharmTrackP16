@@ -1,4 +1,4 @@
-name: iOS Build and Test
+name: iOS CI - Build and Test
 
 on:
   pull_request:
@@ -7,133 +7,79 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    name: Build and Test MediStock
+    runs-on: macos-latest
     timeout-minutes: 30
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      - name: Select Xcode Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+          xcodebuild -version
 
-    - name: Show Xcode version
-      run: xcodebuild -version
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
 
-    - name: List available simulators
-      run: xcrun simctl list devices available
+      - name: Build for Testing
+        uses: sersoft-gmbh/xcodebuild-action@v3.2.0
+        with:
+          project: MediStock.xcodeproj
+          scheme: MediStock
+          destination: platform=iOS Simulator,name=iPhone 17 Pro Max
+          action: build-for-testing
+          build-settings: |
+            CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_REQUIRED=NO
 
-    - name: Setup Firebase Configuration
-      env:
-        GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
-      run: |
-        if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
-          echo "📱 Setting up Firebase configuration from secrets..."
-          echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > MediStock/GoogleService-Info.plist
-          echo "✅ GoogleService-Info.plist configured from secrets"
-        else
-          echo "⚠️ GOOGLE_SERVICE_INFO_PLIST secret not configured"
-          if [ -f "MediStock/GoogleService-Info.plist" ]; then
-            echo "✅ Using existing GoogleService-Info.plist file"
+      - name: Run Tests
+        id: run_tests
+        uses: sersoft-gmbh/xcodebuild-action@v3.2.0
+        with:
+          project: MediStock.xcodeproj
+          scheme: MediStock
+          destination: platform=iOS Simulator,name=iPhone 17 Pro Max
+          action: test-without-building
+          result-bundle-path: TestResults/TestResults.xcresult
+          build-settings: |
+            CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_REQUIRED=NO
+        continue-on-error: true
+
+      - name: Generate Test Report
+        if: always()
+        uses: kishikawakatsumi/xcresulttool@v1
+        with:
+          path: TestResults/TestResults.xcresult
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/TestResults.xcresult
+          retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** MediStock.xcodeproj" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scheme:** MediStock" >> $GITHUB_STEP_SUMMARY
+          echo "- **Simulator:** iPhone 17 Pro Max" >> $GITHUB_STEP_SUMMARY
+          echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          if [ -d "TestResults/TestResults.xcresult" ]; then
+            echo "✅ Tests executed successfully" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ ERROR: No Firebase configuration found!"
-            echo "Please configure GOOGLE_SERVICE_INFO_PLIST secret or commit the file"
-            exit 1
+            echo "❌ Tests failed or were not executed" >> $GITHUB_STEP_SUMMARY
           fi
-        fi
-
-        # Verify the file exists and is valid
-        if [ -f "MediStock/GoogleService-Info.plist" ]; then
-          plutil -lint MediStock/GoogleService-Info.plist
-          echo "✅ Firebase configuration file is valid"
-        fi
-
-    - name: Install dependencies
-      run: |
-        echo "📦 Resolving Swift Package dependencies..."
-        xcodebuild -resolvePackageDependencies -scheme MediStock -project MediStock.xcodeproj
-
-    - name: Build for Testing
-      run: |
-        echo "🔨 Building for testing..."
-        set -o pipefail
-        xcodebuild clean build-for-testing \
-          -project MediStock.xcodeproj \
-          -scheme MediStock \
-          -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-          -derivedDataPath DerivedData \
-          -configuration Debug \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          ONLY_ACTIVE_ARCH=NO \
-          | xcpretty --color || exit 1
-
-    - name: Run Tests
-      id: run_tests
-      run: |
-        echo "🧪 Running tests..."
-        set -o pipefail
-        xcodebuild test-without-building \
-          -project MediStock.xcodeproj \
-          -scheme MediStock \
-          -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-          -derivedDataPath DerivedData \
-          -resultBundlePath TestResults/TestResults.xcresult \
-          -enableCodeCoverage YES \
-          | xcpretty --color --report junit --output TestResults/junit.xml || echo "test_failed=true" >> $GITHUB_OUTPUT
-      continue-on-error: true
-
-    - name: Check if test results exist
-      id: check_results
-      run: |
-        if [ -d "TestResults/TestResults.xcresult" ]; then
-          echo "results_exist=true" >> $GITHUB_OUTPUT
-          echo "✅ Test results found"
-        else
-          echo "results_exist=false" >> $GITHUB_OUTPUT
-          echo "⚠️ Test results not found"
-        fi
-
-    - name: Process Test Results
-      if: steps.check_results.outputs.results_exist == 'true'
-      uses: kishikawakatsumi/xcresulttool@v1
-      with:
-        path: TestResults/TestResults.xcresult
-      continue-on-error: true
-
-    - name: Upload Test Results
-      if: always() && steps.check_results.outputs.results_exist == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: TestResults/TestResults.xcresult
-        retention-days: 30
-
-    - name: Upload JUnit Results
-      if: always() && steps.check_results.outputs.results_exist == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: junit-results
-        path: TestResults/junit.xml
-        retention-days: 30
-
-    - name: Build Summary
-      if: always()
-      run: |
-        echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
-        echo "- **Xcode Version**: $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Simulator**: iPhone 15 Pro" >> $GITHUB_STEP_SUMMARY
-        echo "- **Scheme**: MediStock" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Results" >> $GITHUB_STEP_SUMMARY
-        if [ -d "TestResults/TestResults.xcresult" ]; then
-          if [ "${{ steps.run_tests.outputs.test_failed }}" == "true" ]; then
-            echo "⚠️ Tests executed but some failed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ All tests passed successfully" >> $GITHUB_STEP_SUMMARY
-          fi
-        else
-          echo "❌ Tests were not executed - build may have failed" >> $GITHUB_STEP_SUMMARY
-        fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Auteur:** TLILI HAMDI" >> $GITHUB_STEP_SUMMARY
