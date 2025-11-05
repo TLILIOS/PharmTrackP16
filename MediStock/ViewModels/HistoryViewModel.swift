@@ -1,6 +1,6 @@
+import FirebaseAuth
 import Foundation
 import SwiftUI
-import FirebaseAuth
 
 // MARK: - History ViewModel
 
@@ -89,7 +89,7 @@ class HistoryViewModel: ObservableObject {
             let deletions = stockHistory.filter { $0.type == .deletion }
             if deletions.isEmpty {
                 // Afficher quelques exemples
-                let examples = stockHistory.prefix(3).map { "'\($0.type)'" }.joined(separator: ", ")
+                _ = stockHistory.prefix(3).map { "'\($0.type)'" }.joined(separator: ", ")
             } else {
                 deletions.forEach { deletion in
                 }
@@ -106,20 +106,18 @@ class HistoryViewModel: ObservableObject {
         do {
             history = try await repository.fetchHistory()
 
-            // 📋 Afficher TOUTES les actions brutes
-            let uniqueActions = Set(history.map { $0.action })
-            for (index, entry) in history.enumerated() {
-            }
+            // 📋 Afficher TOUTES les actions brutes (debug)
+            _ = Set(history.map { $0.action })
 
             // Convertir l'historique en StockHistory
             stockHistory = history.compactMap { entry in
                 convertToStockHistory(entry)
             }
 
-            // 📊 Afficher un résumé des types
-            let adjustments = stockHistory.filter { $0.type == .adjustment }.count
-            let additions = stockHistory.filter { $0.type == .addition }.count
-            let deletions = stockHistory.filter { $0.type == .deletion }.count
+            // 📊 Afficher un résumé des types (debug)
+            _ = stockHistory.filter { $0.type == .adjustment }.count
+            _ = stockHistory.filter { $0.type == .addition }.count
+            _ = stockHistory.filter { $0.type == .deletion }.count
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -297,5 +295,15 @@ class HistoryViewModel: ObservableObject {
         ))
 
         return tempURL
+    }
+
+    // MARK: - Factory Methods
+
+    /// Créer une instance avec les dépendances par défaut
+    static func makeDefault() -> HistoryViewModel {
+        return HistoryViewModel(
+            repository: HistoryRepository(),
+            pdfExportService: PDFExportService()
+        )
     }
 }

@@ -123,6 +123,7 @@ final class NetworkMonitor: ObservableObject {
 // MARK: - NetworkMonitor Protocol
 
 /// Protocole pour faciliter les tests et l'injection de dépendances
+@MainActor
 protocol NetworkMonitorProtocol: AnyObject {
     var status: NetworkStatus { get }
     var isConnected: Bool { get }

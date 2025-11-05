@@ -109,9 +109,9 @@ final class AisleListViewModelTests: XCTestCase {
         mockRepository.aisles = [Aisle.mock()]
 
         // When - Launch multiple concurrent loads
-        async let load1 = sut.loadAisles()
-        async let load2 = sut.loadAisles()
-        async let load3 = sut.loadAisles()
+        async let load1: Void = sut.loadAisles()
+        async let load2: Void = sut.loadAisles()
+        async let load3: Void = sut.loadAisles()
 
         await load1
         await load2
@@ -220,8 +220,8 @@ final class AisleListViewModelTests: XCTestCase {
         await sut.loadAisles()
 
         // When - Launch multiple concurrent pagination loads
-        async let load1 = sut.loadMoreAisles()
-        async let load2 = sut.loadMoreAisles()
+        async let load1: Void = sut.loadMoreAisles()
+        async let load2: Void = sut.loadMoreAisles()
 
         await load1
         await load2

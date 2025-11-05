@@ -4,13 +4,17 @@ import Firebase
 // MARK: - MediStockApp Refactorisé (MVVM Strict)
 // Architecture : AppState (Coordinateur) + ViewModels Spécialisés
 
+// MARK: - Test Mode Detection (Global)
+private let isRunningTests = ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+
 @main
 struct MediStockApp: App {
 
     // MARK: - État Global (AppState = Coordinateur)
+    // Note: Ces StateObjects ne seront PAS initialisés en mode test
 
-    @StateObject private var appState = AppState()
-    @StateObject private var themeManager = ThemeManager()
+    @StateObject private var appState: AppState
+    @StateObject private var themeManager: ThemeManager
 
     // MARK: - ViewModels Spécialisés (Créés via DependencyContainer)
 
@@ -23,17 +27,38 @@ struct MediStockApp: App {
     // MARK: - Init
 
     init() {
-        // Configuration Firebase (une seule fois)
+        // En mode test, utiliser des instances vides/mock
+        if isRunningTests {
+            print("⚠️ UNIT_TESTS_ONLY mode - using mock dependencies")
+
+            // Créer des instances minimales via DependencyContainer
+            // Le DependencyContainer créera les instances même si Firebase n'est pas configuré
+            // grâce aux lazy vars dans les DataServices
+            let container = DependencyContainer.shared
+
+            _appState = StateObject(wrappedValue: AppState())
+            _themeManager = StateObject(wrappedValue: ThemeManager())
+            _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
+            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
+            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
+            _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel.makeDefault())
+            _historyViewModel = StateObject(wrappedValue: HistoryViewModel.makeDefault())
+            return
+        }
+
+        // Configuration Firebase (une seule fois) - PRODUCTION SEULEMENT
         FirebaseService.shared.configure()
 
         // Initialiser les ViewModels avec DependencyContainer
         let container = DependencyContainer.shared
 
+        _appState = StateObject(wrappedValue: AppState())
+        _themeManager = StateObject(wrappedValue: ThemeManager())
         _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
         _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
         _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
-        _aisleListViewModel = StateObject(wrappedValue: container.makeAisleListViewModel())
-        _historyViewModel = StateObject(wrappedValue: container.makeHistoryViewModel())
+        _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel.makeDefault())
+        _historyViewModel = StateObject(wrappedValue: HistoryViewModel.makeDefault())
     }
 
     // MARK: - Body
