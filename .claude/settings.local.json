@@ -17,7 +17,14 @@
       "Bash(git push:*)",
       "Bash(plutil:*)",
       "Bash(git log:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(rm:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(git remote get-url:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(UNIT_TESTS_ONLY=1 xcodebuild test:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

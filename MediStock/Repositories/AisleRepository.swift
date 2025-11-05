@@ -1,7 +1,7 @@
 import Foundation
 import FirebaseFirestore
 
-// MARK: - Aisle Repository
+// MARK: - Aisle Repositor
 
 class AisleRepository: AisleRepositoryProtocol {
     private let aisleService: AisleDataService
@@ -35,7 +35,7 @@ class AisleRepository: AisleRepositoryProtocol {
         try await aisleService.deleteAisle(aisle)
     }
 
-    // MARK: - Real-time Listeners
+    // MARK: - Real-time Listener
 
     func startListeningToAisles(completion: @escaping ([Aisle]) -> Void) {
         listener = aisleService.createAislesListener(completion: completion)
