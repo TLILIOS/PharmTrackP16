@@ -296,4 +296,14 @@ class HistoryViewModel: ObservableObject {
 
         return tempURL
     }
+
+    // MARK: - Factory Methods
+
+    /// Créer une instance avec les dépendances par défaut
+    static func makeDefault() -> HistoryViewModel {
+        return HistoryViewModel(
+            repository: HistoryRepository(),
+            pdfExportService: PDFExportService()
+        )
+    }
 }

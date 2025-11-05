@@ -31,19 +31,18 @@ struct MediStockApp: App {
         if isRunningTests {
             print("⚠️ UNIT_TESTS_ONLY mode - using mock dependencies")
 
-            // Créer des mocks minimaux pour éviter les crashes
+            // Créer des instances minimales via DependencyContainer
+            // Le DependencyContainer créera les instances même si Firebase n'est pas configuré
+            // grâce aux lazy vars dans les DataServices
+            let container = DependencyContainer.shared
+
             _appState = StateObject(wrappedValue: AppState())
             _themeManager = StateObject(wrappedValue: ThemeManager())
-            _authViewModel = StateObject(wrappedValue: AuthViewModel(authService: AuthService()))
-            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel(
-                medicineRepository: MedicineRepository(),
-                aisleRepository: AisleRepository()
-            ))
-            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel(
-                medicineRepository: MedicineRepository()
-            ))
-            _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel(repository: AisleRepository()))
-            _historyViewModel = StateObject(wrappedValue: HistoryViewModel(repository: HistoryRepository()))
+            _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
+            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
+            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
+            _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel.makeDefault())
+            _historyViewModel = StateObject(wrappedValue: HistoryViewModel.makeDefault())
             return
         }
 
@@ -58,8 +57,8 @@ struct MediStockApp: App {
         _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
         _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
         _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
-        _aisleListViewModel = StateObject(wrappedValue: container.makeAisleListViewModel())
-        _historyViewModel = StateObject(wrappedValue: container.makeHistoryViewModel())
+        _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel.makeDefault())
+        _historyViewModel = StateObject(wrappedValue: HistoryViewModel.makeDefault())
     }
 
     // MARK: - Body
