@@ -28,11 +28,12 @@ jobs:
         with:
           project: MediStock.xcodeproj
           scheme: MediStock
-          destination: platform=iOS Simulator,name=iPhone 17 Pro Max
+          destination: platform=iOS Simulator,name=iPhone 16 Pro
           action: build-for-testing
           build-settings: |
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
+            UNIT_TESTS_ONLY=1
 
       - name: Run Tests
         id: run_tests
@@ -40,12 +41,13 @@ jobs:
         with:
           project: MediStock.xcodeproj
           scheme: MediStock
-          destination: platform=iOS Simulator,name=iPhone 17 Pro Max
+          destination: platform=iOS Simulator,name=iPhone 16 Pro
           action: test-without-building
           result-bundle-path: TestResults/TestResults.xcresult
           build-settings: |
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
+            UNIT_TESTS_ONLY=1
         continue-on-error: true
 
       - name: Generate Test Report
@@ -71,7 +73,7 @@ jobs:
           echo "### Configuration" >> $GITHUB_STEP_SUMMARY
           echo "- **Project:** MediStock.xcodeproj" >> $GITHUB_STEP_SUMMARY
           echo "- **Scheme:** MediStock" >> $GITHUB_STEP_SUMMARY
-          echo "- **Simulator:** iPhone 17 Pro Max" >> $GITHUB_STEP_SUMMARY
+          echo "- **Simulator:** iPhone 16 Pro" >> $GITHUB_STEP_SUMMARY
           echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Results" >> $GITHUB_STEP_SUMMARY
