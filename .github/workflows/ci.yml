@@ -35,27 +35,29 @@ jobs:
           echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
           echo "Environment check: UNIT_TESTS_ONLY=$UNIT_TESTS_ONLY"
 
-          # Détecter le simulateur disponible (priorité: iPhone 15 Pro > iPhone 16 > Premier iPhone disponible)
-          SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone 15 Pro" | head -1)
-          if [ -z "$SIMULATOR" ]; then
-            SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone 16" | head -1)
-          fi
-          if [ -z "$SIMULATOR" ]; then
-            SIMULATOR=$(xcrun simctl list devices available | grep -o "iPhone [0-9]*" | head -1)
-          fi
-          if [ -z "$SIMULATOR" ]; then
-            SIMULATOR="iPhone 15 Pro"
-          fi
-          echo "📱 Using simulator: $SIMULATOR"
+          # Détecter le simulateur disponible avec une approche plus robuste
+          echo "🔍 Detecting available iPhone simulators..."
 
-          # Boot simulator first to avoid timing issues
-          xcrun simctl boot "$SIMULATOR" 2>/dev/null || echo "Simulator already booted"
-          sleep 3
+          # Liste tous les simulateurs iPhone disponibles et prend le premier
+          SIMULATOR=$(xcrun simctl list devices available | grep -E "iPhone [0-9]+" | grep -v "unavailable" | head -1 | awk '{print $1, $2}')
+
+          # Si aucun simulateur n'est trouvé, utiliser "Any iOS Simulator Device"
+          if [ -z "$SIMULATOR" ]; then
+            echo "⚠️  No specific iPhone simulator found, using generic destination"
+            DESTINATION="platform=iOS Simulator,name=Any iOS Simulator Device"
+          else
+            echo "📱 Using simulator: $SIMULATOR"
+            DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+
+            # Boot simulator first to avoid timing issues
+            xcrun simctl boot "$SIMULATOR" 2>/dev/null || echo "Simulator already booted or using generic device"
+            sleep 3
+          fi
 
           xcodebuild test \
             -project MediStock.xcodeproj \
             -scheme MediStock-UnitTests \
-            -destination "platform=iOS Simulator,name=$SIMULATOR" \
+            -destination "$DESTINATION" \
             -resultBundlePath TestResults/TestResults.xcresult \
             -test-timeouts-enabled YES \
             CODE_SIGN_IDENTITY="" \
