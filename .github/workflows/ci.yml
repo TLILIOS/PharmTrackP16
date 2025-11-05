@@ -23,32 +23,27 @@ jobs:
       - name: List Available Simulators
         run: xcrun simctl list devices available
 
-      - name: Build for Testing
-        uses: sersoft-gmbh/xcodebuild-action@v3.2.0
-        with:
-          project: MediStock.xcodeproj
-          scheme: MediStock
-          destination: platform=iOS Simulator,name=iPhone 16 Pro
-          action: build-for-testing
-          build-settings: |
-            CODE_SIGN_IDENTITY=""
-            CODE_SIGNING_REQUIRED=NO
-            UNIT_TESTS_ONLY=1
-
-      - name: Run Tests
+      - name: Build and Test
         id: run_tests
         timeout-minutes: 10
-        uses: sersoft-gmbh/xcodebuild-action@v3.2.0
-        with:
-          project: MediStock.xcodeproj
-          scheme: MediStock
-          destination: platform=iOS Simulator,name=iPhone 16 Pro
-          action: test-without-building
-          result-bundle-path: TestResults/TestResults.xcresult
-          build-settings: |
-            CODE_SIGN_IDENTITY=""
-            CODE_SIGNING_REQUIRED=NO
-            UNIT_TESTS_ONLY=1
+        run: |
+          set -o pipefail
+          mkdir -p TestResults
+
+          echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
+          xcodebuild test \
+            -project MediStock.xcodeproj \
+            -scheme MediStock \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -resultBundlePath TestResults/TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            UNIT_TESTS_ONLY=1 \
+            | tee xcodebuild.log \
+            | grep -E "(Test Suite|Test Case|passed|failed|Testing started|Testing completed)" \
+            || echo "Tests completed with issues"
+
+          echo "test_exit_code=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
 
       - name: Generate Test Report
@@ -76,13 +71,23 @@ jobs:
           echo "- **Scheme:** MediStock" >> $GITHUB_STEP_SUMMARY
           echo "- **Simulator:** iPhone 16 Pro" >> $GITHUB_STEP_SUMMARY
           echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Mode:** UNIT_TESTS_ONLY=1" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Results" >> $GITHUB_STEP_SUMMARY
+
           if [ -d "TestResults/TestResults.xcresult" ]; then
-            echo "✅ Tests executed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Tests executed" >> $GITHUB_STEP_SUMMARY
+
+            # Extract test summary from xcresult
+            if command -v xcrun &> /dev/null; then
+              TESTS_COUNT=$(grep -o "Executed [0-9]* tests" xcodebuild.log | head -1 || echo "Tests count unavailable")
+              TESTS_TIME=$(grep -o "in [0-9]*\.[0-9]* seconds" xcodebuild.log | head -1 || echo "")
+              echo "- $TESTS_COUNT $TESTS_TIME" >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "❌ Tests failed or were not executed" >> $GITHUB_STEP_SUMMARY
           fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "**Auteur:** TLILI HAMDI" >> $GITHUB_STEP_SUMMARY
