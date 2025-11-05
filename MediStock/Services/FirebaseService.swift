@@ -9,12 +9,24 @@ import SwiftUI
 @MainActor
 class FirebaseService: ObservableObject {
     static let shared = FirebaseService()
-    
+
     private init() {}
+
+    // MARK: - Test Mode Detection
+
+    private var isTestMode: Bool {
+        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+    }
     
     // MARK: - Configuration
 
     func configure() {
+        // Skip Firebase initialization during unit tests
+        if isTestMode {
+            print("⚠️ Skipping Firebase initialization (UNIT_TESTS_ONLY mode)")
+            return
+        }
+
         // Configuration Firebase sécurisée avec FirebaseConfigLoader
         FirebaseConfigLoader.configure(for: .production)
 
@@ -41,30 +53,36 @@ class FirebaseService: ObservableObject {
     }
     
     // MARK: - Analytics Events
-    
+
     func logEvent(_ event: AnalyticsEvent) {
+        guard !isTestMode else { return }
         Analytics.logEvent(event.name, parameters: event.parameters)
     }
     
     func setUserProperty(_ property: UserProperty) {
+        guard !isTestMode else { return }
         Analytics.setUserProperty(property.value, forName: property.name)
     }
-    
+
     func setUserID(_ userID: String?) {
+        guard !isTestMode else { return }
         Analytics.setUserID(userID)
     }
     
     // MARK: - Crashlytics
-    
+
     func logError(_ error: Error, userInfo: [String: Any]? = nil) {
+        guard !isTestMode else { return }
         Crashlytics.crashlytics().record(error: error, userInfo: userInfo)
     }
-    
+
     func log(_ message: String) {
+        guard !isTestMode else { return }
         Crashlytics.crashlytics().log(message)
     }
-    
+
     func setCustomValue(_ value: Any?, forKey key: String) {
+        guard !isTestMode else { return }
         Crashlytics.crashlytics().setCustomValue(value, forKey: key)
     }
     
@@ -185,6 +203,7 @@ class FirebaseService: ObservableObject {
     // MARK: - Network Events
 
     func logEvent(name: String, parameters: [String: Any]?) {
+        guard !isTestMode else { return }
         Analytics.logEvent(name, parameters: parameters)
     }
 }
