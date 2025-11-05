@@ -59,6 +59,7 @@ jobs:
             -scheme MediStock-UnitTests \
             -destination "$DESTINATION" \
             -resultBundlePath TestResults/TestResults.xcresult \
+            -enableCodeCoverage YES \
             -test-timeouts-enabled YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -84,8 +85,8 @@ jobs:
         with:
           path: TestResults/TestResults.xcresult
           title: "Test Results - MediStock"
-          show-passed-tests: false
-          show-code-coverage: false
+          show-passed-tests: true
+          show-code-coverage: true
         continue-on-error: true
 
       - name: Upload Test Results
