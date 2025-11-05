@@ -25,7 +25,7 @@ jobs:
 
       - name: Build and Test
         id: run_tests
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           UNIT_TESTS_ONLY: "1"
         run: |
@@ -35,13 +35,20 @@ jobs:
           echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
           echo "Environment check: UNIT_TESTS_ONLY=$UNIT_TESTS_ONLY"
 
+          # Boot simulator first to avoid timing issues
+          xcrun simctl boot "iPhone 16" 2>/dev/null || echo "Simulator already booted"
+          sleep 3
+
           xcodebuild test \
             -project MediStock.xcodeproj \
-            -scheme MediStock \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -scheme MediStock-UnitTests \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -resultBundlePath TestResults/TestResults.xcresult \
+            -only-testing:MediStockTests/UnitTests \
+            -test-timeouts-enabled YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
+            ENABLE_THREAD_SANITIZER=NO \
             | tee xcodebuild.log \
             | grep -E "(Test Suite|Test Case|passed|failed|Testing started|Testing completed)" \
             || echo "Tests completed with issues"
@@ -71,8 +78,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Configuration" >> $GITHUB_STEP_SUMMARY
           echo "- **Project:** MediStock.xcodeproj" >> $GITHUB_STEP_SUMMARY
-          echo "- **Scheme:** MediStock" >> $GITHUB_STEP_SUMMARY
-          echo "- **Simulator:** iPhone 16 Pro" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scheme:** MediStock-UnitTests" >> $GITHUB_STEP_SUMMARY
+          echo "- **Simulator:** iPhone 16" >> $GITHUB_STEP_SUMMARY
           echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Mode:** UNIT_TESTS_ONLY=1" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

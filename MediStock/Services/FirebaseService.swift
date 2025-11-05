@@ -30,6 +30,12 @@ class FirebaseService: ObservableObject {
         // Configuration Firebase sécurisée avec FirebaseConfigLoader
         FirebaseConfigLoader.configure(for: .production)
 
+        // Vérifier que Firebase est bien configuré avant de continuer
+        guard FirebaseApp.app() != nil else {
+            print("⚠️ Firebase not configured, skipping Analytics and Firestore setup")
+            return
+        }
+
         // Activer Analytics
         Analytics.setAnalyticsCollectionEnabled(true)
 

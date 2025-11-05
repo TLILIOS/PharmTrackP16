@@ -20,9 +20,28 @@ struct MediStockApp: App {
     @StateObject private var aisleListViewModel: AisleListViewModel
     @StateObject private var historyViewModel: HistoryViewModel
 
+    // MARK: - Test Mode Detection
+
+    private static var isTestMode: Bool {
+        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+    }
+
     // MARK: - Init
 
     init() {
+        // Skip app initialization during unit tests
+        if Self.isTestMode {
+            print("⚠️ Running in UNIT_TESTS_ONLY mode - minimal initialization")
+            // Initialize with minimal/mock dependencies
+            let container = DependencyContainer.shared
+            _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
+            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
+            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
+            _aisleListViewModel = StateObject(wrappedValue: container.makeAisleListViewModel())
+            _historyViewModel = StateObject(wrappedValue: container.makeHistoryViewModel())
+            return
+        }
+
         // Configuration Firebase (une seule fois)
         FirebaseService.shared.configure()
 
