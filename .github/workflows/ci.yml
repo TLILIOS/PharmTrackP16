@@ -37,6 +37,7 @@ jobs:
 
       - name: Run Tests
         id: run_tests
+        timeout-minutes: 10
         uses: sersoft-gmbh/xcodebuild-action@v3.2.0
         with:
           project: MediStock.xcodeproj
