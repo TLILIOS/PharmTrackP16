@@ -4,13 +4,17 @@ import Firebase
 // MARK: - MediStockApp Refactorisé (MVVM Strict)
 // Architecture : AppState (Coordinateur) + ViewModels Spécialisés
 
+// MARK: - Test Mode Detection (Global)
+private let isRunningTests = ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+
 @main
 struct MediStockApp: App {
 
     // MARK: - État Global (AppState = Coordinateur)
+    // Note: Ces StateObjects ne seront PAS initialisés en mode test
 
-    @StateObject private var appState = AppState()
-    @StateObject private var themeManager = ThemeManager()
+    @StateObject private var appState: AppState
+    @StateObject private var themeManager: ThemeManager
 
     // MARK: - ViewModels Spécialisés (Créés via DependencyContainer)
 
@@ -20,34 +24,37 @@ struct MediStockApp: App {
     @StateObject private var aisleListViewModel: AisleListViewModel
     @StateObject private var historyViewModel: HistoryViewModel
 
-    // MARK: - Test Mode Detection
-
-    private static var isTestMode: Bool {
-        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
-    }
-
     // MARK: - Init
 
     init() {
-        // Skip app initialization during unit tests
-        if Self.isTestMode {
-            print("⚠️ Running in UNIT_TESTS_ONLY mode - minimal initialization")
-            // Initialize with minimal/mock dependencies
-            let container = DependencyContainer.shared
-            _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
-            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
-            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())
-            _aisleListViewModel = StateObject(wrappedValue: container.makeAisleListViewModel())
-            _historyViewModel = StateObject(wrappedValue: container.makeHistoryViewModel())
+        // En mode test, utiliser des instances vides/mock
+        if isRunningTests {
+            print("⚠️ UNIT_TESTS_ONLY mode - using mock dependencies")
+
+            // Créer des mocks minimaux pour éviter les crashes
+            _appState = StateObject(wrappedValue: AppState())
+            _themeManager = StateObject(wrappedValue: ThemeManager())
+            _authViewModel = StateObject(wrappedValue: AuthViewModel(authService: AuthService()))
+            _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel(
+                medicineRepository: MedicineRepository(),
+                aisleRepository: AisleRepository()
+            ))
+            _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel(
+                medicineRepository: MedicineRepository()
+            ))
+            _aisleListViewModel = StateObject(wrappedValue: AisleListViewModel(repository: AisleRepository()))
+            _historyViewModel = StateObject(wrappedValue: HistoryViewModel(repository: HistoryRepository()))
             return
         }
 
-        // Configuration Firebase (une seule fois)
+        // Configuration Firebase (une seule fois) - PRODUCTION SEULEMENT
         FirebaseService.shared.configure()
 
         // Initialiser les ViewModels avec DependencyContainer
         let container = DependencyContainer.shared
 
+        _appState = StateObject(wrappedValue: AppState())
+        _themeManager = StateObject(wrappedValue: ThemeManager())
         _authViewModel = StateObject(wrappedValue: container.makeAuthViewModel())
         _medicineListViewModel = StateObject(wrappedValue: MedicineListViewModel.makeDefault())
         _dashboardViewModel = StateObject(wrappedValue: DashboardViewModel.makeDefault())

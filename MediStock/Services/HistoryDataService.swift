@@ -6,15 +6,27 @@ import FirebaseAuth
 // Principe KISS : Une seule responsabilité - Gérer l'historique
 
 class HistoryDataService {
-    private let db = Firestore.firestore()
-    
+    // MARK: - Test Mode Detection
+    private var isTestMode: Bool {
+        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+    }
+
+    // Lazy initialization to avoid crash during tests
+    private lazy var db: Firestore = {
+        guard !isTestMode else {
+            fatalError("Firestore should not be accessed in test mode. Use mocks instead.")
+        }
+        return Firestore.firestore()
+    }()
+
     // Cache pour optimiser les performances
     private var historyCache: [String: (entries: [HistoryEntry], timestamp: Date)] = [:]
     private let cacheValidityDuration: TimeInterval = 30 // 30 secondes
-    
+
     // Helper pour obtenir l'ID utilisateur courant
     private var userId: String {
-        Auth.auth().currentUser?.uid ?? "anonymous"
+        guard !isTestMode else { return "test-user" }
+        return Auth.auth().currentUser?.uid ?? "anonymous"
     }
     
     // MARK: - Méthodes Publiques

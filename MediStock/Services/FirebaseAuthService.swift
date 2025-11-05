@@ -15,7 +15,18 @@ class FirebaseAuthService: AuthServiceProtocol {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     private let keychain = KeychainService.shared
 
+    // MARK: - Test Mode Detection
+    private var isTestMode: Bool {
+        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+    }
+
     init() {
+        // Skip Firebase Auth listener during tests
+        guard !isTestMode else {
+            print("⚠️ Skipping Firebase Auth listener (UNIT_TESTS_ONLY mode)")
+            return
+        }
+
         // Observer les changements d'état d'authentification
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, firebaseUser in
             self?.currentUser = firebaseUser.map { user in
