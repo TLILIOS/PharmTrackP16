@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import FirebaseCore
 
 // MARK: - MediStockApp Refactorisé (MVVM Strict)
 // Architecture : AppState (Coordinateur) + ViewModels Spécialisés
@@ -27,6 +28,8 @@ struct MediStockApp: App {
     // MARK: - Init
 
     init() {
+        FirebaseApp.configure()
+
         // En mode test, utiliser des instances vides/mock
         if isRunningTests {
             print("⚠️ UNIT_TESTS_ONLY mode - using mock dependencies")
