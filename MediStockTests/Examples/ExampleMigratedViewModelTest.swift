@@ -451,11 +451,18 @@ class ExampleMedicineListViewModel: ObservableObject {
 
     func updateStock(for id: String, newStock: Int) async throws -> Medicine {
         do {
+            // Effectuer la mise à jour du service en premier
             let updated = try await medicineService.updateMedicineStock(id: id, newStock: newStock)
+
             // Mettre à jour la liste locale
-            if let index = medicines.firstIndex(where: { $0.id == id }) {
-                medicines[index] = updated
+            // Note: Déjà sur @MainActor, pas besoin de await MainActor.run
+            // Créer une nouvelle copie du tableau pour éviter les mutations concurrentes
+            var updatedMedicines = medicines
+            if let index = updatedMedicines.firstIndex(where: { $0.id == id }) {
+                updatedMedicines[index] = updated
             }
+            medicines = updatedMedicines
+
             return updated
         } catch {
             errorMessage = error.localizedDescription
@@ -468,6 +475,8 @@ class ExampleMedicineListViewModel: ObservableObject {
             throw NSError(domain: "Medicine", code: 404, userInfo: [NSLocalizedDescriptionKey: "Medicine not found"])
         }
         try await medicineService.deleteMedicine(medicine)
-        medicines.removeAll { $0.id == id }
+
+        // Mettre à jour de manière thread-safe
+        medicines = medicines.filter { $0.id != id }
     }
 }

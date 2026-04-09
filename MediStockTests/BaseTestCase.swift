@@ -186,8 +186,7 @@ class BaseTestCase: XCTestCase {
     ) rethrows {
         let start = CFAbsoluteTimeGetCurrent()
         try block()
-        let end = CFAbsoluteTimeGetCurrent()
-        let elapsed = end - start
+        _ = CFAbsoluteTimeGetCurrent() - start
     }
 
     /// Mesure le temps d'exécution d'un bloc async
@@ -198,6 +197,6 @@ class BaseTestCase: XCTestCase {
         let start = CFAbsoluteTimeGetCurrent()
         try await block()
         let end = CFAbsoluteTimeGetCurrent()
-        let elapsed = end - start
+        _ = end - start
     }
 }

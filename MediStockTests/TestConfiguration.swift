@@ -80,11 +80,10 @@ class TestConfiguration {
     static func configureTestEnvironment() {
         // Désactiver les animations pour accélérer les tests UI
         UIView.setAnimationsEnabled(false)
-        
-        // Réduire les délais de debounce en mode test
-        if let testMode = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] {
-        }
-        
+
+        // Vérifier si on est en mode test
+        _ = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
         // Configurer les timeouts pour les tests
         URLSession.shared.configuration.timeoutIntervalForRequest = 5.0
         URLSession.shared.configuration.timeoutIntervalForResource = 10.0

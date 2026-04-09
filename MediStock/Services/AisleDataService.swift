@@ -6,20 +6,33 @@ import FirebaseAuth
 // Principe KISS : Une seule responsabilité - Gérer les rayons
 
 class AisleDataService {
-    private let db = Firestore.firestore()
+    // MARK: - Test Mode Detection
+    private var isTestMode: Bool {
+        ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1"
+    }
+
+    // Lazy initialization to avoid crash during tests
+    private lazy var db: Firestore = {
+        guard !isTestMode else {
+            fatalError("Firestore should not be accessed in test mode. Use mocks instead.")
+        }
+        return Firestore.firestore()
+    }()
+
     private let historyService: HistoryDataService
-    
+
     // MARK: - Pagination State
     private var lastDocument: DocumentSnapshot?
     private var hasMore = true
-    
+
     // Helper pour obtenir l'ID utilisateur courant
     private var userId: String {
-        Auth.auth().currentUser?.uid ?? "anonymous"
+        guard !isTestMode else { return "test-user" }
+        return Auth.auth().currentUser?.uid ?? "anonymous"
     }
-    
+
     // MARK: - Initialisation
-    
+
     init(historyService: HistoryDataService = HistoryDataService()) {
         self.historyService = historyService
     }

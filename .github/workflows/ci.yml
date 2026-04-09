@@ -1,4 +1,4 @@
-name: iOS Build and Test
+name: iOS CI - Build and Test
 
 on:
   pull_request:
@@ -7,23 +7,136 @@ on:
 
 jobs:
   build-and-test:
+    name: Build and Test MediStock
     runs-on: macos-latest
+    timeout-minutes: 30
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Build and Test
-      uses: sersoft-gmbh/xcodebuild-action@v3.2.0
-      with:
-        project: MediStock.xcodeproj
-        scheme: MediStock
-        destination: 'platform=iOS Simulator,name=iPhone 16'
-        action: test
-        result-bundle-path: 'TestResults/TestResults.xcresult'
+      - name: Show Xcode Version
+        run: |
+          xcodebuild -version
+          echo "Default Xcode path: $(xcode-select -p)"
 
-    - name: Process Test Results
-      uses: kishikawakatsumi/xcresulttool@v1
-      with:
-        path: TestResults/TestResults.xcresult
-      if: success() || failure()
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
+
+      - name: Build and Test
+        id: run_tests
+        timeout-minutes: 20
+        env:
+          UNIT_TESTS_ONLY: "1"
+        run: |
+          set -o pipefail
+          mkdir -p TestResults
+
+          echo "🧪 Running tests with UNIT_TESTS_ONLY=1..."
+          echo "Environment check: UNIT_TESTS_ONLY=$UNIT_TESTS_ONLY"
+
+          # Détecter le simulateur disponible avec une approche plus robuste
+          echo "🔍 Detecting available iPhone simulators..."
+
+          # Liste tous les simulateurs iPhone disponibles et prend le premier
+          SIMULATOR=$(xcrun simctl list devices available | grep -E "iPhone [0-9]+" | grep -v "unavailable" | head -1 | awk '{print $1, $2}')
+
+          # Si aucun simulateur n'est trouvé, utiliser "Any iOS Simulator Device"
+          if [ -z "$SIMULATOR" ]; then
+            echo "⚠️  No specific iPhone simulator found, using generic destination"
+            DESTINATION="platform=iOS Simulator,name=Any iOS Simulator Device"
+          else
+            echo "📱 Using simulator: $SIMULATOR"
+            DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+
+            # Boot simulator first to avoid timing issues
+            xcrun simctl boot "$SIMULATOR" 2>/dev/null || echo "Simulator already booted or using generic device"
+            sleep 3
+          fi
+
+          xcodebuild test \
+            -project MediStock.xcodeproj \
+            -scheme MediStock-UnitTests \
+            -destination "$DESTINATION" \
+            -resultBundlePath TestResults/TestResults.xcresult \
+            -enableCodeCoverage YES \
+            -test-timeouts-enabled YES \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            ENABLE_THREAD_SANITIZER=NO \
+            | tee xcodebuild.log \
+            | grep -E "(Test Suite|Test Case|passed|failed|Testing started|Testing completed)" \
+            || true
+
+          # Capture the actual exit code
+          TEST_EXIT_CODE="${PIPESTATUS[0]}"
+          echo "test_exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          # Show test results
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ Tests passed successfully"
+          else
+            echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+          fi
+
+      - name: Generate Test Report
+        if: always()
+        uses: kishikawakatsumi/xcresulttool@v1
+        with:
+          path: TestResults/TestResults.xcresult
+          title: "Test Results - MediStock"
+          show-passed-tests: true
+          show-code-coverage: true
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/TestResults.xcresult
+          retention-days: 30
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## 📊 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** MediStock.xcodeproj" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scheme:** MediStock-UnitTests" >> $GITHUB_STEP_SUMMARY
+          echo "- **Xcode Version:** $(xcodebuild -version | head -n 1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Mode:** UNIT_TESTS_ONLY=1" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "TestResults/TestResults.xcresult" ]; then
+            # Extract test summary from xcresult
+            if command -v xcrun &> /dev/null; then
+              TESTS_COUNT=$(grep -o "Executed [0-9]* tests" xcodebuild.log | head -1 || echo "Tests count unavailable")
+              TESTS_TIME=$(grep -o "in [0-9.]*.*seconds" xcodebuild.log | head -1 || echo "")
+
+              if grep -q "TEST SUCCEEDED" xcodebuild.log; then
+                echo "✅ **Tests passed**" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "❌ **Tests failed**" >> $GITHUB_STEP_SUMMARY
+              fi
+
+              echo "- $TESTS_COUNT $TESTS_TIME" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ Tests failed or were not executed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Logs" >> $GITHUB_STEP_SUMMARY
+          echo "Test results and logs are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Auteur:** TLILI HAMDI" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Test Results
+        if: steps.run_tests.outputs.test_exit_code != '0'
+        run: |
+          echo "::error::Tests failed with exit code ${{ steps.run_tests.outputs.test_exit_code }}"
+          exit 1

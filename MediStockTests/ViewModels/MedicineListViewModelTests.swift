@@ -126,9 +126,9 @@ final class MedicineListViewModelTests: XCTestCase {
         mockMedicineRepository.medicines = [Medicine.mock()]
 
         // When - Launch multiple concurrent loads
-        async let load1 = sut.loadMedicines()
-        async let load2 = sut.loadMedicines()
-        async let load3 = sut.loadMedicines()
+        async let load1: Void = sut.loadMedicines()
+        async let load2: Void = sut.loadMedicines()
+        async let load3: Void = sut.loadMedicines()
 
         await load1
         await load2
@@ -205,8 +205,8 @@ final class MedicineListViewModelTests: XCTestCase {
         await sut.loadMedicines()
 
         // When - Launch multiple concurrent pagination loads
-        async let load1 = sut.loadMoreMedicines()
-        async let load2 = sut.loadMoreMedicines()
+        async let load1: Void = sut.loadMoreMedicines()
+        async let load2: Void = sut.loadMoreMedicines()
 
         await load1
         await load2

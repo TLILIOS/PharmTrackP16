@@ -206,12 +206,15 @@ class MedicineListViewModel: ObservableObject {
         do {
             let saved = try await medicineRepository.saveMedicine(medicine)
 
-            // Mettre à jour la liste locale
-            if let index = medicines.firstIndex(where: { $0.id == saved.id }) {
-                medicines[index] = saved
+            // Mettre à jour la liste locale de manière thread-safe
+            // Créer une nouvelle copie pour éviter les mutations concurrentes
+            var updatedMedicines = medicines
+            if let index = updatedMedicines.firstIndex(where: { $0.id == saved.id }) {
+                updatedMedicines[index] = saved
             } else {
-                medicines.insert(saved, at: 0) // Ajouter en tête
+                updatedMedicines.insert(saved, at: 0) // Ajouter en tête
             }
+            medicines = updatedMedicines
 
             // NOTE: L'historique est déjà enregistré par MedicineDataService.saveMedicine()
             // Pas besoin de créer une entrée dupliquée ici
@@ -244,8 +247,9 @@ class MedicineListViewModel: ObservableObject {
         do {
             try await medicineRepository.deleteMedicine(id: medicine.id ?? "")
 
-            // Retirer de la liste locale
-            medicines.removeAll { $0.id == medicine.id }
+            // Retirer de la liste locale de manière thread-safe
+            // Créer une nouvelle copie pour éviter les mutations concurrentes
+            medicines = medicines.filter { $0.id != medicine.id }
 
             // NOTE: L'historique est déjà enregistré par MedicineDataService.deleteMedicine()
             // Pas besoin de créer une entrée dupliquée ici
@@ -278,10 +282,13 @@ class MedicineListViewModel: ObservableObject {
                 newStock: newQuantity
             )
 
-            // Mettre à jour localement
-            if let index = medicines.firstIndex(where: { $0.id == updated.id }) {
-                medicines[index] = updated
+            // Mettre à jour localement de manière thread-safe
+            // Créer une nouvelle copie pour éviter les mutations concurrentes
+            var updatedMedicines = medicines
+            if let index = updatedMedicines.firstIndex(where: { $0.id == updated.id }) {
+                updatedMedicines[index] = updated
             }
+            medicines = updatedMedicines
 
             // NOTE: L'historique est déjà enregistré par MedicineDataService.updateMedicineStock()
             // Pas besoin de créer une entrée dupliquée ici

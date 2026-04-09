@@ -28,6 +28,12 @@ enum FirebaseConfigLoader {
     /// Configure Firebase selon l'environnement
     /// - Parameter environment: Environnement de configuration
     static func configure(for environment: Environment = .production) {
+        // Skip Firebase initialization during unit tests
+        if ProcessInfo.processInfo.environment["UNIT_TESTS_ONLY"] == "1" {
+            print("⚠️ Skipping Firebase configuration (UNIT_TESTS_ONLY mode)")
+            return
+        }
+
         #if DEBUG
         #endif
 

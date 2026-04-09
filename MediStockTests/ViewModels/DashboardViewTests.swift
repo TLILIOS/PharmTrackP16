@@ -389,7 +389,6 @@ class DashboardViewTests: XCTestCase {
 
     func testStatisticsStatusColorGreen() {
         // Given - Normal stock
-        let normalMeds = [Medicine.mock(currentQuantity: 100)]
         let farFuture = Date().addingTimeInterval(365 * 24 * 60 * 60)
         let meds = [Medicine.mock(currentQuantity: 100, expiryDate: farFuture)]
         dashboardViewModel = DashboardViewModel.makeMock(medicines: meds)

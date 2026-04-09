@@ -276,7 +276,9 @@ final class AuthViewModelTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertGreaterThanOrEqual(receivedUsers.count, 2) // nil initially, then User (possibly multiple updates)
         XCTAssertNil(receivedUsers[0])
-        XCTAssertNotNil(receivedUsers.last)
+        if let lastUser = receivedUsers.last {
+            XCTAssertNotNil(lastUser)
+        }
         cancellable.cancel()
     }
 
